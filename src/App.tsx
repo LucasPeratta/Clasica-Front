@@ -1,8 +1,11 @@
-import Navbar from "./components/Navbar";
-import "./app.scss";
+import Router from "./components/Router";
 
 function App() {
-  return <Navbar></Navbar>;
+  return (
+    <div>
+      <Router />
+    </div>
+  );
 }
 
 export default App;
