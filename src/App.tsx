@@ -1,7 +1,8 @@
-import "./App.css";
+import Navbar from "./components/Navbar";
+import "./app.scss";
 
 function App() {
-  return <p>HELLO WORLD</p>;
+  return <Navbar></Navbar>;
 }
 
 export default App;
