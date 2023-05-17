@@ -1,17 +1,29 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import "./Router.scss";
+import { Layout } from "./Layout";
+import { TableComponent } from "./pax/Table";
 
 function Router() {
+  const auth = true;
+
   return (
     <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Navigate to="/files" />} />
-        <Route path="/files" element={<p>FILES</p>} />
-        <Route path="/paxs" element={<p>Paxs</p>} />
-        <Route path="/service" element={<p>Service</p>} />
-      </Routes>
+      <Layout>
+        <Routes>
+          {auth ? (
+            <>
+              <Route path="/" element={<Navigate to="/paxs" />} />
+              <Route path="/files" element={<p>FILES</p>} />
+              <Route path="/paxs" element={<TableComponent></TableComponent>} />
+              <Route path="/service" element={<p>Service</p>} />
+            </>
+          ) : (
+            <>
+              <Route path="/login" element={<p>Login</p>} />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </>
+          )}
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }
