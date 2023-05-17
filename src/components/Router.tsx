@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./Layout";
-import { TableComponent } from "./pax/Table";
+import { TableComponent } from "./pax/TablePax";
 
 function Router() {
   const auth = true;

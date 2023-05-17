@@ -1,4 +1,4 @@
-import { usePax } from "./Pasajeros";
+import { Pasajeros } from "./Pasajeros";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -11,7 +11,7 @@ import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 
 export const TableComponent = (): JSX.Element => {
-  const pax = usePax();
+  const pax = Pasajeros();
 
   return (
     <>
