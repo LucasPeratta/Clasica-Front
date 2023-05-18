@@ -33,7 +33,7 @@ const fetchPax = async (): Promise<Pax[]> => {
   }
 };
 
-export const TablePax = (): JSX.Element => {
+export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<Pax[]>([]);
   useEffect(() => {
     fetchPax().then((data) => {
