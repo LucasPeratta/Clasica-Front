@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import TableCell from "@mui/material/TableCell";
+import TableRow from "@mui/material/TableRow";
 
 interface Pax {
   id: number;
@@ -15,9 +17,7 @@ interface Pax {
 const fetchPax = async (): Promise<Pax[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/pax");
-    console.log(response);
     const data = await response.json();
-    console.log(data);
 
     if (typeof data.paxs === "object" && data !== null) {
       return data.paxs;
@@ -39,5 +39,18 @@ export const Pasajeros = () => {
     });
   }, []);
 
-  return pax;
+  return (
+    <>
+      {pax.map((pax) => (
+        <TableRow key={pax.id}>
+          <TableCell component="th" scope="row">
+            {pax.firstname}
+          </TableCell>
+          <TableCell align="right">{pax.email}</TableCell>
+          <TableCell align="right">{pax.dob}</TableCell>
+          <TableCell align="right">{pax.obs}</TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
 };

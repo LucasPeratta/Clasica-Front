@@ -35,16 +35,7 @@ export const TableComponent = (): JSX.Element => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {pax.map((pax) => (
-              <TableRow key={pax.id}>
-                <TableCell component="th" scope="row">
-                  {pax.firstname}
-                </TableCell>
-                <TableCell align="right">{pax.email}</TableCell>
-                <TableCell align="right">{pax.dob}</TableCell>
-                <TableCell align="right">{pax.obs}</TableCell>
-              </TableRow>
-            ))}
+            <Pasajeros />
           </TableBody>
         </Table>
       </TableContainer>
