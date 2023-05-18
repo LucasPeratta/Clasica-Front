@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./Layout";
-import { TableComponent } from "./pax/TablePax";
+import { TablePax } from "./pax/TablePax";
 
 function Router() {
   const auth = true;
@@ -13,7 +13,7 @@ function Router() {
             <>
               <Route path="/" element={<Navigate to="/paxs" />} />
               <Route path="/files" element={<p>FILES</p>} />
-              <Route path="/paxs" element={<TableComponent></TableComponent>} />
+              <Route path="/paxs" element={<TablePax></TablePax>} />
               <Route path="/service" element={<p>Service</p>} />
             </>
           ) : (
