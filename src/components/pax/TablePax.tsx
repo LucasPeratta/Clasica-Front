@@ -26,13 +26,7 @@ const fetchPax = async (): Promise<Pax[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/pax");
     const data = await response.json();
-
-    if (typeof data.paxs === "object" && data !== null) {
-      return data.paxs;
-    } else {
-      console.error("La respuesta de la API no es un objeto válido:", data);
-      return [];
-    }
+    return data.paxs;
   } catch (error) {
     console.error(error);
     return [];
