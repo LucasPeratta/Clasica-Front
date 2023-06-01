@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./Layout";
+import { Inicio } from "./main";
 import { Pax } from "./pax/Pax";
+import { CreatePaxForm } from "./pax/methods/form/CreatePaxForm";
+import { GetById } from "./pax/methods/GetById";
+import { UpdatePax } from "./pax/methods/UpdatePax";
 
 function Router() {
   const auth = true;
@@ -11,9 +15,27 @@ function Router() {
         <Routes>
           {auth ? (
             <>
-              <Route path="/" element={<Navigate to="/paxs" />} />
-              <Route path="/files" element={<p>FILES</p>} />
+              <Route path="/" element={<Inicio></Inicio>} />
+
               <Route path="/paxs" element={<Pax></Pax>} />
+
+              <Route
+                path="/paxs/create"
+                element={<CreatePaxForm></CreatePaxForm>}
+              />
+
+              <Route
+                path="/paxs/allAboutPax/:id"
+                element={<GetById></GetById>}
+              />
+
+              <Route
+                path="/paxs/updatePax/:id"
+                element={<UpdatePax></UpdatePax>}
+              />
+
+              <Route path="/files" element={<p>FILES</p>} />
+
               <Route path="/service" element={<p>Service</p>} />
             </>
           ) : (

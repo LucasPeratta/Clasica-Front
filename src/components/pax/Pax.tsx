@@ -9,20 +9,27 @@ import Paper from "@mui/material/Paper";
 import InputBase from "@mui/material/InputBase";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
+import Fab from "@mui/material/Fab";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router-dom";
 
 interface Pax {
-  id: number;
+  id: string;
   firstname: string;
-  email: string;
+  lastname: string;
+  dni: string;
+  passport: string;
   dob: string;
+  adress: string;
+  email: string;
+  PhoneNumber: string;
   obs: string;
 }
 
-//fetchPax es una función asincrónica que devuelve una promesa de tipo Pax[]
-//La función fetch devuelve una promesa que representa la respuesta HTTP.
-//response.json() es otro método asincrónico que extrae los datos del cuerpo de la respuesta HTTP en formato JSON.
-//Devuelve una promesa que se resuelve con los datos JSON obtenidos.
-const fetchPax = async (): Promise<Pax[]> => {
+const getPax = async (): Promise<Pax[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/pax");
     const data = await response.json();
@@ -33,44 +40,135 @@ const fetchPax = async (): Promise<Pax[]> => {
   }
 };
 
+const deletePax = async (id: string): Promise<void> => {
+  try {
+    await fetch(`http://localhost:3001/api/pax/${id}`, {
+      method: "DELETE",
+    });
+    console.log("Pax deleted successfully");
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<Pax[]>([]);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    fetchPax().then((data) => {
-      setPax(data);
+    getPax().then((data) => {
+      const sortedPax = data.sort((a, b) =>
+        `${a.lastname} ${a.firstname}`.localeCompare(
+          `${b.lastname} ${b.firstname}`
+        )
+      );
+      setPax(sortedPax);
     });
   }, []);
 
+  const handleAddButtonClick = () => {
+    navigate("/paxs/create");
+  };
+
+  const handleViewPaxBottomClick = (id: string) => {
+    navigate(`/paxs/allAboutPax/${id}`);
+  };
+
+  const handleDeleteButtonClick = (id: string) => {
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar este pasajero?"
+    );
+    if (confirmed) {
+      deletePax(id).then(() => {
+        setPax((prevPax) => prevPax.filter((pax) => pax.id !== id));
+      });
+    }
+  };
+
   return (
     <>
-      <Paper
-        component="form"
-        sx={{ p: "2px 4px", display: "flex", alignItems: "center", width: 400 }}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "16px",
+          margin: "auto",
+        }}
       >
-        <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Buscar Pax" />
-        <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
-          <SearchIcon />
-        </IconButton>
-      </Paper>
+        <Paper
+          component="form"
+          sx={{
+            p: "2px 4px",
+            margin: "auto",
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+          }}
+        >
+          <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Buscar Pax" />
+          <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
+            <SearchIcon />
+          </IconButton>
+        </Paper>
+        <Fab
+          color="success"
+          aria-label="add"
+          sx={{ ml: 2 }}
+          onClick={handleAddButtonClick}
+        >
+          <AddIcon />
+        </Fab>
+      </div>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>Apellido y Nombre</TableCell>
-              <TableCell align="right">email</TableCell>
-              <TableCell align="right">dob</TableCell>
-              <TableCell align="right">obs</TableCell>
+              <TableCell>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  APELLIDO & NOMBRE
+                </Typography>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  EMAIL
+                </Typography>
+              </TableCell>
+              <TableCell align="right">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  PhoneNumber
+                </Typography>
+              </TableCell>
+              <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {pax.map((pax) => (
               <TableRow key={pax.id}>
                 <TableCell component="th" scope="row">
-                  {pax.firstname}
+                  {`${pax.lastname} ${pax.firstname} `}
                 </TableCell>
                 <TableCell align="right">{pax.email}</TableCell>
-                <TableCell align="right">{pax.dob}</TableCell>
-                <TableCell align="right">{pax.obs}</TableCell>
+                <TableCell align="right">{pax.PhoneNumber}</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Eliminar Pax" placement="top">
+                    <IconButton
+                      aria-label="delete"
+                      color="error"
+                      onClick={() => handleDeleteButtonClick(pax.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Ver Detalles" placement="top">
+                    <IconButton
+                      aria-label="details"
+                      color="primary"
+                      onClick={() => handleViewPaxBottomClick(pax.id)}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
