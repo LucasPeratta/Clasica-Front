@@ -15,44 +15,11 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-
-interface Pax {
-  id: string;
-  firstname: string;
-  lastname: string;
-  dni: string;
-  passport: string;
-  dob: string;
-  adress: string;
-  email: string;
-  PhoneNumber: string;
-  obs: string;
-}
-
-const getPax = async (): Promise<Pax[]> => {
-  try {
-    const response = await fetch("http://localhost:3001/api/pax");
-    const data = await response.json();
-    return data.paxs;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
-
-const deletePax = async (id: string): Promise<void> => {
-  try {
-    await fetch(`http://localhost:3001/api/pax/${id}`, {
-      method: "DELETE",
-    });
-    console.log("Pax deleted successfully");
-  } catch (error) {
-    console.error(error);
-  }
-};
+import { deletePax, getPax } from "./handler";
+import type { IPax } from "./model";
 
 export const Pax = (): JSX.Element => {
-  const [pax, setPax] = useState<Pax[]>([]);
+  const [pax, setPax] = useState<IPax[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { getPaxById } from "./handler";
 
 interface PaxDates {
   id: string;
@@ -15,22 +16,19 @@ interface PaxDates {
   obs: string;
 }
 
-export const GetById = (): JSX.Element => {
+export const PaxProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
   const [paxDates, setPaxDates] = useState<PaxDates | null>(null);
 
   useEffect(() => {
-    const getPaxDates = async () => {
-      try {
-        const response = await fetch(`http://localhost:3001/api/pax/${id}`);
-        const data = await response.json();
-        console.log(data);
-        setPaxDates(data.data);
-      } catch (error) {
+    if (!id) return;
+    getPaxById(id)
+      .then((data) => {
+        setPaxDates(data);
+      })
+      .catch((error) => {
         console.error(error);
-      }
-    };
-    getPaxDates();
+      });
   }, [id]); //Indica que el efecto se ejecutará cada vez que el valor de id cambie.
 
   if (!paxDates) {
@@ -49,7 +47,7 @@ export const GetById = (): JSX.Element => {
       <p>Email: {paxDates.email}</p>
       <p>Celular: {paxDates.PhoneNumber}</p>
       <p>Observaciones: {paxDates.obs}</p>
-      <Link to={`/paxs/updatePax/${paxDates.id}`}>
+      <Link to={`/paxs/update/${paxDates.id}`}>
         <button>Editar</button>
       </Link>
     </div>

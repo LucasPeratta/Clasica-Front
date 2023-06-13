@@ -1,31 +1,46 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
-// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-// import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import Snackbar from "@mui/material/Snackbar";
 import { useNavigate } from "react-router-dom";
-import "./CretaePaxForm.scss";
+import { getPaxById } from "../handler";
+import { IPax } from "../model";
 
-const initialState = {
-  firstname: "",
-  lastname: "",
-  dni: "",
-  passport: "",
-  dob: "",
-  adress: "",
-  email: "",
-  PhoneNumber: "",
-  obs: "",
-};
-
-export const CreatePaxForm = () => {
-  const [formData, setFormData] = useState(initialState);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+export const UpdatePaxForm = (): JSX.Element => {
+  const { id } = useParams<{ id: string }>();
+  const [pax, setPax] = useState<Omit<IPax, "id"> | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!id) return;
+    getPaxById(id)
+      .then((data) => {
+        setPax(data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }, [id]);
+
+  const [formData, setFormData] = useState<Omit<IPax, "id">>({
+    firstname: "",
+    lastname: "",
+    dni: "",
+    passport: "",
+    dob: "",
+    adress: "",
+    email: "",
+    PhoneNumber: "",
+    obs: "",
+  });
+
+  useEffect(() => {
+    if (pax) {
+      setFormData(pax);
+    }
+  }, [pax]);
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,8 +63,8 @@ export const CreatePaxForm = () => {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const redirectToAllAboutPax = () => {
+    navigate(`/paxs/allAboutPax/${id}`);
   };
 
   //para validar errores
@@ -81,26 +96,27 @@ export const CreatePaxForm = () => {
     await handleSubmit(event);
   };
 
-  //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
+  // Una vez que pasamos la verificacion
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3001/api/pax/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/pax/update/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
-        console.log("Pasajero creado correctamente");
-        setFormData(initialState);
-        navigate("/paxs");
-        setSnackbarOpen(true);
+        console.log("Pasajero actualizado correctamente");
+        redirectToAllAboutPax();
       } else {
-        console.log("Error al crear el pasajero");
+        console.log("Error al actualizar el pasajero");
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -193,7 +209,7 @@ export const CreatePaxForm = () => {
               label="Nro de celular"
               variant="outlined"
               required
-              inputProps={{ maxLength: 35 }}
+              inputProps={{ maxLength: 15 }}
               value={formData.PhoneNumber}
               onChange={handleChange}
             />
@@ -209,14 +225,8 @@ export const CreatePaxForm = () => {
               onChange={handleChange}
             />
             <Button type="submit" variant="contained" color="success">
-              Crear Pasajero
+              Editar Pasajero
             </Button>
-            <Snackbar
-              open={snackbarOpen}
-              autoHideDuration={6000}
-              onClose={handleSnackbarClose}
-              message="Pasajero creado correctamente"
-            />
           </form>
         </FormControl>
       </Box>

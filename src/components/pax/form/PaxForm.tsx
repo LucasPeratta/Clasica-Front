@@ -1,60 +1,56 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
-import { useNavigate } from "react-router-dom";
+// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+// import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import Snackbar from "@mui/material/Snackbar";
+import { useNavigate, useParams } from "react-router-dom";
+import { IPax } from "../model";
+import { getPaxById } from "../handler";
 
-interface PaxDates {
-  firstname: string;
-  lastname: string;
-  dni: string;
-  passport: string;
-  dob: string;
-  adress: string;
-  email: string;
-  PhoneNumber: string;
-  obs: string;
-}
+import "./styles.scss";
 
-export const UpdatePax = (): JSX.Element => {
-  const { id } = useParams<{ id: string }>();
-  const [paxDates, setPaxDates] = useState<PaxDates | null>(null);
+const initialState: Omit<IPax, "id"> = {
+  firstname: "",
+  lastname: "",
+  dni: "",
+  passport: "",
+  dob: "",
+  adress: "",
+  email: "",
+  PhoneNumber: "",
+  obs: "",
+};
+
+export const PaxForm = () => {
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState(initialState);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
 
   useEffect(() => {
-    const getPaxDates = async () => {
-      try {
-        const response = await fetch(`http://localhost:3001/api/pax/${id}`);
-        const data = await response.json();
-        console.log(data);
-        setPaxDates(data.data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    getPaxDates();
+    console.log("ENTREEEEEEEEE");
+    console.log(id);
+    if (id) {
+      getPaxById(id)
+        .then((pax) => {
+          if (pax) {
+            setFormData(pax);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => setLoading(false));
+    }
   }, [id]);
 
-  const [formData, setFormData] = useState<PaxDates>({
-    firstname: "",
-    lastname: "",
-    dni: "",
-    passport: "",
-    dob: "",
-    adress: "",
-    email: "",
-    PhoneNumber: "",
-    obs: "",
-  });
-
-  useEffect(() => {
-    if (paxDates) {
-      setFormData(paxDates);
-    }
-  }, [paxDates]);
+  // Cambiarlo por algo mas potable y lindo
+  if (loading) return <div>Loading...</div>;
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,8 +73,8 @@ export const UpdatePax = (): JSX.Element => {
     }
   };
 
-  const redirectToAllAboutPax = () => {
-    navigate(`/paxs/allAboutPax/${id}`);
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   //para validar errores
@@ -110,27 +106,26 @@ export const UpdatePax = (): JSX.Element => {
     await handleSubmit(event);
   };
 
-  // Una vez que pasamos la verificacion
+  //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/pax/update/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:3001/api/pax/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
-        console.log("Pasajero actualizado correctamente");
-        redirectToAllAboutPax();
+        console.log("Pasajero creado correctamente");
+        setFormData(initialState);
+        navigate("/paxs");
+        setSnackbarOpen(true);
       } else {
-        console.log("Error al actualizar el pasajero");
+        console.log("Error al crear el pasajero");
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -223,7 +218,7 @@ export const UpdatePax = (): JSX.Element => {
               label="Nro de celular"
               variant="outlined"
               required
-              inputProps={{ maxLength: 15 }}
+              inputProps={{ maxLength: 35 }}
               value={formData.PhoneNumber}
               onChange={handleChange}
             />
@@ -239,8 +234,14 @@ export const UpdatePax = (): JSX.Element => {
               onChange={handleChange}
             />
             <Button type="submit" variant="contained" color="success">
-              Editar Pasajero
+              Crear Pasajero
             </Button>
+            <Snackbar
+              open={snackbarOpen}
+              autoHideDuration={6000}
+              onClose={handleSnackbarClose}
+              message="Pasajero creado correctamente"
+            />
           </form>
         </FormControl>
       </Box>
