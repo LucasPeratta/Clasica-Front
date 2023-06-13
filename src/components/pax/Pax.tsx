@@ -53,6 +53,8 @@ const deletePax = async (id: string): Promise<void> => {
 
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<Pax[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,6 +67,13 @@ export const Pax = (): JSX.Element => {
       setPax(sortedPax);
     });
   }, []);
+
+  const filteredPax = pax.filter((p) =>
+    `${p.lastname} ${p.firstname}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
+  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
     navigate("/paxs/create");
@@ -105,7 +114,12 @@ export const Pax = (): JSX.Element => {
             flex: 1,
           }}
         >
-          <InputBase sx={{ ml: 1, flex: 1 }} placeholder="Buscar Pax" />
+          <InputBase
+            sx={{ ml: 1, flex: 1 }}
+            placeholder="Buscar Pax"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
             <SearchIcon />
           </IconButton>
@@ -119,10 +133,16 @@ export const Pax = (): JSX.Element => {
           <AddIcon />
         </Fab>
       </div>
-      <TableContainer component={Paper}>
+
+      <TableContainer
+        component={Paper}
+        style={{ maxHeight: "53em", overflowY: "auto" }}
+      >
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>
-            <TableRow>
+            <TableRow
+              style={{ position: "sticky", top: 0, background: "#FFF" }}
+            >
               <TableCell>
                 <Typography variant="subtitle1" fontWeight="bold">
                   APELLIDO & NOMBRE
@@ -142,7 +162,7 @@ export const Pax = (): JSX.Element => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {pax.map((pax) => (
+            {filteredPax.map((pax) => (
               <TableRow key={pax.id}>
                 <TableCell component="th" scope="row">
                   {`${pax.lastname} ${pax.firstname} `}

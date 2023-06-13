@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./Layout";
-import { Inicio } from "./main";
+import { Inicio } from "./Main";
 import { Pax } from "./pax/Pax";
 import { CreatePaxForm } from "./pax/methods/form/CreatePaxForm";
 import { GetById } from "./pax/methods/GetById";
 import { UpdatePax } from "./pax/methods/UpdatePax";
+import { Service } from "./service/index";
+import { CreateService } from "./service/createService";
 
 function Router() {
   const auth = true;
@@ -36,7 +38,11 @@ function Router() {
 
               <Route path="/files" element={<p>FILES</p>} />
 
-              <Route path="/service" element={<p>Service</p>} />
+              <Route path="/service" element={<Service></Service>} />
+              <Route
+                path="/service/create"
+                element={<CreateService></CreateService>}
+              />
             </>
           ) : (
             <>
@@ -51,6 +57,3 @@ function Router() {
 }
 
 export default Router;
-
-//navigate("/files"); indicamos a React Router que navegue a la ruta /files
-//2do param de useEffect : pasamos [navigate] como dependencia para asegurarnos de que useEffect se ejecute nuevamente solo si navigate cambia. Esto evita que useEffect se ejecute en bucle.
