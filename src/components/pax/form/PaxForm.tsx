@@ -1,31 +1,60 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
-// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-// import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import Snackbar from "@mui/material/Snackbar";
-import { useNavigate } from "react-router-dom";
-import "./CretaePaxForm.scss";
+import { useNavigate, useParams } from "react-router-dom";
+import { IPax } from "../model";
+import { getPaxById, createPax, updatePax } from "../handler";
+import Grid from "@mui/material/Grid";
+import "dayjs/locale/es";
+import "./styles.scss";
+import dayjs from "dayjs";
 
-const initialState = {
+const initialState: IPax = {
+  id: "",
   firstname: "",
   lastname: "",
   dni: "",
   passport: "",
-  dob: "",
+  dob: null,
   adress: "",
   email: "",
-  PhoneNumber: "",
+  phoneNumber: "",
   obs: "",
 };
 
-export const CreatePaxForm = () => {
+export const PaxForm = () => {
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+
+  useEffect(() => {
+    if (id) {
+      getPaxById(id)
+        .then((pax) => {
+          if (pax) {
+            console.log(pax);
+            pax.dob = dayjs(pax.dob);
+
+            setFormData(pax);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => setLoading(false));
+    } else setLoading(false);
+  }, [id]);
+
+  // Cambiarlo por algo mas potable y lindo
+  if (loading) return <div>Loading...</div>;
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +93,7 @@ export const CreatePaxForm = () => {
       "passport",
       "dob",
       "email",
-      "PhoneNumber",
+      "phoneNumber",
     ];
 
     const missingFields = requiredFields.filter(
@@ -86,21 +115,48 @@ export const CreatePaxForm = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3001/api/pax/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      if (id) {
+        // Actualización
+        const response = await updatePax(id, formData);
 
-      if (response.ok) {
-        console.log("Pasajero creado correctamente");
-        setFormData(initialState);
-        navigate("/paxs");
-        setSnackbarOpen(true);
+        if (response.ok) {
+          console.log("Pasajero actualizado correctamente");
+          navigate(`/paxs/profile/${id}`);
+          setSnackbarOpen(true);
+        } else {
+          const errorData = await response.json();
+          if (
+            errorData.errorCode === "P2002" &&
+            errorData.msg === "Error: Email already exists"
+          ) {
+            alert("El correo electrónico ya está registrado");
+          } else {
+            console.log("Error al actualizar el pasajero");
+          }
+        }
       } else {
-        console.log("Error al crear el pasajero");
+        // Creación
+        const response = await createPax(formData);
+
+        if (response.ok) {
+          console.log("Pasajero creado correctamente");
+          setFormData(initialState);
+          navigate("/paxs");
+          setSnackbarOpen(true);
+        } else {
+          console.log(response);
+          const errorData = await response.json();
+          console.log(errorData);
+
+          if (
+            errorData.errorCode === "P2002" &&
+            errorData.msg === "Error: Email already exists"
+          ) {
+            alert("El correo electrónico ya está registrado");
+          } else {
+            console.log("Error al crear el pasajero");
+          }
+        }
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -158,15 +214,18 @@ export const CreatePaxForm = () => {
               onChange={handleChange}
             />
 
-            <TextField
-              id="dob"
-              label="Fecha de Nacimiento"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 35 }}
-              value={formData.dob}
-              onChange={handleChange}
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+              <DatePicker
+                label="Fecha de nacimiento"
+                value={formData.dob}
+                onChange={(value) => {
+                  setFormData((prevFormData) => ({
+                    ...prevFormData,
+                    dob: value,
+                  }));
+                }}
+              />
+            </LocalizationProvider>
 
             <TextField
               id="adress"
@@ -189,12 +248,12 @@ export const CreatePaxForm = () => {
             />
 
             <TextField
-              id="PhoneNumber"
+              id="phoneNumber"
               label="Nro de celular"
               variant="outlined"
               required
               inputProps={{ maxLength: 35 }}
-              value={formData.PhoneNumber}
+              value={formData.phoneNumber}
               onChange={handleChange}
             />
 
@@ -208,9 +267,27 @@ export const CreatePaxForm = () => {
               value={formData.obs}
               onChange={handleChange}
             />
-            <Button type="submit" variant="contained" color="success">
-              Crear Pasajero
-            </Button>
+            <Grid container spacing={2} justifyContent="space-between">
+              <Grid item>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={
+                    id
+                      ? () => navigate(`/paxs/profile/${id}`)
+                      : () => navigate("/paxs")
+                  }
+                >
+                  Volver
+                </Button>
+              </Grid>
+              <Grid item>
+                <Button type="submit" variant="contained" color="success">
+                  {id ? "ACTUALIZAR PASAJERO" : "CREAR PASAJERO"}
+                </Button>
+              </Grid>
+            </Grid>
+
             <Snackbar
               open={snackbarOpen}
               autoHideDuration={6000}

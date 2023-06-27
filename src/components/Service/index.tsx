@@ -15,54 +15,57 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-import { deletePax, getPax } from "./handler";
-import type { IPax } from "./model";
 
-export const Pax = (): JSX.Element => {
-  const [pax, setPax] = useState<IPax[]>([]);
+interface Currency {
+  usd: string;
+  pesos: string;
+  euro: string;
+}
+
+interface Service {
+  id: string;
+  provider: string;
+  neto: string;
+  currency: Currency;
+  obs: string;
+}
+
+const getService = async (): Promise<Service[]> => {
+  try {
+    const response = await fetch("http://localhost:3001/api/service");
+    const data = await response.json();
+    return data.services;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const Service = (): JSX.Element => {
+  const [service, setService] = useState<Service[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    getPax().then((data) => {
-      const sortedPax = data.sort((a, b) =>
-        `${a.lastname} ${a.firstname}`.localeCompare(
-          `${b.lastname} ${b.firstname}`
-        )
+    getService().then((data) => {
+      const sortedService = data.sort((a, b) =>
+        `${a.provider}`.localeCompare(`${b.provider}`)
       );
-      setPax(sortedPax);
+      setService(sortedService);
     });
   }, []);
 
-  const filteredPax = pax.filter((p) =>
-    `${p.lastname} ${p.firstname}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+  const filteredservice = service.filter((p) =>
+    `${p.provider} `.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
-    navigate("/paxs/create");
-  };
-
-  const handleViewPaxBottomClick = (id: string) => {
-    navigate(`/paxs/profile/${id}`);
-  };
-
-  const handleDeleteButtonClick = (id: string) => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar este pasajero?"
-    );
-    if (confirmed) {
-      deletePax(id).then(() => {
-        setPax((prevPax) => prevPax.filter((pax) => pax.id !== id));
-      });
-    }
+    navigate("/service/create");
   };
 
   return (
-    <div style={{ margin: "0 80px" }}>
+    <>
       <div
         style={{
           display: "flex",
@@ -112,46 +115,38 @@ export const Pax = (): JSX.Element => {
             >
               <TableCell>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  APELLIDO & NOMBRE
+                  NOMBRE MAYORISTA
                 </Typography>
               </TableCell>
               <TableCell align="right">
                 <Typography variant="subtitle1" fontWeight="bold">
-                  EMAIL
+                  PRECIO NETO
                 </Typography>
               </TableCell>
               <TableCell align="right">
                 <Typography variant="subtitle1" fontWeight="bold">
-                  PhoneNumber
+                  OBSERVACIONES
                 </Typography>
               </TableCell>
               <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredPax.map((pax) => (
-              <TableRow key={pax.id}>
+            {filteredservice.map((service) => (
+              <TableRow key={service.id}>
                 <TableCell component="th" scope="row">
-                  {`${pax.lastname} ${pax.firstname} `}
+                  {service.provider}
                 </TableCell>
-                <TableCell align="right">{pax.email}</TableCell>
-                <TableCell align="right">{pax.phoneNumber}</TableCell>
+                <TableCell align="right">{`${service.neto} ${service.currency}`}</TableCell>
+                <TableCell align="right">{service.obs}</TableCell>
                 <TableCell align="right">
-                  <Tooltip title="Eliminar Pax" placement="top">
-                    <IconButton
-                      aria-label="delete"
-                      color="error"
-                      onClick={() => handleDeleteButtonClick(pax.id)}
-                    >
+                  <Tooltip title="Eliminar service" placement="top">
+                    <IconButton aria-label="delete" color="error">
                       <DeleteIcon />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Ver Detalles" placement="top">
-                    <IconButton
-                      aria-label="details"
-                      color="primary"
-                      onClick={() => handleViewPaxBottomClick(pax.id)}
-                    >
+                    <IconButton aria-label="details" color="primary">
                       <AddIcon />
                     </IconButton>
                   </Tooltip>
@@ -161,6 +156,6 @@ export const Pax = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
-    </div>
+    </>
   );
 };
