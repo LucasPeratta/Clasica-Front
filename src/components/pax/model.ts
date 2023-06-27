@@ -1,12 +1,14 @@
+import dayjs from "dayjs";
+
 export interface IPax {
   id: string;
   firstname: string;
   lastname: string;
   dni: string;
   passport: string;
-  dob: string;
+  dob: null | dayjs.Dayjs;
   adress: string;
   email: string;
-  PhoneNumber: string;
+  phoneNumber: string;
   obs: string;
 }

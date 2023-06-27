@@ -16,7 +16,7 @@ function Router() {
             <>
               <Route path="/" element={<Inicio></Inicio>} />
               <Route path="/paxs" element={<Pax></Pax>} />
-              <Route path="/paxs/allAboutPax/:id" element={<PaxProfile />} />
+              <Route path="/paxs/profile/:id" element={<PaxProfile />} />
               <Route path="/paxs/create" element={<PaxForm />} />
               <Route path="/paxs/update/:id" element={<PaxForm />} />
               <Route path="/files" element={<p>FILES</p>} />

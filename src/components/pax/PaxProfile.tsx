@@ -2,52 +2,45 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getPaxById } from "./handler";
-
-interface PaxDates {
-  id: string;
-  firstname: string;
-  lastname: string;
-  dni: string;
-  passport: string;
-  dob: string;
-  adress: string;
-  email: string;
-  PhoneNumber: string;
-  obs: string;
-}
+import { IPax } from "./model";
+import dayjs from "dayjs";
 
 export const PaxProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
-  const [paxDates, setPaxDates] = useState<PaxDates | null>(null);
+  const [Pax, setPax] = useState<IPax | null>(null);
+  console.log(Pax?.dob);
 
   useEffect(() => {
     if (!id) return;
     getPaxById(id)
       .then((data) => {
-        setPaxDates(data);
+        setPax(data);
       })
       .catch((error) => {
         console.error(error);
       });
   }, [id]); //Indica que el efecto se ejecutará cada vez que el valor de id cambie.
 
-  if (!paxDates) {
+  if (!Pax) {
     return <div>error</div>;
   }
 
   return (
     <div>
       <h1>
-        {paxDates.firstname} {paxDates.lastname}
+        {Pax.firstname} {Pax.lastname}
       </h1>
-      <p>DNI: {paxDates.dni}</p>
-      <p>Pasaporte: {paxDates.passport}</p>
-      <p>Fecha de Nacimiento: {paxDates.dob}</p>
-      <p>Direccion: {paxDates.adress}</p>
-      <p>Email: {paxDates.email}</p>
-      <p>Celular: {paxDates.PhoneNumber}</p>
-      <p>Observaciones: {paxDates.obs}</p>
-      <Link to={`/paxs/update/${paxDates.id}`}>
+      <p>DNI: {Pax.dni}</p>
+      <p>Pasaporte: {Pax.passport}</p>
+      <p>Fecha de Nacimiento: {dayjs(Pax.dob).format("DD-MM-YYYY")}</p>
+      <p>Direccion: {Pax.adress}</p>
+      <p>Email: {Pax.email}</p>
+      <p>Celular: {Pax.phoneNumber}</p>
+      <p>Observaciones: {Pax.obs}</p>
+      <Link to={`/paxs`}>
+        <button>volver</button>
+      </Link>
+      <Link to={`/paxs/update/${Pax.id}`}>
         <button>Editar</button>
       </Link>
     </div>
