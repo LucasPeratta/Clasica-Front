@@ -1,4 +1,4 @@
-export interface IService {
+export interface iService {
   id: string;
   neto: string;
   currency: string;

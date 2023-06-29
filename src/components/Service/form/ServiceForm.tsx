@@ -5,13 +5,13 @@ import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Snackbar from "@mui/material/Snackbar";
 import { useNavigate, useParams } from "react-router-dom";
-import { IService } from "../model";
+import { iService } from "../model";
 import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
 
-const initialState: IService = {
+const initialState: iService = {
   id: "",
   neto: "",
   currency: "",

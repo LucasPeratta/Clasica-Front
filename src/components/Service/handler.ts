@@ -1,6 +1,6 @@
-import { IService } from "./model";
+import { iService } from "./model";
 
-export const getService = async (): Promise<IService[]> => {
+export const getService = async (): Promise<iService[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/service");
     const data = await response.json();
@@ -32,7 +32,7 @@ export const getServiceById = async (id: string) => {
   }
 };
 
-export const updateService = async (id: string, formData: IService) => {
+export const updateService = async (id: string, formData: iService) => {
   try {
     const response = await fetch(`http://localhost:3001/api/service/${id}`, {
       method: "PUT",
@@ -49,7 +49,7 @@ export const updateService = async (id: string, formData: IService) => {
   }
 };
 
-export const createService = async (formData: IService): Promise<Response> => {
+export const createService = async (formData: iService): Promise<Response> => {
   try {
     const response = await fetch("http://localhost:3001/api/service/create", {
       method: "POST",

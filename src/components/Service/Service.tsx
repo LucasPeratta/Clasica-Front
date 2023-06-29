@@ -16,10 +16,10 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deleteService, getService } from "./handler";
-import type { IService } from "./model";
+import type { iService } from "./model";
 
 export const Service = (): JSX.Element => {
-  const [service, setService] = useState<IService[]>([]);
+  const [service, setService] = useState<iService[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
-import { IPax } from "./model";
+import { iPax } from "./model";
 
-export const getPax = async (): Promise<IPax[]> => {
+export const getPax = async (): Promise<iPax[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/pax");
     const data = await response.json();
@@ -32,7 +32,7 @@ export const getPaxById = async (id: string) => {
   }
 };
 
-export const updatePax = async (id: string, formData: IPax) => {
+export const updatePax = async (id: string, formData: iPax) => {
   try {
     const response = await fetch(`http://localhost:3001/api/pax/update/${id}`, {
       method: "PUT",
@@ -49,7 +49,7 @@ export const updatePax = async (id: string, formData: IPax) => {
   }
 };
 
-export const createPax = async (formData: IPax): Promise<Response> => {
+export const createPax = async (formData: iPax): Promise<Response> => {
   try {
     const response = await fetch("http://localhost:3001/api/pax/create", {
       method: "POST",

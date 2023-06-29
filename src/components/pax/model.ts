@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-export interface IPax {
+export interface iPax {
   id: string;
   firstname: string;
   lastname: string;

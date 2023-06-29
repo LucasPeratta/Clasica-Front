@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getServiceById } from "./handler";
-import { IService } from "./model";
+import { iService } from "./model";
 export const ServiceProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
-  const [Service, setService] = useState<IService | null>(null);
+  const [Service, setService] = useState<iService | null>(null);
 
   useEffect(() => {
     if (!id) return;
