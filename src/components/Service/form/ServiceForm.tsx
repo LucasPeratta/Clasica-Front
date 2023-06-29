@@ -1,38 +1,60 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
-// import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-// import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-// import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import Snackbar from "@mui/material/Snackbar";
-import { useNavigate } from "react-router-dom";
-import "./CreateService.scss";
-import RadioGroup from "@mui/material/RadioGroup";
-import Radio from "@mui/material/Radio";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import { useNavigate, useParams } from "react-router-dom";
+import { iService } from "../model";
+import { getServiceById, createService, updateService } from "../handler";
+import Grid from "@mui/material/Grid";
+import "dayjs/locale/es";
+import "./styles.scss";
 
-const initialState = {
-  provider: "",
+const initialState: iService = {
+  id: "",
   neto: "",
-  currency: "pesos",
+  currency: "",
+  provider: "",
   obs: "",
 };
 
-export const CreateService = () => {
+export const ServiceForm = () => {
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+
+  useEffect(() => {
+    if (id) {
+      getServiceById(id)
+        .then((service) => {
+          if (service) {
+            setFormData(service);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => setLoading(false));
+    } else setLoading(false);
+  }, [id]);
+
+  // Cambiarlo por algo mas potable y lindo
+  if (loading) return <div>Loading...</div>;
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = event.target;
 
     if (id === "currency") {
+      const formattedValue = value.toUpperCase();
+      event.target.value = formattedValue;
+
       setFormData((prevFormData) => ({
         ...prevFormData,
-        [id]: value,
+        [id]: formattedValue,
       }));
     } else {
       setFormData((prevFormData) => ({
@@ -63,6 +85,13 @@ export const CreateService = () => {
       return;
     }
 
+    // Validar valor de currency
+    const allowedCurrencies = ["USD", "PESOS", "EURO"];
+    if (!allowedCurrencies.includes(formData.currency)) {
+      alert("Error: El tipo de moneda no es válido.");
+      return;
+    }
+
     // Si todos los campos requeridos están completos pasamos la verificacion y vamos a la sig funcion a hacer la petision.
     await handleSubmit(event);
   };
@@ -72,21 +101,33 @@ export const CreateService = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3001/api/service/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      if (id) {
+        // Actualización
+        const response = await updateService(id, formData);
 
-      if (response.ok) {
-        console.log("Servicio creado correctamente");
-        setFormData(initialState);
-        navigate("/service");
-        setSnackbarOpen(true);
+        if (response.ok) {
+          console.log("Servicio actualizado correctamente");
+          navigate(`/services/profile/${id}`);
+          setSnackbarOpen(true);
+        } else {
+          console.log(response);
+          console.log("Error al actualizar el Servicio");
+        }
       } else {
-        console.log("Error al crear el pasajero");
+        // Creación
+        const response = await createService(formData);
+
+        if (response.ok) {
+          console.log("Servicio creado correctamente");
+          setFormData(initialState);
+          navigate("/services");
+          setSnackbarOpen(true);
+        } else {
+          console.log(response);
+          const errorData = await response.json();
+          console.log(errorData);
+          console.log("Error al crear el Servicio");
+        }
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -109,7 +150,7 @@ export const CreateService = () => {
           <form onSubmit={handleFormSubmit}>
             <TextField
               id="provider"
-              label="Nombre Provedor"
+              label="Proveedor"
               variant="outlined"
               required
               inputProps={{ maxLength: 15 }}
@@ -125,21 +166,15 @@ export const CreateService = () => {
               value={formData.neto}
               onChange={handleChange}
             />
-
-            <RadioGroup
+            <TextField
               id="currency"
+              label="Tipo de Moneda"
+              variant="outlined"
+              required
+              inputProps={{ maxLength: 10 }}
               value={formData.currency}
               onChange={handleChange}
-            >
-              <FormControlLabel
-                value="PESOS"
-                control={<Radio />}
-                label="Pesos"
-              />
-              <FormControlLabel value="USD" control={<Radio />} label="USD" />
-              <FormControlLabel value="EURO" control={<Radio />} label="Euro" />
-            </RadioGroup>
-
+            />
             <TextField
               id="obs"
               label="Observaciones"
@@ -150,14 +185,32 @@ export const CreateService = () => {
               value={formData.obs}
               onChange={handleChange}
             />
-            <Button type="submit" variant="contained" color="success">
-              Crear Pasajero
-            </Button>
+            <Grid container spacing={2} justifyContent="space-between">
+              <Grid item>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={
+                    id
+                      ? () => navigate(`/services/profile/${id}`)
+                      : () => navigate("/services")
+                  }
+                >
+                  Volver
+                </Button>
+              </Grid>
+              <Grid item>
+                <Button type="submit" variant="contained" color="success">
+                  {id ? "ACTUALIZAR Servicio" : "CREAR Servicio"}
+                </Button>
+              </Grid>
+            </Grid>
+
             <Snackbar
               open={snackbarOpen}
               autoHideDuration={6000}
               onClose={handleSnackbarClose}
-              message="Pasajero creado correctamente"
+              message="Servicio creado correctamente"
             />
           </form>
         </FormControl>

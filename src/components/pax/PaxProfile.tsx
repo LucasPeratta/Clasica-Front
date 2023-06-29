@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getPaxById } from "./handler";
-import { IPax } from "./model";
+import { iPax } from "./model";
 import dayjs from "dayjs";
 
 export const PaxProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
-  const [Pax, setPax] = useState<IPax | null>(null);
+  const [Pax, setPax] = useState<iPax | null>(null);
   console.log(Pax?.dob);
 
   useEffect(() => {
