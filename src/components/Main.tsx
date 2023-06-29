@@ -9,7 +9,7 @@ export const Inicio = () => {
       <Link to={`/files`}>
         <button>FILES</button>
       </Link>
-      <Link to={`/service`}>
+      <Link to={`/services`}>
         <button>SERVICE</button>
       </Link>
     </>

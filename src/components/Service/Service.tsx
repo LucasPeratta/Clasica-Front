@@ -15,57 +15,52 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-
-interface Currency {
-  usd: string;
-  pesos: string;
-  euro: string;
-}
-
-interface Service {
-  id: string;
-  provider: string;
-  neto: string;
-  currency: Currency;
-  obs: string;
-}
-
-const getService = async (): Promise<Service[]> => {
-  try {
-    const response = await fetch("http://localhost:3001/api/service");
-    const data = await response.json();
-    return data.services;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
+import { deleteService, getService } from "./handler";
+import type { IService } from "./model";
 
 export const Service = (): JSX.Element => {
-  const [service, setService] = useState<Service[]>([]);
+  const [service, setService] = useState<IService[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
     getService().then((data) => {
-      const sortedService = data.sort((a, b) =>
-        `${a.provider}`.localeCompare(`${b.provider}`)
+      const sortedservice = data.sort((a, b) =>
+        `${a.provider}}`.localeCompare(`${b.provider}`)
       );
-      setService(sortedService);
+      setService(sortedservice);
     });
   }, []);
 
-  const filteredservice = service.filter((p) =>
-    `${p.provider} `.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredService = service.filter((p) =>
+    `${p.provider}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
-    navigate("/service/create");
+    navigate("/services/create");
+  };
+
+  const handleViewserviceBottomClick = (id: string) => {
+    navigate(`/services/profile/${id}`);
+  };
+
+  const handleDeleteButtonClick = (id: string) => {
+    const confirmed = window.confirm(
+      "¿Estás seguro de que deseas eliminar este servicio?"
+    );
+    if (confirmed) {
+      deleteService(id).then(() => {
+        setService((prevservice) =>
+          prevservice.filter((service) => service.id !== id)
+        );
+      });
+    }
   };
 
   return (
-    <>
+    <div style={{ margin: "0 80px" }}>
       <div
         style={{
           display: "flex",
@@ -86,7 +81,7 @@ export const Service = (): JSX.Element => {
         >
           <InputBase
             sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar Pax"
+            placeholder="Buscar service"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -115,7 +110,7 @@ export const Service = (): JSX.Element => {
             >
               <TableCell>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  NOMBRE MAYORISTA
+                  Proveedor
                 </Typography>
               </TableCell>
               <TableCell align="right">
@@ -125,28 +120,36 @@ export const Service = (): JSX.Element => {
               </TableCell>
               <TableCell align="right">
                 <Typography variant="subtitle1" fontWeight="bold">
-                  OBSERVACIONES
+                  $
                 </Typography>
               </TableCell>
               <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredservice.map((service) => (
+            {filteredService.map((service) => (
               <TableRow key={service.id}>
                 <TableCell component="th" scope="row">
-                  {service.provider}
+                  {`${service.provider}`}
                 </TableCell>
-                <TableCell align="right">{`${service.neto} ${service.currency}`}</TableCell>
-                <TableCell align="right">{service.obs}</TableCell>
+                <TableCell align="right">{service.neto}</TableCell>
+                <TableCell align="right">{service.currency}</TableCell>
                 <TableCell align="right">
                   <Tooltip title="Eliminar service" placement="top">
-                    <IconButton aria-label="delete" color="error">
+                    <IconButton
+                      aria-label="delete"
+                      color="error"
+                      onClick={() => handleDeleteButtonClick(service.id)}
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Ver Detalles" placement="top">
-                    <IconButton aria-label="details" color="primary">
+                    <IconButton
+                      aria-label="details"
+                      color="primary"
+                      onClick={() => handleViewserviceBottomClick(service.id)}
+                    >
                       <AddIcon />
                     </IconButton>
                   </Tooltip>
@@ -156,6 +159,6 @@ export const Service = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
-    </>
+    </div>
   );
 };
