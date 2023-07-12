@@ -8,7 +8,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import Snackbar from "@mui/material/Snackbar";
 import { useNavigate, useParams } from "react-router-dom";
-import { iPax } from "../model";
+import { iPax } from "../../model";
 import { getPaxById, createPax, updatePax } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";

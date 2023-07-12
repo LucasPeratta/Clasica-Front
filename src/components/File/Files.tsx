@@ -15,46 +15,48 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-import { deleteService, getService } from "./handler";
-import type { iService } from "../model";
+import { deleteFile, getFile } from "./handler";
+import type { iFile } from "../model";
 
-export const Service = (): JSX.Element => {
-  const [service, setService] = useState<iService[]>([]);
+export const Files = (): JSX.Element => {
+  const [file, setFile] = useState<iFile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    getService().then((data) => {
-      const sortedservice = data.sort((a, b) =>
-        `${a.provider}}`.localeCompare(`${b.provider}`)
+    getFile().then((data) => {
+      const sortedfile = data.sort((a, b) =>
+        `${a.destino}}`.localeCompare(`${b.destino}`)
       );
-      setService(sortedservice);
+      setFile(sortedfile);
     });
   }, []);
 
-  const filteredService = service.filter((p) =>
-    `${p.provider}`.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    console.log(file);
+  }, [file]);
+
+  const filteredfile = file.filter((p) =>
+    `${p.destino}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
   console.log(searchTerm);
 
   const handleAddButtonClick = () => {
-    navigate("/services/create");
+    navigate("/files/create");
   };
 
-  const handleViewserviceBottomClick = (id: string) => {
-    navigate(`/services/profile/${id}`);
+  const handleViewfileBottomClick = (id: string) => {
+    navigate(`/files/profile/${id}`);
   };
 
   const handleDeleteButtonClick = (id: string) => {
     const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar este servicio?"
+      "¿Estás seguro de que deseas eliminar este FILE?"
     );
     if (confirmed) {
-      deleteService(id).then(() => {
-        setService((prevservice) =>
-          prevservice.filter((service) => service.id !== id)
-        );
+      deleteFile(id).then(() => {
+        setFile((prevFile) => prevFile.filter((file) => file.id !== id));
       });
     }
   };
@@ -81,7 +83,7 @@ export const Service = (): JSX.Element => {
         >
           <InputBase
             sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar service"
+            placeholder="Buscar file"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -110,12 +112,12 @@ export const Service = (): JSX.Element => {
             >
               <TableCell>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  Proveedor
+                  DESTINO
                 </Typography>
               </TableCell>
               <TableCell align="right">
                 <Typography variant="subtitle1" fontWeight="bold">
-                  PRECIO NETO
+                  FECHA DE SALIDA
                 </Typography>
               </TableCell>
               <TableCell align="right">
@@ -123,29 +125,24 @@ export const Service = (): JSX.Element => {
                   TARIFA
                 </Typography>
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  $
-                </Typography>
-              </TableCell>
               <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredService.map((service) => (
-              <TableRow key={service.id}>
+            {filteredfile.map((file) => (
+              <TableRow key={file.id}>
                 <TableCell component="th" scope="row">
-                  {`${service.provider}`}
+                  {`${file.destino}`}
                 </TableCell>
-                <TableCell align="right">{service.precioNeto}</TableCell>
-                <TableCell align="right">{service.tarifa}</TableCell>
-                <TableCell align="right">{service.currency}</TableCell>
+                <TableCell align="right">{file.fechaSalida}</TableCell>
+                <TableCell align="right">{file.tarifaTotal}</TableCell>
+
                 <TableCell align="right">
-                  <Tooltip title="Eliminar service" placement="top">
+                  <Tooltip title="Eliminar file" placement="top">
                     <IconButton
                       aria-label="delete"
                       color="error"
-                      onClick={() => handleDeleteButtonClick(service.id)}
+                      onClick={() => handleDeleteButtonClick(file.id)}
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -154,7 +151,7 @@ export const Service = (): JSX.Element => {
                     <IconButton
                       aria-label="details"
                       color="primary"
-                      onClick={() => handleViewserviceBottomClick(service.id)}
+                      onClick={() => handleViewfileBottomClick(file.id)}
                     >
                       <AddIcon />
                     </IconButton>

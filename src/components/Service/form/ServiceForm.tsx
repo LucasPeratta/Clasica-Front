@@ -5,7 +5,7 @@ import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Snackbar from "@mui/material/Snackbar";
 import { useNavigate, useParams } from "react-router-dom";
-import { iService } from "../model";
+import { iService } from "../../model";
 import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
@@ -13,7 +13,8 @@ import "./styles.scss";
 
 const initialState: iService = {
   id: "",
-  neto: "",
+  precioNeto: "",
+  tarifa: "",
   currency: "",
   provider: "",
   obs: "",
@@ -73,7 +74,7 @@ export const ServiceForm = () => {
     event.preventDefault();
 
     // Validar campos requeridos
-    const requiredFields = ["provider", "neto", "currency"];
+    const requiredFields = ["provider", "precioNeto", "tarifa", "currency"];
 
     const missingFields = requiredFields.filter(
       (field) => !formData[field as keyof typeof formData]
@@ -158,12 +159,21 @@ export const ServiceForm = () => {
               onChange={handleChange}
             />
             <TextField
-              id="neto"
+              id="precioNeto"
               label="Precio Neto"
               variant="outlined"
               required
               inputProps={{ maxLength: 15 }}
-              value={formData.neto}
+              value={formData.precioNeto}
+              onChange={handleChange}
+            />
+            <TextField
+              id="tarifa"
+              label="Tarifa"
+              variant="outlined"
+              required
+              inputProps={{ maxLength: 15 }}
+              value={formData.tarifa}
               onChange={handleChange}
             />
             <TextField

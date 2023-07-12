@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getServiceById } from "./handler";
-import { iService } from "./model";
+import { iService } from "../model";
 export const ServiceProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
   const [Service, setService] = useState<iService | null>(null);
@@ -24,8 +24,9 @@ export const ServiceProfile = (): JSX.Element => {
 
   return (
     <div>
-      <h1>{Service.provider}</h1>
-      <p>Precio Neto: {Service.neto}</p>
+      <h2>Provedor: {Service.provider}</h2>
+      <p>Precio Neto: {Service.precioNeto}</p>
+      <p>Tarifa: {Service.tarifa}</p>
       <p>Valor: {Service.currency}</p>
       <p>Observaciones: {Service.obs}</p>
       <Link to={`/services`}>
