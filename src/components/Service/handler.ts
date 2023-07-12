@@ -1,4 +1,4 @@
-import { iService } from "./model";
+import { iService } from "../model";
 
 export const getService = async (): Promise<iService[]> => {
   try {

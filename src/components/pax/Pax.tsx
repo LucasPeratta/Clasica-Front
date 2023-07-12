@@ -16,7 +16,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deletePax, getPax } from "./handler";
-import type { iPax } from "./model";
+import type { iPax } from "../model";
 
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<iPax[]>([]);

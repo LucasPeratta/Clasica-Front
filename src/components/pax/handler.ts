@@ -1,4 +1,4 @@
-import { iPax } from "./model";
+import { iPax } from "../model";
 
 export const getPax = async (): Promise<iPax[]> => {
   try {
