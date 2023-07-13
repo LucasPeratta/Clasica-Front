@@ -1,7 +1,7 @@
 .form-container {
   display: flex;
   flex-direction: column;
-  margin: 3em auto;
+  margin: 3em 8em;
   width: 25em;
   background-color: #f0f0f0;
   box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.4);
@@ -17,7 +17,7 @@
     }
 
     .MuiButton-root {
-      align-self: center;
+      align-self: flex-start; /* Cambio de "center" a "flex-start" */
     }
   }
 }

@@ -6,7 +6,7 @@ export interface iFile {
   precioNetoTotal: string;
   tarifaTotal: string;
   destino: string;
-  fechaSalida: string;
+  fechaSalida: null | dayjs.Dayjs;
   clients: iPax[];
   services: iService[];
 }
