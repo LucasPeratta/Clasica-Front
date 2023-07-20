@@ -68,19 +68,16 @@ export const createFile = async (formData: iFile): Promise<Response> => {
 
 export const addPaxToFile = async (
   fileId: string,
-  paxId: string
+  paxIds: string[]
 ): Promise<Response> => {
   try {
-    const response = await fetch(
-      `http://localhost:3001/api/file/${fileId}/addPax`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fileId, paxId }),
-      }
-    );
+    const response = await fetch(`http://localhost:3001/api/file/pax`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fileId, paxIds }),
+    });
 
     return response;
   } catch (error) {
