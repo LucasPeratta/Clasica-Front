@@ -64,6 +64,9 @@ export const FilesProfile = (): JSX.Element => {
       <Link to={`/files`}>
         <button>Back</button>
       </Link>
+      <Link to={`/files/update/${id}`}>
+        <button>editar</button>
+      </Link>
     </div>
   );
 };

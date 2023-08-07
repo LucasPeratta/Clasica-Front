@@ -4,11 +4,18 @@ import { Root, Label, InputWrapper, StyledTag, Listbox } from "./styles";
 import { useEffect } from "react";
 
 interface Props {
+  initialValues: IOptions[];
   options: IOptions[];
   label: string;
   updateSelection: (newvalue: IOptions[]) => void;
 }
-export const Autocomplete = ({ options, label, updateSelection }: Props) => {
+export const Autocomplete = ({
+  initialValues,
+  options,
+  label,
+  updateSelection,
+}: Props) => {
+  console.log({ initialValues });
   const {
     getRootProps,
     getInputLabelProps,
@@ -22,7 +29,7 @@ export const Autocomplete = ({ options, label, updateSelection }: Props) => {
     setAnchorEl,
   } = useAutocomplete({
     id: "customized-hook-demo",
-    defaultValue: [],
+    defaultValue: initialValues,
     multiple: true,
     options,
     getOptionLabel: (option) => option.title,
@@ -30,6 +37,7 @@ export const Autocomplete = ({ options, label, updateSelection }: Props) => {
   });
 
   useEffect(() => {
+    console.log({ value });
     updateSelection(value);
   }, [value, updateSelection]);
 

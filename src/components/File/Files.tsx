@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deleteFile, getFile } from "./handler";
 import type { iFile } from "../model";
+import dayjs from "dayjs";
 
 export const Files = (): JSX.Element => {
   const [file, setFile] = useState<iFile[]>([]);
@@ -33,14 +34,9 @@ export const Files = (): JSX.Element => {
     });
   }, []);
 
-  useEffect(() => {
-    console.log(file);
-  }, [file]);
-
   const filteredfile = file.filter((p) =>
     `${p.destino}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
     navigate("/files/create");
@@ -134,7 +130,9 @@ export const Files = (): JSX.Element => {
                 <TableCell component="th" scope="row">
                   {`${file.destino}`}
                 </TableCell>
-                <TableCell align="right">{file.fechaSalida}</TableCell>
+                <TableCell align="right">
+                  {dayjs(file.fechaSalida).format("DD-MM-YYYY")}
+                </TableCell>
                 <TableCell align="right">{file.tarifaTotal}</TableCell>
 
                 <TableCell align="right">

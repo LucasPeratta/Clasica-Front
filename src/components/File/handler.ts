@@ -88,23 +88,64 @@ export const addPaxToFile = async (
 
 export const addServiceToFile = async (
   fileId: string,
-  serviceId: string
+  serviceIds: string[]
 ): Promise<Response> => {
   try {
-    const response = await fetch(
-      `http://localhost:3001/api/file/${fileId}/addService`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fileId, serviceId }),
-      }
-    );
+    const response = await fetch(`http://localhost:3001/api/file/service`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fileId, serviceIds }),
+    });
 
     return response;
   } catch (error) {
     console.error(error);
     throw error;
+  }
+};
+
+export const updatePaxsInFile = async (
+  fileId: string,
+  paxIds: string[]
+): Promise<Response> => {
+  try {
+    const response = await fetch(
+      ` http://localhost:3001/api/file/pax/${fileId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paxIds }),
+      }
+    );
+
+    return response;
+  } catch (err) {
+    console.error();
+    throw err;
+  }
+};
+
+export const updateServicesInFile = async (
+  fileId: string,
+  serviceIds: string[]
+): Promise<Response> => {
+  console.log(serviceIds);
+
+  try {
+    const response = await fetch(
+      ` http://localhost:3001/api/file/service/${fileId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceIds }),
+      }
+    );
+
+    return response;
+  } catch (err) {
+    console.error();
+    throw err;
   }
 };

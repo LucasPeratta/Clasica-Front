@@ -4,16 +4,25 @@ import { Inicio } from "./Main";
 import { Pax, PaxProfile, PaxForm } from "./Pax";
 import { Service, ServiceForm, ServiceProfile } from "./Service";
 import { Files, FilesProfile, FileForm } from "./File/index";
+import { Login } from "./login/login";
+import { useAuth } from "./hooks/useAuth";
 
 function Router() {
-  const auth = true;
+  const { isAuthenticated, isLoading } = useAuth();
+  console.log(isAuthenticated);
+
+  //@TODO hacer pantalla de carga
+  if (isLoading) {
+    return <span>LOADING...</span>;
+  }
 
   return (
     <BrowserRouter>
       <Layout>
         <Routes>
-          {auth ? (
+          {isAuthenticated ? (
             <>
+              <Route path="/login" element={<Navigate to="/" />} />
               <Route path="/" element={<Inicio></Inicio>} />
               <Route path="/paxs" element={<Pax />} />
               <Route path="/paxs/profile/:id" element={<PaxProfile />} />
@@ -33,7 +42,7 @@ function Router() {
             </>
           ) : (
             <>
-              <Route path="/login" element={<p>Login</p>} />
+              <Route path="/login" element={<Login />} />
               <Route path="*" element={<Navigate to="/login" />} />
             </>
           )}

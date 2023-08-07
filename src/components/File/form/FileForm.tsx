@@ -1,9 +1,5 @@
 import { Button, Grid } from "@mui/material";
 import { Autocomplete, IOptions } from "../../common/Autocomplete/Autocomplete";
-import { useEffect, useState } from "react";
-import { iPax } from "../../model";
-import { getPax } from "../../Pax/handler";
-import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
@@ -11,8 +7,21 @@ import Snackbar from "@mui/material/Snackbar";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useEffect, useState } from "react";
+import { iPax, iService } from "../../model";
+import { getPax } from "../../Pax/handler";
+import { getService } from "../../Service/handler";
+import { useNavigate, useParams } from "react-router-dom";
 import { iFile } from "../../model";
-import { getFileById, createFile, updateFile, addPaxToFile } from "../handler";
+import {
+  getFileById,
+  createFile,
+  updateFile,
+  addPaxToFile,
+  addServiceToFile,
+  updatePaxsInFile,
+  updateServicesInFile,
+} from "../handler";
 import "dayjs/locale/es";
 import "./fileForm.scss";
 import dayjs from "dayjs";
@@ -31,6 +40,8 @@ const initialState: iFile = {
 export const FileForm = () => {
   const [paxs, setPaxs] = useState<iPax[]>([]);
   const [selectedPax, setSelectedPax] = useState<IOptions[]>([]);
+  const [services, setServices] = useState<iService[]>([]);
+  const [selectedService, setSelectedService] = useState<IOptions[]>([]);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
@@ -41,6 +52,16 @@ export const FileForm = () => {
     getPax()
       .then((pax) => {
         setPaxs(pax);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, []);
+
+  useEffect(() => {
+    getService()
+      .then((service) => {
+        setServices(service);
       })
       .catch((err) => {
         console.error(err);
@@ -66,10 +87,31 @@ export const FileForm = () => {
   // Cambiarlo por algo mas potable y lindo
   if (loading) return <div>Loading...</div>;
 
-  const options = paxs.map((p) => {
+  const optionsPax = paxs.map((p) => {
     return {
       id: p.id,
       title: `${p.firstname} ${p.lastname}`,
+    };
+  });
+
+  const initialSelectedPax = formData.clients.map((pax) => {
+    return {
+      id: pax.id,
+      title: ` ${pax.firstname} ${pax.lastname}`,
+    };
+  });
+
+  const initialSelectedService = formData.services.map((service) => {
+    return {
+      id: service.id,
+      title: ` ${service.provider} ${service.tarifa}  ${service.currency}`,
+    };
+  });
+
+  const optionsService = services.map((p) => {
+    return {
+      id: p.id,
+      title: `${p.provider} ${p.tarifa}`,
     };
   });
 
@@ -110,45 +152,69 @@ export const FileForm = () => {
 
   const addPax = async (idFile: string) => {
     const paxsId: string[] = selectedPax.map((pax) => pax.id);
-    console.log(`aca el idFile: ${idFile}`);
-    console.log(`aca los paxs seleccionados: ${selectedPax}`);
-    console.log(`aca los id de los paxs seleccioandos: ${paxsId}`);
-
     const response = await addPaxToFile(idFile, paxsId);
-
     if (response.ok) return true;
+    return false;
+  };
 
+  const addService = async (idFile: string) => {
+    const servicesId: string[] = selectedService.map((service) => service.id);
+    const response = await addServiceToFile(idFile, servicesId);
+    if (response.ok) return true;
+    return false;
+  };
+
+  const updatePax = async (idFile: string) => {
+    const paxsId: string[] = selectedPax.map((service) => service.id);
+    console.log(idFile, paxsId);
+    const response = await updatePaxsInFile(idFile, paxsId);
+    if (response.ok) return true;
+    return false;
+  };
+
+  const updateService = async (idFile: string) => {
+    const servicesId: string[] = selectedService.map((service) => service.id);
+    const response = await updateServicesInFile(idFile, servicesId);
+    if (response.ok) return true;
+    return false;
+  };
+
+  const updateForm = async (idFile: string) => {
+    const response = await updateFile(idFile, formData);
+    if (response.ok) return true;
     return false;
   };
 
   //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
   const handleSubmit = async () => {
     if (!validate()) {
-      alert("Error: Debes completar todos los campos requeridos(*)");
+      alert("Error: Debes completar todos los campos requeriosd(*)");
       return;
     }
-
     try {
       if (id) {
-        // Actualización
-        const response = await updateFile(id, formData);
+        console.log(JSON.stringify(formData));
 
-        if (response.ok) {
+        if (
+          (await updateForm(id)) &&
+          (await updatePax(id)) &&
+          (await updateService(id))
+        ) {
+          // Actualización
           console.log("File actualizado correctamente");
           navigate(`/files/profile/${id}`);
           setSnackbarOpen(true);
         } else {
-          console.log(response);
           console.log("Error al actualizar el File");
         }
       } else {
         // Creación
+        // @TODO unir las 3 funciones en una
         const response = await createFile(formData);
         if (response.ok) {
           const responseData = await response.json();
-          console.log(responseData);
           const idFile = responseData.id;
-          if (await addPax(idFile)) {
+          if ((await addPax(idFile)) && (await addService(idFile))) {
             console.log("File creado correctamente");
             setFormData(initialState);
             navigate("/files");
@@ -251,11 +317,31 @@ export const FileForm = () => {
           </>
         </Grid>
         <Grid item xs={6}>
-          <Autocomplete
-            options={options}
-            label="Agregar pasajeros"
-            updateSelection={setSelectedPax}
-          />
+          <Grid
+            container
+            spacing={2}
+            direction="column"
+            justifyContent="center"
+          >
+            <Grid item>
+              {/* Middle part: Autocomplete for Pax */}
+              <Autocomplete
+                initialValues={initialSelectedPax}
+                options={optionsPax}
+                label="Agregar Pasajeros"
+                updateSelection={setSelectedPax}
+              />
+            </Grid>
+            <Grid item sx={{ marginTop: "auto" }}>
+              {/* Bottom part: Autocomplete for Services */}
+              <Autocomplete
+                initialValues={initialSelectedService}
+                options={optionsService}
+                label="Agregar Servicios"
+                updateSelection={setSelectedService}
+              />
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
 
@@ -264,7 +350,11 @@ export const FileForm = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate("/files")}
+            onClick={
+              id
+                ? () => navigate(`/files/profile/${id}`)
+                : () => navigate("/files")
+            }
           >
             Volver
           </Button>
@@ -276,7 +366,7 @@ export const FileForm = () => {
             color="success"
             onClick={handleSubmit}
           >
-            CREAR File
+            {id ? "ACTUALIZAR FILE" : "CREAR FILE"}
           </Button>
         </Grid>
       </Grid>
