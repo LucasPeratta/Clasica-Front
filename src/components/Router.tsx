@@ -8,19 +8,14 @@ import { Login } from "./login/login";
 import { useAuth } from "./hooks/useAuth";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-  console.log(isAuthenticated);
-
-  //@TODO hacer pantalla de carga
-  if (isLoading) {
-    return <span>LOADING...</span>;
-  }
+  const { isLoggedIn } = useAuth();
+  console.log(isLoggedIn);
 
   return (
     <BrowserRouter>
       <Layout>
         <Routes>
-          {isAuthenticated ? (
+          {isLoggedIn ? (
             <>
               <Route path="/login" element={<Navigate to="/" />} />
               <Route path="/" element={<Inicio></Inicio>} />
