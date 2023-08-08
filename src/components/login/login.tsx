@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { loginHandler } from "./handler";
+import { useAuth } from "../hooks/useAuth";
 
 import {
   Button,
@@ -13,6 +14,8 @@ import {
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { isLoggedIn, login } = useAuth();
+  console.log(isLoggedIn);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +28,8 @@ export const Login = () => {
       console.log(token);
 
       localStorage.setItem("token", token);
-      console.log(localStorage);
-      window.location.reload();
+      login(token);
+      console.log(isLoggedIn);
     }
     if (response?.status == 401) alert("Usuario y contraseña no coinciden");
     else {
