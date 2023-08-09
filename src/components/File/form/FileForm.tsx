@@ -13,23 +13,15 @@ import { getPax } from "../../Pax/handler";
 import { getService } from "../../Service/handler";
 import { useNavigate, useParams } from "react-router-dom";
 import { iFile } from "../../model";
-import {
-  getFileById,
-  createFile,
-  updateFile,
-  addPaxToFile,
-  addServiceToFile,
-  updatePaxsInFile,
-  updateServicesInFile,
-} from "../handler";
+import { getFileById, createFile, updateFile } from "../handler";
 import "dayjs/locale/es";
 import "./fileForm.scss";
 import dayjs from "dayjs";
 
 const initialState: iFile = {
   id: "",
-  precioNetoTotal: "",
-  tarifaTotal: "",
+  precioNetoTotal: "0",
+  tarifaTotal: "0",
   destino: "",
   fechaSalida: null,
   clients: [],
@@ -111,7 +103,7 @@ export const FileForm = () => {
   const optionsService = services.map((p) => {
     return {
       id: p.id,
-      title: `${p.provider} ${p.tarifa}`,
+      title: `${p.provider} | ${p.tarifa}`,
     };
   });
 
@@ -150,42 +142,22 @@ export const FileForm = () => {
     return true;
   };
 
-  const addPax = async (idFile: string) => {
+  const createDataFile = async () => {
     const paxsId: string[] = selectedPax.map((pax) => pax.id);
-    const response = await addPaxToFile(idFile, paxsId);
-    if (response.ok) return true;
-    return false;
-  };
-
-  const addService = async (idFile: string) => {
     const servicesId: string[] = selectedService.map((service) => service.id);
-    const response = await addServiceToFile(idFile, servicesId);
+    const response = await createFile(formData, paxsId, servicesId);
     if (response.ok) return true;
     return false;
   };
 
-  const updatePax = async (idFile: string) => {
+  const updateData = async (idFile: string) => {
     const paxsId: string[] = selectedPax.map((service) => service.id);
-    console.log(idFile, paxsId);
-    const response = await updatePaxsInFile(idFile, paxsId);
-    if (response.ok) return true;
-    return false;
-  };
-
-  const updateService = async (idFile: string) => {
     const servicesId: string[] = selectedService.map((service) => service.id);
-    const response = await updateServicesInFile(idFile, servicesId);
+    const response = await updateFile(idFile, formData, paxsId, servicesId);
     if (response.ok) return true;
     return false;
   };
 
-  const updateForm = async (idFile: string) => {
-    const response = await updateFile(idFile, formData);
-    if (response.ok) return true;
-    return false;
-  };
-
-  //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
   const handleSubmit = async () => {
     if (!validate()) {
       alert("Error: Debes completar todos los campos requeriosd(*)");
@@ -193,14 +165,9 @@ export const FileForm = () => {
     }
     try {
       if (id) {
-        console.log(JSON.stringify(formData));
+        // Actualización
 
-        if (
-          (await updateForm(id)) &&
-          (await updatePax(id)) &&
-          (await updateService(id))
-        ) {
-          // Actualización
+        if (await updateData(id)) {
           console.log("File actualizado correctamente");
           navigate(`/files/profile/${id}`);
           setSnackbarOpen(true);
@@ -209,20 +176,14 @@ export const FileForm = () => {
         }
       } else {
         // Creación
-        // @TODO unir las 3 funciones en una
-        const response = await createFile(formData);
-        if (response.ok) {
-          const responseData = await response.json();
-          const idFile = responseData.id;
-          if ((await addPax(idFile)) && (await addService(idFile))) {
-            console.log("File creado correctamente");
-            setFormData(initialState);
-            navigate("/files");
-            setSnackbarOpen(true);
-          }
+
+        const response = await createDataFile();
+        if (response) {
+          console.log("File creado correctamente");
+          setFormData(initialState);
+          navigate("/files");
+          setSnackbarOpen(true);
         } else {
-          const errorData = await response.json();
-          console.log(errorData);
           console.log("Error al crear el File");
         }
       }
@@ -279,19 +240,17 @@ export const FileForm = () => {
                       id="precioNetoTotal"
                       label="Precio Neto Total"
                       variant="outlined"
-                      required
-                      inputProps={{ maxLength: 10 }}
+                      inputProps={{ maxLength: 15 }}
                       value={formData.precioNetoTotal}
-                      onChange={handleChange}
+                      disabled // Campo deshabilitado
                     />
                     <TextField
                       id="tarifaTotal"
                       label="Tarifa Total"
                       variant="outlined"
-                      required
                       inputProps={{ maxLength: 15 }}
                       value={formData.tarifaTotal}
-                      onChange={handleChange}
+                      disabled // Campo deshabilitado
                     />
                     <TextField
                       id="obs"

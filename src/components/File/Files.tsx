@@ -28,15 +28,42 @@ export const Files = (): JSX.Element => {
   useEffect(() => {
     getFile().then((data) => {
       const sortedfile = data.sort((a, b) =>
-        `${a.destino}}`.localeCompare(`${b.destino}`)
+        a.fechaSalida && b.fechaSalida
+          ? a.fechaSalida < b.fechaSalida
+            ? -1
+            : 1
+          : 0
       );
       setFile(sortedfile);
     });
   }, []);
 
-  const filteredfile = file.filter((p) =>
-    `${p.destino}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchTerms = searchTerm.toLowerCase().split(" ");
+  const filteredfile = file
+    .filter(
+      (p) =>
+        !searchTerm ||
+        p.clients.some((client) =>
+          searchTerms.every(
+            (term) =>
+              client.lastname.toLowerCase().includes(term) ||
+              client.firstname.toLowerCase().includes(term)
+          )
+        )
+    )
+    .sort((a, b) => {
+      if (!searchTerm) {
+        // If no search term, show files without clients first
+        if (a.clients.length === 0 && b.clients.length > 0) return -1;
+        if (a.clients.length > 0 && b.clients.length === 0) return 1;
+      }
+      // Sort by other criteria (you can adjust this part as needed)
+      return a.fechaSalida && b.fechaSalida
+        ? a.fechaSalida < b.fechaSalida
+          ? -1
+          : 1
+        : 0;
+    });
 
   const handleAddButtonClick = () => {
     navigate("/files/create");

@@ -26,10 +26,10 @@ export const Service = (): JSX.Element => {
 
   useEffect(() => {
     getService().then((data) => {
-      const sortedservice = data.sort((a, b) =>
-        `${a.provider}}`.localeCompare(`${b.provider}`)
+      const sortedService = data.sort((a, b) =>
+        a.createdAt > b.createdAt ? -1 : 1
       );
-      setService(sortedservice);
+      setService(sortedService);
     });
   }, []);
 

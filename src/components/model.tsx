@@ -31,4 +31,5 @@ export interface iService {
   currency: string;
   provider: string;
   obs: string;
+  createdAt: dayjs.Dayjs;
 }

@@ -15,7 +15,6 @@ export const Autocomplete = ({
   label,
   updateSelection,
 }: Props) => {
-  console.log({ initialValues });
   const {
     getRootProps,
     getInputLabelProps,
@@ -37,7 +36,6 @@ export const Autocomplete = ({
   });
 
   useEffect(() => {
-    console.log({ value });
     updateSelection(value);
   }, [value, updateSelection]);
 
