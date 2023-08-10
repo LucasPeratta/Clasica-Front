@@ -1,9 +1,8 @@
-import { Button, Grid } from "@mui/material";
+import { Alert, Button, Grid, Snackbar } from "@mui/material";
 import { Autocomplete, IOptions } from "../../common/Autocomplete/Autocomplete";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
-import Snackbar from "@mui/material/Snackbar";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -37,8 +36,9 @@ export const FileForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const { id } = useParams<{ id?: string }>();
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
 
   useEffect(() => {
     getPax()
@@ -117,8 +117,32 @@ export const FileForm = () => {
     }));
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const openNotification = () => {
+    setNotificationOpen(true);
+  };
+
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
+  };
+
+  const createDataFile = async () => {
+    const paxsId: string[] = selectedPax.map((pax) => pax.id);
+    const servicesId: string[] = selectedService.map((service) => service.id);
+    const response = await createFile(formData, paxsId, servicesId);
+    if (response.ok) {
+      return true;
+    }
+    return false;
+  };
+
+  const updateData = async (idFile: string) => {
+    const paxsId: string[] = selectedPax.map((service) => service.id);
+    const servicesId: string[] = selectedService.map((service) => service.id);
+    const response = await updateFile(idFile, formData, paxsId, servicesId);
+    if (response.ok) {
+      return true;
+    }
+    return false;
   };
 
   //para validar errores
@@ -142,25 +166,11 @@ export const FileForm = () => {
     return true;
   };
 
-  const createDataFile = async () => {
-    const paxsId: string[] = selectedPax.map((pax) => pax.id);
-    const servicesId: string[] = selectedService.map((service) => service.id);
-    const response = await createFile(formData, paxsId, servicesId);
-    if (response.ok) return true;
-    return false;
-  };
-
-  const updateData = async (idFile: string) => {
-    const paxsId: string[] = selectedPax.map((service) => service.id);
-    const servicesId: string[] = selectedService.map((service) => service.id);
-    const response = await updateFile(idFile, formData, paxsId, servicesId);
-    if (response.ok) return true;
-    return false;
-  };
-
   const handleSubmit = async () => {
+    console.log(validate());
+
     if (!validate()) {
-      alert("Error: Debes completar todos los campos requeriosd(*)");
+      openErrorNotification();
       return;
     }
     try {
@@ -169,20 +179,24 @@ export const FileForm = () => {
 
         if (await updateData(id)) {
           console.log("File actualizado correctamente");
-          navigate(`/files/profile/${id}`);
-          setSnackbarOpen(true);
+          setFormData(initialState);
+          openNotification();
+          setTimeout(() => {
+            navigate(`/files/profile/${id}`);
+          }, 1500);
         } else {
           console.log("Error al actualizar el File");
         }
       } else {
         // Creación
-
         const response = await createDataFile();
         if (response) {
           console.log("File creado correctamente");
           setFormData(initialState);
-          navigate("/files");
-          setSnackbarOpen(true);
+          openNotification();
+          setTimeout(() => {
+            navigate("/files");
+          }, 1500);
         } else {
           console.log("Error al crear el File");
         }
@@ -262,13 +276,6 @@ export const FileForm = () => {
                       value={formData.obs}
                       onChange={handleChange}
                     />
-
-                    <Snackbar
-                      open={snackbarOpen}
-                      autoHideDuration={6000}
-                      onClose={handleSnackbarClose}
-                      message="File creado correctamente"
-                    />
                   </form>
                 </FormControl>
               </Box>
@@ -303,6 +310,32 @@ export const FileForm = () => {
           </Grid>
         </Grid>
       </Grid>
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top", // Posición vertical en la parte superior
+          horizontal: "center", // Posición horizontal a la derecha
+        }}
+      >
+        <Alert onClose={() => setNotificationOpen(false)} severity="success">
+          {id ? "File actualizado correctamente" : "File creado correctamente"}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
+          Debes completar todos los campos requeridos (*)
+        </Alert>
+      </Snackbar>
 
       <Grid container spacing={2} justifyContent="center">
         <Grid item>
