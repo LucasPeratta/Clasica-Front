@@ -17,18 +17,34 @@ import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deleteService, getService } from "./handler";
 import type { iService } from "../model";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Snackbar,
+} from "@mui/material";
 
 export const Service = (): JSX.Element => {
   const [service, setService] = useState<iService[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDeleteId, setServiceToDeleteId] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
     getService().then((data) => {
-      const sortedService = data.sort((a, b) =>
-        a.createdAt > b.createdAt ? -1 : 1
-      );
+      const sortedService = data
+        .filter((service) => service.createdAt !== null) // Filter out null values
+        .sort((a, b) =>
+          a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
+        ); // Handle null values
+
       setService(sortedService);
     });
   }, []);
@@ -46,17 +62,22 @@ export const Service = (): JSX.Element => {
     navigate(`/services/profile/${id}`);
   };
 
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
+  };
+
   const handleDeleteButtonClick = (id: string) => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar este servicio?"
-    );
-    if (confirmed) {
-      deleteService(id).then(() => {
-        setService((prevservice) =>
-          prevservice.filter((service) => service.id !== id)
-        );
-      });
-    }
+    setServiceToDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteService = (id: string) => {
+    deleteService(id).then(() => {
+      setService((prevService) =>
+        prevService.filter((service) => service.id !== id)
+      );
+      openErrorNotification();
+    });
   };
 
   return (
@@ -165,6 +186,47 @@ export const Service = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={3000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          onClose={() => setErrorNotificationOpen(false)}
+          severity="success"
+        >
+          Servicio eliminado con exito!
+        </Alert>
+      </Snackbar>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este Servicio?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              handleDeleteService(serviceToDeleteId);
+            }}
+            color="error"
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

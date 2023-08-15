@@ -6,7 +6,6 @@ import FormControl from "@mui/material/FormControl";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import Snackbar from "@mui/material/Snackbar";
 import { useNavigate, useParams } from "react-router-dom";
 import { iPax } from "../../model";
 import { getPaxById, createPax, updatePax } from "../handler";
@@ -14,6 +13,7 @@ import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
 import dayjs from "dayjs";
+import { Alert, Snackbar } from "@mui/material";
 
 const initialState: iPax = {
   id: "",
@@ -31,9 +31,10 @@ const initialState: iPax = {
 export const PaxForm = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -77,14 +78,16 @@ export const PaxForm = () => {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const openNotification = () => {
+    setNotificationOpen(true);
+  };
+
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
   };
 
   //para validar errores
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const validate = () => {
     // Validar campos requeridos
     const requiredFields = [
       "firstname",
@@ -103,33 +106,36 @@ export const PaxForm = () => {
     if (missingFields.length > 0) {
       console.log(missingFields);
       console.log("Error: Debes completar todos los campos requeridos.");
-      return;
+      return false;
     }
-
-    // Si todos los campos requeridos están completos pasamos la verificacion y vamos a la sig funcion a hacer la petision.
-    await handleSubmit(event);
+    return true;
   };
 
   //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!validate()) {
+      return;
+    }
+
     try {
       if (id) {
         // Actualización
         const response = await updatePax(id, formData);
-
         if (response.ok) {
           console.log("Pasajero actualizado correctamente");
-          navigate(`/paxs/profile/${id}`);
-          setSnackbarOpen(true);
+          openNotification();
+          setTimeout(() => {
+            navigate(`/paxs/profile/${id}`);
+          }, 1500);
         } else {
           const errorData = await response.json();
           if (
             errorData.errorCode === "P2002" &&
             errorData.msg === "Error: Email already exists"
           ) {
-            alert("El correo electrónico ya está registrado");
+            openErrorNotification();
           } else {
             console.log("Error al actualizar el pasajero");
           }
@@ -141,8 +147,10 @@ export const PaxForm = () => {
         if (response.ok) {
           console.log("Pasajero creado correctamente");
           setFormData(initialState);
-          navigate("/paxs");
-          setSnackbarOpen(true);
+          openNotification();
+          setTimeout(() => {
+            navigate("/paxs");
+          }, 1500);
         } else {
           console.log(response);
           const errorData = await response.json();
@@ -152,7 +160,7 @@ export const PaxForm = () => {
             errorData.errorCode === "P2002" &&
             errorData.msg === "Error: Email already exists"
           ) {
-            alert("El correo electrónico ya está registrado");
+            openErrorNotification();
           } else {
             console.log("Error al crear el pasajero");
           }
@@ -164,139 +172,160 @@ export const PaxForm = () => {
   };
 
   return (
-    <div className="form-container">
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          padding: "20px",
-          border: "2px solid #ccc",
-          borderRadius: "8px",
+    <>
+      <div className="pax-form-container">
+        <Box>
+          <FormControl className="form">
+            <form onSubmit={handleSubmit}>
+              <div className="form-row">
+                <TextField
+                  id="firstname"
+                  label="Nombre"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 25 }}
+                  value={formData.firstname}
+                  onChange={handleChange}
+                />
+                <TextField
+                  id="lastname"
+                  label="Apellido"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 25 }}
+                  value={formData.lastname}
+                  onChange={handleChange}
+                />
+                <TextField
+                  id="dni"
+                  label="DNI"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 10 }}
+                  value={formData.dni}
+                  onChange={handleChange}
+                />
+                <TextField
+                  id="passport"
+                  label="Nro Passaporte"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 7 }}
+                  value={formData.passport}
+                  onChange={handleChange}
+                />
+
+                <LocalizationProvider
+                  dateAdapter={AdapterDayjs}
+                  adapterLocale="es"
+                >
+                  <DatePicker
+                    label="Fecha de nacimiento"
+                    value={formData.dob}
+                    onChange={(value) => {
+                      setFormData((prevFormData) => ({
+                        ...prevFormData,
+                        dob: value,
+                      }));
+                    }}
+                  />
+                </LocalizationProvider>
+
+                <TextField
+                  id="adress"
+                  label="Direccion"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 30 }}
+                  value={formData.adress}
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  id="email"
+                  label="Email"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 35 }}
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  id="phoneNumber"
+                  label="Nro de celular"
+                  variant="outlined"
+                  required
+                  inputProps={{ maxLength: 35 }}
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="obs-field">
+                <TextField
+                  id="obs"
+                  label="Observaciones"
+                  multiline
+                  inputProps={{ maxLength: 300 }}
+                  rows={5}
+                  variant="outlined"
+                  value={formData.obs}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="button-grid">
+                <Grid container spacing={2} justifyContent="space-between">
+                  <Grid item>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={
+                        id
+                          ? () => navigate(`/paxs/profile/${id}`)
+                          : () => navigate("/paxs")
+                      }
+                    >
+                      Volver
+                    </Button>
+                  </Grid>
+                  <Grid item>
+                    <Button type="submit" variant="contained" color="success">
+                      {id ? "ACTUALIZAR PASAJERO" : "CREAR PASAJERO"}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </div>
+            </form>
+          </FormControl>
+        </Box>
+      </div>
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top", // Posición vertical en la parte superior
+          horizontal: "center", // Posición horizontal a la derecha
         }}
       >
-        <FormControl>
-          <form onSubmit={handleFormSubmit}>
-            <TextField
-              id="firstname"
-              label="Nombre"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 15 }}
-              value={formData.firstname}
-              onChange={handleChange}
-            />
-            <TextField
-              id="lastname"
-              label="Apellido"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 15 }}
-              value={formData.lastname}
-              onChange={handleChange}
-            />
-            <TextField
-              id="dni"
-              label="DNI"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 10 }}
-              value={formData.dni}
-              onChange={handleChange}
-            />
-            <TextField
-              id="passport"
-              label="Nro Passaporte"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 7 }}
-              value={formData.passport}
-              onChange={handleChange}
-            />
-
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-              <DatePicker
-                label="Fecha de nacimiento"
-                value={formData.dob}
-                onChange={(value) => {
-                  setFormData((prevFormData) => ({
-                    ...prevFormData,
-                    dob: value,
-                  }));
-                }}
-              />
-            </LocalizationProvider>
-
-            <TextField
-              id="adress"
-              label="Direccion"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 20 }}
-              value={formData.adress}
-              onChange={handleChange}
-            />
-
-            <TextField
-              id="email"
-              label="Email"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 35 }}
-              value={formData.email}
-              onChange={handleChange}
-            />
-
-            <TextField
-              id="phoneNumber"
-              label="Nro de celular"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 35 }}
-              value={formData.phoneNumber}
-              onChange={handleChange}
-            />
-
-            <TextField
-              id="obs"
-              label="Observaciones"
-              multiline
-              inputProps={{ maxLength: 200 }}
-              rows={5}
-              variant="outlined"
-              value={formData.obs}
-              onChange={handleChange}
-            />
-            <Grid container spacing={2} justifyContent="space-between">
-              <Grid item>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={
-                    id
-                      ? () => navigate(`/paxs/profile/${id}`)
-                      : () => navigate("/paxs")
-                  }
-                >
-                  Volver
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button type="submit" variant="contained" color="success">
-                  {id ? "ACTUALIZAR PASAJERO" : "CREAR PASAJERO"}
-                </Button>
-              </Grid>
-            </Grid>
-
-            <Snackbar
-              open={snackbarOpen}
-              autoHideDuration={6000}
-              onClose={handleSnackbarClose}
-              message="Pasajero creado correctamente"
-            />
-          </form>
-        </FormControl>
-      </Box>
-    </div>
+        <Alert onClose={() => setNotificationOpen(false)} severity="success">
+          {id ? "Pax actualizado correctamente" : "Pax creado correctamente"}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
+          EL mail ingresado ya se encuentra registrado
+        </Alert>
+      </Snackbar>
+    </>
   );
 };

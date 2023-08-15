@@ -39,6 +39,8 @@ export const FileForm = () => {
   const { id } = useParams<{ id?: string }>();
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  console.log(paxs);
+  console.log(services);
 
   useEffect(() => {
     getPax()
@@ -52,8 +54,11 @@ export const FileForm = () => {
 
   useEffect(() => {
     getService()
-      .then((service) => {
-        setServices(service);
+      .then((data) => {
+        const sortedService = data.sort((a, b) =>
+          a.createdAt > b.createdAt ? -1 : 1
+        );
+        setServices(sortedService);
       })
       .catch((err) => {
         console.error(err);
@@ -179,7 +184,6 @@ export const FileForm = () => {
 
         if (await updateData(id)) {
           console.log("File actualizado correctamente");
-          setFormData(initialState);
           openNotification();
           setTimeout(() => {
             navigate(`/files/profile/${id}`);

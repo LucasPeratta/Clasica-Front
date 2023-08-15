@@ -10,6 +10,7 @@ import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
+import { Alert } from "@mui/material";
 
 const initialState: iService = {
   id: "",
@@ -18,14 +19,16 @@ const initialState: iService = {
   currency: "",
   provider: "",
   obs: "",
+  createdAt: null,
 };
 
 export const ServiceForm = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -65,8 +68,12 @@ export const ServiceForm = () => {
     }
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const openNotification = () => {
+    setNotificationOpen(true);
+  };
+
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
   };
 
   //para validar errores
@@ -108,9 +115,12 @@ export const ServiceForm = () => {
 
         if (response.ok) {
           console.log("Servicio actualizado correctamente");
-          navigate(`/services/profile/${id}`);
-          setSnackbarOpen(true);
+          openNotification();
+          setTimeout(() => {
+            navigate(`/services/profile/${id}`);
+          }, 1500);
         } else {
+          openErrorNotification();
           console.log(response);
           console.log("Error al actualizar el Servicio");
         }
@@ -121,10 +131,13 @@ export const ServiceForm = () => {
         if (response.ok) {
           console.log("Servicio creado correctamente");
           setFormData(initialState);
-          navigate("/services");
-          setSnackbarOpen(true);
+          openNotification();
+          setTimeout(() => {
+            navigate("/services");
+          }, 1500);
         } else {
           console.log(response);
+          openErrorNotification();
           const errorData = await response.json();
           console.log(errorData);
           console.log("Error al crear el Servicio");
@@ -215,16 +228,37 @@ export const ServiceForm = () => {
                 </Button>
               </Grid>
             </Grid>
-
-            <Snackbar
-              open={snackbarOpen}
-              autoHideDuration={6000}
-              onClose={handleSnackbarClose}
-              message="Servicio creado correctamente"
-            />
           </form>
         </FormControl>
       </Box>
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top", // Posición vertical en la parte superior
+          horizontal: "center", // Posición horizontal a la derecha
+        }}
+      >
+        <Alert onClose={() => setNotificationOpen(false)} severity="success">
+          {id
+            ? "Servicio actualizado correctamente"
+            : "Servicio creado correctamente"}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
+          Error al crear servicio
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

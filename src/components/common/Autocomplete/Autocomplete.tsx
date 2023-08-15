@@ -39,6 +39,7 @@ export const Autocomplete = ({
     updateSelection(value);
   }, [value, updateSelection]);
 
+  //ToDo darle un key : id a cada objeto
   return (
     <Root>
       <div {...getRootProps()}>

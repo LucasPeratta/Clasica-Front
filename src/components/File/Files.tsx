@@ -18,10 +18,20 @@ import { useNavigate } from "react-router-dom";
 import { deleteFile, getFile } from "./handler";
 import type { iFile } from "../model";
 import dayjs from "dayjs";
+import { Alert, Snackbar } from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
 
 export const Files = (): JSX.Element => {
   const [file, setFile] = useState<iFile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDeleteId, setFileToDeleteId] = useState("");
 
   const navigate = useNavigate();
 
@@ -39,6 +49,7 @@ export const Files = (): JSX.Element => {
   }, []);
 
   const searchTerms = searchTerm.toLowerCase().split(" ");
+
   const filteredfile = file
     .filter(
       (p) =>
@@ -73,15 +84,20 @@ export const Files = (): JSX.Element => {
     navigate(`/files/profile/${id}`);
   };
 
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
+  };
+
   const handleDeleteButtonClick = (id: string) => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar este FILE?"
-    );
-    if (confirmed) {
-      deleteFile(id).then(() => {
-        setFile((prevFile) => prevFile.filter((file) => file.id !== id));
-      });
-    }
+    setFileToDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteFile = (id: string) => {
+    deleteFile(id).then(() => {
+      setFile((prevFile) => prevFile.filter((file) => file.id !== id));
+      openErrorNotification();
+    });
   };
 
   return (
@@ -106,7 +122,7 @@ export const Files = (): JSX.Element => {
         >
           <InputBase
             sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar file"
+            placeholder="Buscar file..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -172,6 +188,7 @@ export const Files = (): JSX.Element => {
                       <DeleteIcon />
                     </IconButton>
                   </Tooltip>
+
                   <Tooltip title="Ver Detalles" placement="top">
                     <IconButton
                       aria-label="details"
@@ -187,6 +204,47 @@ export const Files = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={3000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          onClose={() => setErrorNotificationOpen(false)}
+          severity="success"
+        >
+          File eliminado con exito!
+        </Alert>
+      </Snackbar>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este FILE?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              handleDeleteFile(fileToDeleteId);
+            }}
+            color="error"
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

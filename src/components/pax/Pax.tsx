@@ -17,10 +17,20 @@ import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deletePax, getPax } from "./handler";
 import type { iPax } from "../model";
+import { Alert, Snackbar } from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Button from "@mui/material/Button";
 
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<iPax[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paxToDeleteId, setPaxToDeleteId] = useState("");
 
   const navigate = useNavigate();
 
@@ -50,15 +60,20 @@ export const Pax = (): JSX.Element => {
     navigate(`/paxs/profile/${id}`);
   };
 
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
+  };
+
   const handleDeleteButtonClick = (id: string) => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que deseas eliminar este pasajero?"
-    );
-    if (confirmed) {
-      deletePax(id).then(() => {
-        setPax((prevPax) => prevPax.filter((pax) => pax.id !== id));
-      });
-    }
+    setPaxToDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeletePax = (id: string) => {
+    deletePax(id).then(() => {
+      setPax((prevPax) => prevPax.filter((pax) => pax.id !== id));
+      openErrorNotification();
+    });
   };
 
   return (
@@ -137,7 +152,7 @@ export const Pax = (): JSX.Element => {
                 <TableCell align="right">{pax.email}</TableCell>
                 <TableCell align="right">{pax.phoneNumber}</TableCell>
                 <TableCell align="right">
-                  <Tooltip title="Eliminar Pax" placement="top">
+                  <Tooltip title="Eliminar pax" placement="top">
                     <IconButton
                       aria-label="delete"
                       color="error"
@@ -161,6 +176,47 @@ export const Pax = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={3000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          onClose={() => setErrorNotificationOpen(false)}
+          severity="success"
+        >
+          Pax eliminado con exito!
+        </Alert>
+      </Snackbar>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que deseas eliminar este Pax?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              handleDeletePax(paxToDeleteId);
+            }}
+            color="error"
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
