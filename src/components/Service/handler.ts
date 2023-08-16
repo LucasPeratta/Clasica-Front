@@ -22,6 +22,17 @@ export const deleteService = async (id: string): Promise<void> => {
   }
 };
 
+export const softDeleteService = async (id: string): Promise<void> => {
+  try {
+    await fetch(`http://localhost:3001/api/service/${id}`, {
+      method: "PATCH",
+    });
+    console.log("Service soft deleted successfully");
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 export const getServiceById = async (id: string) => {
   try {
     const response = await fetch(`http://localhost:3001/api/service/${id}`);

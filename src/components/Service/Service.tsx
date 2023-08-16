@@ -15,7 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
-import { deleteService, getService } from "./handler";
+import { getService, softDeleteService } from "./handler";
 import type { iService } from "../model";
 import {
   Alert,
@@ -39,15 +39,20 @@ export const Service = (): JSX.Element => {
 
   useEffect(() => {
     getService().then((data) => {
-      const sortedService = data
-        .filter((service) => service.createdAt !== null) // Filter out null values
-        .sort((a, b) =>
-          a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
-        ); // Handle null values
+      console.log(data);
+
+      // Filtrar solo los servicios con deleted_at en nulo
+      const activeServices = data.filter(
+        (service) => service.deleted_at === null
+      );
+      // Ordenar los servicios como lo estás haciendo actualmente
+      const sortedService = activeServices.sort((a, b) =>
+        a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
+      );
 
       setService(sortedService);
     });
-  }, []);
+  }, [service]);
 
   const filteredService = service.filter((p) =>
     `${p.provider}`.toLowerCase().includes(searchTerm.toLowerCase())
@@ -62,7 +67,7 @@ export const Service = (): JSX.Element => {
     navigate(`/services/profile/${id}`);
   };
 
-  const openErrorNotification = () => {
+  const openDeletedNotification = () => {
     setErrorNotificationOpen(true);
   };
 
@@ -71,13 +76,10 @@ export const Service = (): JSX.Element => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteService = (id: string) => {
-    deleteService(id).then(() => {
-      setService((prevService) =>
-        prevService.filter((service) => service.id !== id)
-      );
-      openErrorNotification();
-    });
+  const handleDeleteService = async (idService: string) => {
+    await softDeleteService(idService);
+    console.log("borrado");
+    openDeletedNotification();
   };
 
   return (

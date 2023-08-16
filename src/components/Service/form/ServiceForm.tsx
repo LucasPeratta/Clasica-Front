@@ -20,6 +20,7 @@ const initialState: iService = {
   provider: "",
   obs: "",
   createdAt: null,
+  deleted_at: null,
 };
 
 export const ServiceForm = () => {

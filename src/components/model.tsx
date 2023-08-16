@@ -32,4 +32,5 @@ export interface iService {
   provider: string;
   obs: string;
   createdAt: null | dayjs.Dayjs;
+  deleted_at: null | dayjs.Dayjs;
 }
