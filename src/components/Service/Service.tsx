@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { getService, softDeleteService } from "./handler";
 import type { iService } from "../model";
+import { LoadingScreen } from "../LoadingScreen";
 import {
   Alert,
   Button,
@@ -34,30 +35,29 @@ export const Service = (): JSX.Element => {
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDeleteId, setServiceToDeleteId] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     getService().then((data) => {
-      console.log(data);
+      setLoading(true);
 
-      // Filtrar solo los servicios con deleted_at en nulo
-      const activeServices = data.filter(
-        (service) => service.deleted_at === null
-      );
-      // Ordenar los servicios como lo estás haciendo actualmente
-      const sortedService = activeServices.sort((a, b) =>
+      const sortedService = data.sort((a, b) =>
         a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
       );
-
       setService(sortedService);
+      setLoading(false);
     });
-  }, [service]);
+  }, [setService, setLoading]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   const filteredService = service.filter((p) =>
     `${p.provider}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
     navigate("/services/create");
@@ -77,9 +77,15 @@ export const Service = (): JSX.Element => {
   };
 
   const handleDeleteService = async (idService: string) => {
-    await softDeleteService(idService);
-    console.log("borrado");
-    openDeletedNotification();
+    const response = await softDeleteService(idService);
+    console.log(response);
+    if (response?.ok) {
+      openDeletedNotification();
+      setDeleteDialogOpen(false);
+      setService((prevService) => {
+        return prevService.filter((service) => service.id !== idService);
+      });
+    }
   };
 
   return (
@@ -220,7 +226,6 @@ export const Service = (): JSX.Element => {
           </Button>
           <Button
             onClick={() => {
-              setDeleteDialogOpen(false);
               handleDeleteService(serviceToDeleteId);
             }}
             color="error"

@@ -70,7 +70,6 @@ export const updateFile = async (
       paxIds,
       serviceIds,
     };
-    console.log(updateData);
 
     const response = await fetch(
       `http://localhost:3001/api/file/update/${idFile}`,

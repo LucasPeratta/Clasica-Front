@@ -13,7 +13,8 @@ import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
 import dayjs from "dayjs";
-import { Alert, Snackbar } from "@mui/material";
+import { Alert, CircularProgress, Snackbar } from "@mui/material";
+import { LoadingScreen } from "../../LoadingScreen";
 
 const initialState: iPax = {
   id: "",
@@ -41,9 +42,7 @@ export const PaxForm = () => {
       getPaxById(id)
         .then((pax) => {
           if (pax) {
-            console.log(pax);
             pax.dob = dayjs(pax.dob);
-
             setFormData(pax);
           }
         })
@@ -54,8 +53,9 @@ export const PaxForm = () => {
     } else setLoading(false);
   }, [id]);
 
-  // Cambiarlo por algo mas potable y lindo
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +152,6 @@ export const PaxForm = () => {
             navigate("/paxs");
           }, 1500);
         } else {
-          console.log(response);
           const errorData = await response.json();
           console.log(errorData);
 
@@ -305,8 +304,8 @@ export const PaxForm = () => {
         autoHideDuration={5000}
         onClose={() => setNotificationOpen(false)}
         anchorOrigin={{
-          vertical: "top", // Posición vertical en la parte superior
-          horizontal: "center", // Posición horizontal a la derecha
+          vertical: "top",
+          horizontal: "center",
         }}
       >
         <Alert onClose={() => setNotificationOpen(false)} severity="success">

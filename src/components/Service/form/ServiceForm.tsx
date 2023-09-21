@@ -10,7 +10,7 @@ import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
-import { Alert } from "@mui/material";
+import { Alert, CircularProgress } from "@mui/material";
 
 const initialState: iService = {
   id: "",
@@ -46,10 +46,23 @@ export const ServiceForm = () => {
     } else setLoading(false);
   }, [id]);
 
-  // Cambiarlo por algo mas potable y lindo
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "50vh",
+        }}
+      >
+        <CircularProgress color="primary" />
+        <p style={{ marginTop: "16px" }}>Cargando...</p>
+      </div>
+    );
+  }
 
-  //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = event.target;
 
@@ -122,7 +135,6 @@ export const ServiceForm = () => {
           }, 1500);
         } else {
           openErrorNotification();
-          console.log(response);
           console.log("Error al actualizar el Servicio");
         }
       } else {
@@ -137,7 +149,6 @@ export const ServiceForm = () => {
             navigate("/services");
           }, 1500);
         } else {
-          console.log(response);
           openErrorNotification();
           const errorData = await response.json();
           console.log(errorData);

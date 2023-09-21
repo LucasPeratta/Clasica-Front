@@ -11,23 +11,25 @@ export const getService = async (): Promise<iService[]> => {
   }
 };
 
-export const deleteService = async (id: string): Promise<void> => {
+export const deleteService = async (id: string) => {
   try {
-    await fetch(`http://localhost:3001/api/service/${id}`, {
+    const response = await fetch(`http://localhost:3001/api/service/${id}`, {
       method: "DELETE",
     });
     console.log("service deleted successfully");
+    return response;
   } catch (error) {
     console.error(error);
   }
 };
 
-export const softDeleteService = async (id: string): Promise<void> => {
+export const softDeleteService = async (id: string) => {
   try {
-    await fetch(`http://localhost:3001/api/service/${id}`, {
-      method: "PATCH",
+    const response = await fetch(`http://localhost:3001/api/service/${id}`, {
+      method: "DELETE",
     });
     console.log("Service soft deleted successfully");
+    return response;
   } catch (error) {
     console.error(error);
   }

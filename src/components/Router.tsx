@@ -9,8 +9,6 @@ import { useAuth } from "./hooks/useAuth";
 
 function Router() {
   const { isLoggedIn } = useAuth();
-  console.log(isLoggedIn);
-
   return (
     <BrowserRouter>
       <Layout>
