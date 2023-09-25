@@ -40,7 +40,6 @@ export const Login = () => {
       openNotification();
       setTimeout(() => {
         login(token);
-        console.log(isLoggedIn);
       }, 1500);
     }
     if (response?.status == 401) openErrorNotification();

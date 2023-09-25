@@ -77,7 +77,7 @@ export const FilesProfile = (): JSX.Element => {
                     whiteSpace: "pre-wrap",
                     wordWrap: "break-word",
                     lineHeight: "1.2", // Ajusta este valor para el espaciado entre líneas
-                    maxWidth: "40ch", // Limita a 30 caracteres por línea
+                    maxWidth: "140ch",
                   }}
                 >
                   {file.obs}
@@ -113,7 +113,7 @@ export const FilesProfile = (): JSX.Element => {
                                 whiteSpace: "pre-wrap",
                                 wordWrap: "break-word",
                                 lineHeight: "1.2", // Ajusta este valor para el espaciado entre líneas
-                                maxWidth: "40ch", // Limita a 30 caracteres por línea
+                                maxWidth: "60ch", // Limita a 30 caracteres por línea
                               }}
                             >
                               {client.obs}
@@ -139,8 +139,8 @@ export const FilesProfile = (): JSX.Element => {
                           <TableCell component="th" scope="row">
                             {service.provider}
                           </TableCell>
-                          <TableCell>{service.precioNeto}</TableCell>
-                          <TableCell>{service.tarifa}</TableCell>
+                          <TableCell>PrecioNeto:{service.precioNeto}</TableCell>
+                          <TableCell>Tarifa:{service.tarifa}</TableCell>
                           <TableCell>{service.currency}</TableCell>
                           <TableCell>
                             <Typography

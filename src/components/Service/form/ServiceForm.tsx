@@ -10,7 +10,13 @@ import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
 import "./styles.scss";
-import { Alert, CircularProgress } from "@mui/material";
+import {
+  Alert,
+  CircularProgress,
+  FormControlLabel,
+  RadioGroup,
+} from "@mui/material";
+import Radio from "@mui/material/Radio";
 
 const initialState: iService = {
   id: "",
@@ -63,16 +69,20 @@ export const ServiceForm = () => {
     );
   }
 
+  const controlProps = (item: string) => ({
+    onChange: handleChange,
+    value: item,
+    name: "size-radio-button-demo",
+    inputProps: { "aria-label": item },
+  });
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = event.target;
 
-    if (id === "currency") {
-      const formattedValue = value.toUpperCase();
-      event.target.value = formattedValue;
-
+    if (id === "") {
       setFormData((prevFormData) => ({
         ...prevFormData,
-        [id]: formattedValue,
+        ["currency"]: value,
       }));
     } else {
       setFormData((prevFormData) => ({
@@ -90,11 +100,8 @@ export const ServiceForm = () => {
     setErrorNotificationOpen(true);
   };
 
-  //para validar errores
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // Validar campos requeridos
     const requiredFields = ["provider", "precioNeto", "tarifa", "currency"];
 
     const missingFields = requiredFields.filter(
@@ -103,46 +110,37 @@ export const ServiceForm = () => {
 
     if (missingFields.length > 0) {
       console.log(missingFields);
-      console.log("Error: Debes completar todos los campos requeridos.");
       return;
     }
 
-    // Validar valor de currency
     const allowedCurrencies = ["USD", "PESOS", "EURO"];
     if (!allowedCurrencies.includes(formData.currency)) {
       alert("Error: El tipo de moneda no es válido.");
       return;
     }
 
-    // Si todos los campos requeridos están completos pasamos la verificacion y vamos a la sig funcion a hacer la petision.
     await handleSubmit(event);
   };
 
-  //funcion que se llamara cdo se apreta el bton crear y no hay ningun error
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     try {
       if (id) {
-        // Actualización
         const response = await updateService(id, formData);
 
         if (response.ok) {
-          console.log("Servicio actualizado correctamente");
           openNotification();
           setTimeout(() => {
             navigate(`/services/profile/${id}`);
           }, 1500);
         } else {
           openErrorNotification();
-          console.log("Error al actualizar el Servicio");
         }
       } else {
-        // Creación
         const response = await createService(formData);
 
         if (response.ok) {
-          console.log("Servicio creado correctamente");
           setFormData(initialState);
           openNotification();
           setTimeout(() => {
@@ -152,7 +150,6 @@ export const ServiceForm = () => {
           openErrorNotification();
           const errorData = await response.json();
           console.log(errorData);
-          console.log("Error al crear el Servicio");
         }
       }
     } catch (error) {
@@ -161,65 +158,75 @@ export const ServiceForm = () => {
   };
 
   return (
-    <div className="form-container">
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          padding: "20px",
-          border: "2px solid #ccc",
-          borderRadius: "8px",
-        }}
-      >
-        <FormControl>
+    <div className="pax-form-container">
+      <h1>Crear Servicio</h1>
+      <Box>
+        <FormControl className="form">
           <form onSubmit={handleFormSubmit}>
-            <TextField
-              id="provider"
-              label="Proveedor"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 15 }}
-              value={formData.provider}
-              onChange={handleChange}
-            />
-            <TextField
-              id="precioNeto"
-              label="Precio Neto"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 15 }}
-              value={formData.precioNeto}
-              onChange={handleChange}
-            />
-            <TextField
-              id="tarifa"
-              label="Tarifa"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 15 }}
-              value={formData.tarifa}
-              onChange={handleChange}
-            />
-            <TextField
-              id="currency"
-              label="Tipo de Moneda"
-              variant="outlined"
-              required
-              inputProps={{ maxLength: 10 }}
-              value={formData.currency}
-              onChange={handleChange}
-            />
-            <TextField
-              id="obs"
-              label="Observaciones"
-              multiline
-              inputProps={{ maxLength: 200 }}
-              rows={5}
-              variant="outlined"
-              value={formData.obs}
-              onChange={handleChange}
-            />
+            <div className="form-row">
+              <TextField
+                id="provider"
+                label="Proveedor"
+                variant="outlined"
+                required
+                inputProps={{ maxLength: 15 }}
+                value={formData.provider}
+                onChange={handleChange}
+              />
+              <TextField
+                id="precioNeto"
+                label="Precio Neto"
+                variant="outlined"
+                required
+                inputProps={{ maxLength: 15 }}
+                value={formData.precioNeto}
+                onChange={handleChange}
+              />
+              <TextField
+                id="tarifa"
+                label="Tarifa"
+                variant="outlined"
+                required
+                inputProps={{ maxLength: 15 }}
+                value={formData.tarifa}
+                onChange={handleChange}
+              />
+
+              <RadioGroup
+                id="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                row
+              >
+                <FormControlLabel
+                  value="USD"
+                  control={<Radio {...controlProps("USD")} />}
+                  label="USD"
+                />
+                <FormControlLabel
+                  value="PESOS"
+                  control={<Radio {...controlProps("PESOS")} />}
+                  label="PESOS"
+                />
+                <FormControlLabel
+                  value="EURO"
+                  control={<Radio {...controlProps("EURO")} />}
+                  label="EURO"
+                />
+              </RadioGroup>
+            </div>
+            <div className="obs-field">
+              <TextField
+                id="obs"
+                label="Observaciones"
+                multiline
+                inputProps={{ maxLength: 200 }}
+                rows={5}
+                variant="outlined"
+                value={formData.obs}
+                onChange={handleChange}
+              />
+            </div>
             <Grid container spacing={2} justifyContent="space-between">
               <Grid item>
                 <Button

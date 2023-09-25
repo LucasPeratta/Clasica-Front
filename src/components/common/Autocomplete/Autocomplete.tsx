@@ -18,8 +18,6 @@ export const Autocomplete = ({
 }: Props) => {
   const [selectedValue, setSelectedValue] = useState<IOptions[]>(initialValues);
 
-  console.log({ initialValues });
-
   const {
     getRootProps,
     getInputLabelProps,

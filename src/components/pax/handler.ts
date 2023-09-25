@@ -16,7 +16,6 @@ export const deletePax = async (id: string): Promise<void> => {
     await fetch(`http://localhost:3001/api/pax/${id}`, {
       method: "DELETE",
     });
-    console.log("Pax deleted successfully");
   } catch (error) {
     console.error(error);
   }

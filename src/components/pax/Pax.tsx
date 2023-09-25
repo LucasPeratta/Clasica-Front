@@ -59,7 +59,6 @@ export const Pax = (): JSX.Element => {
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
-  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
     navigate("/paxs/create");

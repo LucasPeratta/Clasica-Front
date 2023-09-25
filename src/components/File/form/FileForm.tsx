@@ -43,11 +43,9 @@ export const FileForm = () => {
 
   useEffect(() => {
     const promises = [getPax(), getService()];
-    let filePromise;
 
     if (id) {
-      filePromise = getFileById(id);
-      promises.push(filePromise);
+      promises.push(getFileById(id));
     }
 
     Promise.allSettled(promises)
@@ -76,13 +74,11 @@ export const FileForm = () => {
           }
         });
 
-        // Update state variables with the resolved data
         if (paxsData.length > 0) {
           setPaxs(paxsData);
         }
 
         if (serviceData.length > 0) {
-          // Handle service data
           const sortedService = serviceData.sort((a, b) => {
             if (a.createdAt && b.createdAt) {
               return dayjs(a.createdAt).isBefore(b.createdAt) ? 1 : -1;
@@ -93,15 +89,14 @@ export const FileForm = () => {
         }
 
         if (fileData) {
-          // Handle file data
           fileData.fechaSalida = dayjs(fileData.fechaSalida);
           setFormData(fileData);
         }
-        setLoading(false);
       })
       .catch((err) => {
         console.error(err);
-      });
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
@@ -121,7 +116,6 @@ export const FileForm = () => {
       title: ` ${pax.firstname} ${pax.lastname}`,
     };
   });
-  console.log({ initialSelectedPax });
 
   const initialSelectedService = formData.services.map((service) => {
     return {
@@ -233,10 +227,12 @@ export const FileForm = () => {
 
   return (
     <div className="main-container">
+      <h1>Crear File:</h1>
+
       <Grid container spacing={2}>
         <Grid item xs={6}>
           <>
-            <h3>Datos del File:</h3>
+            <h3>-Datos del File</h3>
 
             <div className="form-container">
               <Box
@@ -338,8 +334,8 @@ export const FileForm = () => {
         autoHideDuration={5000}
         onClose={() => setNotificationOpen(false)}
         anchorOrigin={{
-          vertical: "top", // Posición vertical en la parte superior
-          horizontal: "center", // Posición horizontal a la derecha
+          vertical: "top",
+          horizontal: "center",
         }}
       >
         <Alert onClose={() => setNotificationOpen(false)} severity="success">

@@ -16,7 +16,6 @@ export const deleteService = async (id: string) => {
     const response = await fetch(`http://localhost:3001/api/service/${id}`, {
       method: "DELETE",
     });
-    console.log("service deleted successfully");
     return response;
   } catch (error) {
     console.error(error);
@@ -28,7 +27,6 @@ export const softDeleteService = async (id: string) => {
     const response = await fetch(`http://localhost:3001/api/service/${id}`, {
       method: "DELETE",
     });
-    console.log("Service soft deleted successfully");
     return response;
   } catch (error) {
     console.error(error);
