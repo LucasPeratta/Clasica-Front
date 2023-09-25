@@ -1,23 +1,42 @@
-.form-container {
+.pax-form-container {
   display: flex;
   flex-direction: column;
-  margin: 3em auto;
-  width: 25em;
-  background-color: #f0f0f0;
-  box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.4);
+  align-items: center;
 
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25em;
-    padding: 0.3125em;
+  .form {
+    width: 100%;
+    max-width: 400px;
+    background-color: #f0f0f0;
+    box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 5px;
 
-    .MuiTextField-root {
-      width: 100%;
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 10px;
+      .MuiTextField-root {
+        width: 100%;
+      }
     }
 
-    .MuiButton-root {
-      align-self: center;
+    .obs-field {
+      padding: 1em 0;
+      width: 100%;
+
+      .MuiTextField-root {
+        width: 100%;
+      }
+    }
+
+    .button-grid {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+
+      .MuiButton-root {
+        margin: 0 10px;
+      }
     }
   }
 }

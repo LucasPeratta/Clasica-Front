@@ -4,45 +4,99 @@ import { Link } from "react-router-dom";
 import { getPaxById } from "./handler";
 import { iPax } from "../model";
 import dayjs from "dayjs";
+import { LoadingScreen } from "../LoadingScreen";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Paper,
+  Typography,
+  Button,
+} from "@mui/material";
 
 export const PaxProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
-  const [Pax, setPax] = useState<iPax | null>(null);
-  console.log(Pax?.dob);
+  const [pax, setPax] = useState<iPax | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!id) return;
+    setLoading(true);
     getPaxById(id)
       .then((data) => {
         setPax(data);
+        setLoading(false);
       })
       .catch((error) => {
         console.error(error);
       });
-  }, [id]); //Indica que el efecto se ejecutará cada vez que el valor de id cambie.
+  }, [id]);
 
-  if (!Pax) {
-    return <div>error</div>;
+  if (!pax) {
+    return <div>Error</div>;
+  }
+
+  if (loading) {
+    return <LoadingScreen />;
   }
 
   return (
     <div>
-      <h1>
-        {Pax.firstname} {Pax.lastname}
-      </h1>
-      <p>DNI: {Pax.dni}</p>
-      <p>Pasaporte: {Pax.passport}</p>
-      <p>Fecha de Nacimiento: {dayjs(Pax.dob).format("DD-MM-YYYY")}</p>
-      <p>Direccion: {Pax.adress}</p>
-      <p>Email: {Pax.email}</p>
-      <p>Celular: {Pax.phoneNumber}</p>
-      <p>Observaciones: {Pax.obs}</p>
-      <Link to={`/paxs`}>
-        <button>volver</button>
-      </Link>
-      <Link to={`/paxs/update/${Pax.id}`}>
-        <button>Editar</button>
-      </Link>
+      <Typography variant="h4" gutterBottom>
+        {pax.firstname} {pax.lastname}
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell>DNI:</TableCell>
+              <TableCell>{pax.dni}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Pasaporte:</TableCell>
+              <TableCell>{pax.passport}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Fecha de Nacimiento:</TableCell>
+              <TableCell>{dayjs(pax.dob).format("DD-MM-YYYY")}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Dirección:</TableCell>
+              <TableCell>{pax.adress}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Email:</TableCell>
+              <TableCell>{pax.email}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Celular:</TableCell>
+              <TableCell>{pax.phoneNumber}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Observaciones:</TableCell>
+              <TableCell>
+                <Typography style={{ whiteSpace: "pre-wrap" }}>
+                  {pax.obs}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Button component={Link} to={`/paxs`} variant="outlined" sx={{ mt: 2 }}>
+        Volver
+      </Button>
+      <Button
+        component={Link}
+        to={`/paxs/update/${pax.id}`}
+        variant="contained"
+        color="primary"
+        sx={{ ml: 2, mt: 2 }}
+      >
+        Editar
+      </Button>
     </div>
   );
 };

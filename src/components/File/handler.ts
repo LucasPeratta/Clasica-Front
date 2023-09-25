@@ -16,7 +16,6 @@ export const deleteFile = async (id: string): Promise<void> => {
     await fetch(`http://localhost:3001/api/file/${id}`, {
       method: "DELETE",
     });
-    console.log("File deleted successfully");
   } catch (error) {
     console.error(error);
   }
@@ -70,7 +69,6 @@ export const updateFile = async (
       paxIds,
       serviceIds,
     };
-    console.log(updateData);
 
     const response = await fetch(
       `http://localhost:3001/api/file/update/${idFile}`,

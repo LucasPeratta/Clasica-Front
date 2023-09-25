@@ -1,7 +1,7 @@
+import { useEffect, useState } from "react";
 import useAutocomplete from "@mui/base/useAutocomplete";
 import CheckIcon from "@mui/icons-material/Check";
 import { Root, Label, InputWrapper, StyledTag, Listbox } from "./styles";
-import { useEffect } from "react";
 
 interface Props {
   initialValues: IOptions[];
@@ -9,12 +9,15 @@ interface Props {
   label: string;
   updateSelection: (newvalue: IOptions[]) => void;
 }
+
 export const Autocomplete = ({
   initialValues,
   options,
   label,
   updateSelection,
 }: Props) => {
+  const [selectedValue, setSelectedValue] = useState<IOptions[]>(initialValues);
+
   const {
     getRootProps,
     getInputLabelProps,
@@ -23,29 +26,30 @@ export const Autocomplete = ({
     getListboxProps,
     getOptionProps,
     groupedOptions,
-    value,
     focused,
     setAnchorEl,
   } = useAutocomplete({
     id: "customized-hook-demo",
-    defaultValue: initialValues,
+    value: selectedValue, // Utiliza un valor controlado
     multiple: true,
     options,
     getOptionLabel: (option) => option.title,
-    isOptionEqualToValue: (option, value) => option.id === value.id, // Personaliza la comparación
+    isOptionEqualToValue: (option, value) => option.id === value.id,
+    onChange: (_, newValue) => {
+      setSelectedValue(newValue);
+    },
   });
 
   useEffect(() => {
-    updateSelection(value);
-  }, [value, updateSelection]);
+    updateSelection(selectedValue);
+  }, [selectedValue, updateSelection]);
 
-  //ToDo darle un key : id a cada objeto
   return (
     <Root>
       <div {...getRootProps()}>
         <Label {...getInputLabelProps()}>{label}:</Label>
         <InputWrapper ref={setAnchorEl} className={focused ? "focused" : ""}>
-          {value.map((option, index) => (
+          {selectedValue.map((option, index) => (
             <StyledTag label={option.title} {...getTagProps({ index })} />
           ))}
           <input {...getInputProps()} />
@@ -54,7 +58,7 @@ export const Autocomplete = ({
       {groupedOptions.length > 0 ? (
         <Listbox {...getListboxProps()}>
           {(groupedOptions as typeof options).map((option, index) => (
-            <li {...getOptionProps({ option, index })}>
+            <li {...getOptionProps({ option, index })} key={option.id}>
               <span>{option.title}</span>
               <CheckIcon fontSize="small" />
             </li>

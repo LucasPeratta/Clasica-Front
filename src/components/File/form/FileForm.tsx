@@ -16,6 +16,7 @@ import { getFileById, createFile, updateFile } from "../handler";
 import "dayjs/locale/es";
 import "./fileForm.scss";
 import dayjs from "dayjs";
+import { LoadingScreen } from "../../LoadingScreen";
 
 const initialState: iFile = {
   id: "",
@@ -39,50 +40,68 @@ export const FileForm = () => {
   const { id } = useParams<{ id?: string }>();
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
-  console.log(paxs);
-  console.log(services);
 
   useEffect(() => {
-    getPax()
-      .then((pax) => {
-        setPaxs(pax);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
+    const promises = [getPax(), getService()];
 
-  useEffect(() => {
-    getService()
-      .then((data) => {
-        const sortedService = data.sort((a, b) =>
-          a.createdAt > b.createdAt ? -1 : 1
-        );
-        setServices(sortedService);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
-
-  useEffect(() => {
     if (id) {
-      getFileById(id)
-        .then((file) => {
-          if (file) {
-            file.fechaSalida = dayjs(file.fechaSalida);
-            setFormData(file);
+      promises.push(getFileById(id));
+    }
+
+    Promise.allSettled(promises)
+      .then((results) => {
+        let paxsData: iPax[] = [];
+        let serviceData: iService[] = [];
+        let fileData: iFile | undefined;
+
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            //verifica si el esatdo de la promesa esta resuelta
+            if (Array.isArray(result.value)) {
+              if (result.value.length > 0) {
+                // para ver si corresponde a sreive o paxs
+                if ("provider" in result.value[0]) {
+                  serviceData = result.value as iService[];
+                } else {
+                  paxsData = result.value as iPax[];
+                }
+              }
+            } else {
+              if (id) {
+                fileData = result.value as iFile;
+              }
+            }
           }
-        })
-        .catch((error) => {
-          console.error(error);
-        })
-        .finally(() => setLoading(false));
-    } else setLoading(false);
+        });
+
+        if (paxsData.length > 0) {
+          setPaxs(paxsData);
+        }
+
+        if (serviceData.length > 0) {
+          const sortedService = serviceData.sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+              return dayjs(a.createdAt).isBefore(b.createdAt) ? 1 : -1;
+            }
+            return 0;
+          });
+          setServices(sortedService);
+        }
+
+        if (fileData) {
+          fileData.fechaSalida = dayjs(fileData.fechaSalida);
+          setFormData(fileData);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
-  // Cambiarlo por algo mas potable y lindo
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   const optionsPax = paxs.map((p) => {
     return {
@@ -165,15 +184,13 @@ export const FileForm = () => {
     );
 
     if (missingFields.length > 0) {
-      console.log(missingFields);
+      console.error(missingFields);
       return false;
     }
     return true;
   };
 
   const handleSubmit = async () => {
-    console.log(validate());
-
     if (!validate()) {
       openErrorNotification();
       return;
@@ -183,26 +200,24 @@ export const FileForm = () => {
         // Actualización
 
         if (await updateData(id)) {
-          console.log("File actualizado correctamente");
           openNotification();
           setTimeout(() => {
             navigate(`/files/profile/${id}`);
           }, 1500);
         } else {
-          console.log("Error al actualizar el File");
+          console.error("Error al actualizar el File");
         }
       } else {
         // Creación
         const response = await createDataFile();
         if (response) {
-          console.log("File creado correctamente");
           setFormData(initialState);
           openNotification();
           setTimeout(() => {
             navigate("/files");
           }, 1500);
         } else {
-          console.log("Error al crear el File");
+          console.error("Error al crear el File");
         }
       }
     } catch (error) {
@@ -212,10 +227,12 @@ export const FileForm = () => {
 
   return (
     <div className="main-container">
+      <h1>Crear File:</h1>
+
       <Grid container spacing={2}>
         <Grid item xs={6}>
           <>
-            <h3>Datos del File:</h3>
+            <h3>-Datos del File</h3>
 
             <div className="form-container">
               <Box
@@ -294,7 +311,6 @@ export const FileForm = () => {
             justifyContent="center"
           >
             <Grid item>
-              {/* Middle part: Autocomplete for Pax */}
               <Autocomplete
                 initialValues={initialSelectedPax}
                 options={optionsPax}
@@ -303,7 +319,6 @@ export const FileForm = () => {
               />
             </Grid>
             <Grid item sx={{ marginTop: "auto" }}>
-              {/* Bottom part: Autocomplete for Services */}
               <Autocomplete
                 initialValues={initialSelectedService}
                 options={optionsService}
@@ -319,8 +334,8 @@ export const FileForm = () => {
         autoHideDuration={5000}
         onClose={() => setNotificationOpen(false)}
         anchorOrigin={{
-          vertical: "top", // Posición vertical en la parte superior
-          horizontal: "center", // Posición horizontal a la derecha
+          vertical: "top",
+          horizontal: "center",
         }}
       >
         <Alert onClose={() => setNotificationOpen(false)} severity="success">

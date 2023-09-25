@@ -6,17 +6,26 @@ import Button from "@mui/material/Button";
 import { Link } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
+import { useState } from "react";
 
 function ResponsiveAppBar() {
   const { isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleDeleteButtonClick = () => {
+    setDeleteDialogOpen(true);
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ backgroundColor: "#0D5B75" }}>
       <Toolbar disableGutters>
         <Link to="/" style={{ textDecoration: "none" }}>
           <Typography
@@ -71,11 +80,36 @@ function ResponsiveAppBar() {
             </>
           )}
         </Box>
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+        >
+          <DialogTitle>Confirmacion</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              ¿Estás seguro de que deseas salir?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+              CANCELAR
+            </Button>
+            <Button
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                logout();
+              }}
+              color="error"
+            >
+              SALIR
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {isLoggedIn && (
           <Box sx={{ marginLeft: "auto", marginRight: 2 }}>
-            <Button color="inherit" onClick={handleLogout}>
-              Logout
+            <Button color="inherit" onClick={handleDeleteButtonClick}>
+              EXIT
             </Button>
           </Box>
         )}

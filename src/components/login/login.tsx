@@ -9,13 +9,24 @@ import {
   Paper,
   Typography,
   Container,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { isLoggedIn, login } = useAuth();
-  console.log(isLoggedIn);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+
+  const openNotification = () => {
+    setNotificationOpen(true);
+  };
+
+  const openErrorNotification = () => {
+    setErrorNotificationOpen(true);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,18 +34,15 @@ export const Login = () => {
 
     if (response?.ok) {
       const data = await response.json();
-      console.log(data);
       const token = data.token;
-      console.log(token);
 
       localStorage.setItem("token", token);
-      login(token);
-      console.log(isLoggedIn);
+      openNotification();
+      setTimeout(() => {
+        login(token);
+      }, 1500);
     }
-    if (response?.status == 401) alert("Usuario y contraseña no coinciden");
-    else {
-      //   console.log(response);
-    }
+    if (response?.status == 401) openErrorNotification();
   };
 
   return (
@@ -91,6 +99,32 @@ export const Login = () => {
           </Grid>
         </form>
       </Paper>
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert onClose={() => setNotificationOpen(false)} severity="success">
+          Logeado con exito!
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={errorNotificationOpen}
+        autoHideDuration={5000}
+        onClose={() => setErrorNotificationOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+      >
+        <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
+          Usuario y contraseña no coinciden.
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

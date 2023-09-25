@@ -25,6 +25,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
+import { LoadingScreen } from "../LoadingScreen";
 
 export const Files = (): JSX.Element => {
   const [file, setFile] = useState<iFile[]>([]);
@@ -32,10 +33,12 @@ export const Files = (): JSX.Element => {
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDeleteId, setFileToDeleteId] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    setLoading(true);
     getFile().then((data) => {
       const sortedfile = data.sort((a, b) =>
         a.fechaSalida && b.fechaSalida
@@ -45,8 +48,13 @@ export const Files = (): JSX.Element => {
           : 0
       );
       setFile(sortedfile);
+      setLoading(false);
     });
   }, []);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   const searchTerms = searchTerm.toLowerCase().split(" ");
 

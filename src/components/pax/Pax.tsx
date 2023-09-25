@@ -24,6 +24,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
+import { LoadingScreen } from "../LoadingScreen";
 
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<iPax[]>([]);
@@ -31,10 +32,13 @@ export const Pax = (): JSX.Element => {
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paxToDeleteId, setPaxToDeleteId] = useState("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    setLoading(true);
+
     getPax().then((data) => {
       const sortedPax = data.sort((a, b) =>
         `${a.lastname} ${a.firstname}`.localeCompare(
@@ -42,15 +46,19 @@ export const Pax = (): JSX.Element => {
         )
       );
       setPax(sortedPax);
+      setLoading(false);
     });
   }, []);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   const filteredPax = pax.filter((p) =>
     `${p.lastname} ${p.firstname}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase())
   );
-  console.log(searchTerm);
 
   const handleAddButtonClick = () => {
     navigate("/paxs/create");

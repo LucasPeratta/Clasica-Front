@@ -14,6 +14,7 @@ import "dayjs/locale/es";
 import "./styles.scss";
 import dayjs from "dayjs";
 import { Alert, Snackbar } from "@mui/material";
+import { LoadingScreen } from "../../LoadingScreen";
 
 const initialState: iPax = {
   id: "",
@@ -41,9 +42,7 @@ export const PaxForm = () => {
       getPaxById(id)
         .then((pax) => {
           if (pax) {
-            console.log(pax);
             pax.dob = dayjs(pax.dob);
-
             setFormData(pax);
           }
         })
@@ -54,8 +53,9 @@ export const PaxForm = () => {
     } else setLoading(false);
   }, [id]);
 
-  // Cambiarlo por algo mas potable y lindo
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   //actualizar estado del form
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +105,6 @@ export const PaxForm = () => {
 
     if (missingFields.length > 0) {
       console.log(missingFields);
-      console.log("Error: Debes completar todos los campos requeridos.");
       return false;
     }
     return true;
@@ -124,7 +123,6 @@ export const PaxForm = () => {
         // Actualización
         const response = await updatePax(id, formData);
         if (response.ok) {
-          console.log("Pasajero actualizado correctamente");
           openNotification();
           setTimeout(() => {
             navigate(`/paxs/profile/${id}`);
@@ -137,7 +135,7 @@ export const PaxForm = () => {
           ) {
             openErrorNotification();
           } else {
-            console.log("Error al actualizar el pasajero");
+            console.error("Error al actualizar el pasajero");
           }
         }
       } else {
@@ -145,14 +143,12 @@ export const PaxForm = () => {
         const response = await createPax(formData);
 
         if (response.ok) {
-          console.log("Pasajero creado correctamente");
           setFormData(initialState);
           openNotification();
           setTimeout(() => {
             navigate("/paxs");
           }, 1500);
         } else {
-          console.log(response);
           const errorData = await response.json();
           console.log(errorData);
 
@@ -162,7 +158,7 @@ export const PaxForm = () => {
           ) {
             openErrorNotification();
           } else {
-            console.log("Error al crear el pasajero");
+            console.error("Error al crear el pasajero");
           }
         }
       }
@@ -174,6 +170,7 @@ export const PaxForm = () => {
   return (
     <>
       <div className="pax-form-container">
+        <h1>Crear Pasajero</h1>
         <Box>
           <FormControl className="form">
             <form onSubmit={handleSubmit}>
@@ -305,8 +302,8 @@ export const PaxForm = () => {
         autoHideDuration={5000}
         onClose={() => setNotificationOpen(false)}
         anchorOrigin={{
-          vertical: "top", // Posición vertical en la parte superior
-          horizontal: "center", // Posición horizontal a la derecha
+          vertical: "top",
+          horizontal: "center",
         }}
       >
         <Alert onClose={() => setNotificationOpen(false)} severity="success">
