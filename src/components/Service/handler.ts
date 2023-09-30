@@ -1,8 +1,10 @@
 import { iService } from "../model";
 
+const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+
 export const getService = async (): Promise<iService[]> => {
   try {
-    const response = await fetch("http://localhost:3001/api/service");
+    const response = await fetch(`${apiUrl}/service`);
     const data = await response.json();
     return data.services;
   } catch (error) {
@@ -13,7 +15,7 @@ export const getService = async (): Promise<iService[]> => {
 
 export const deleteService = async (id: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/service/${id}`, {
+    const response = await fetch(`${apiUrl}/service/${id}`, {
       method: "DELETE",
     });
     return response;
@@ -24,7 +26,7 @@ export const deleteService = async (id: string) => {
 
 export const softDeleteService = async (id: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/service/${id}`, {
+    const response = await fetch(`${apiUrl}/service/${id}`, {
       method: "DELETE",
     });
     return response;
@@ -35,7 +37,7 @@ export const softDeleteService = async (id: string) => {
 
 export const getServiceById = async (id: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/service/${id}`);
+    const response = await fetch(`${apiUrl}/service/${id}`);
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -45,7 +47,7 @@ export const getServiceById = async (id: string) => {
 
 export const updateService = async (id: string, formData: iService) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/service/${id}`, {
+    const response = await fetch(`${apiUrl}/service/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -62,7 +64,7 @@ export const updateService = async (id: string, formData: iService) => {
 
 export const createService = async (formData: iService): Promise<Response> => {
   try {
-    const response = await fetch("http://localhost:3001/api/service/create", {
+    const response = await fetch(`${apiUrl}/service/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

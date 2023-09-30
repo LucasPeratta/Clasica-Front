@@ -1,8 +1,10 @@
 import { iFile } from "../model";
 
+const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+
 export const getFile = async (): Promise<iFile[]> => {
   try {
-    const response = await fetch("http://localhost:3001/api/file");
+    const response = await fetch(`${apiUrl}/file`);
     const data = await response.json();
     return data.files;
   } catch (error) {
@@ -13,7 +15,7 @@ export const getFile = async (): Promise<iFile[]> => {
 
 export const deleteFile = async (id: string): Promise<void> => {
   try {
-    await fetch(`http://localhost:3001/api/file/${id}`, {
+    await fetch(`${apiUrl}/file/${id}`, {
       method: "DELETE",
     });
   } catch (error) {
@@ -23,7 +25,7 @@ export const deleteFile = async (id: string): Promise<void> => {
 
 export const getFileById = async (id: string) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/file/${id}`);
+    const response = await fetch(`${apiUrl}/file/${id}`);
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -42,7 +44,7 @@ export const createFile = async (
       paxIds,
       serviceIds,
     };
-    const response = await fetch("http://localhost:3001/api/file/create", {
+    const response = await fetch(`${apiUrl}/file/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,16 +72,13 @@ export const updateFile = async (
       serviceIds,
     };
 
-    const response = await fetch(
-      `http://localhost:3001/api/file/update/${idFile}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updateData),
-      }
-    );
+    const response = await fetch(`${apiUrl}/file/update/${idFile}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updateData),
+    });
 
     return response;
   } catch (error) {
