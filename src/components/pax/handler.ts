@@ -1,6 +1,6 @@
 import { iPax } from "../model";
 
-const apiUrl = process.env.REACT_APP_API_URL;
+const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
 export const getPax = async (): Promise<iPax[]> => {
   try {

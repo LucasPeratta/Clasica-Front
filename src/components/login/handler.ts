@@ -1,4 +1,4 @@
-const apiUrl = process.env.REACT_APP_API_URL;
+const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
 export const loginHandler = async (email: string, password: string) => {
   try {
