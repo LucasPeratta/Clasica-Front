@@ -16,7 +16,6 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deleteFile, getFile } from "./handler";
-import type { iFile } from "../model";
 import dayjs from "dayjs";
 import { Alert, Snackbar } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
@@ -26,6 +25,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Button from "@mui/material/Button";
 import { LoadingScreen } from "../LoadingScreen";
+import { iFile } from "./model";
 
 export const Files = (): JSX.Element => {
   const [file, setFile] = useState<iFile[]>([]);

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getServiceById } from "./handler";
-import { iService } from "../model";
 import {
   Table,
   TableBody,
@@ -14,6 +13,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
+import { iService } from "./model";
 
 export const ServiceProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();

@@ -7,16 +7,17 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useEffect, useState } from "react";
-import { iPax, iService } from "../../model";
+import { iPax } from "../../Pax/model";
 import { getPax } from "../../Pax/handler";
 import { getService } from "../../Service/handler";
 import { useNavigate, useParams } from "react-router-dom";
-import { iFile } from "../../model";
 import { getFileById, createFile, updateFile } from "../handler";
 import "dayjs/locale/es";
 import "./fileForm.scss";
 import dayjs from "dayjs";
 import { LoadingScreen } from "../../LoadingScreen";
+import { iService } from "../../Service/model";
+import { iFile } from "../model";
 
 const initialState: iFile = {
   id: "",

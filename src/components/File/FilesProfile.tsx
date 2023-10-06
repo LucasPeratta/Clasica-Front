@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getFileById } from "./handler";
-import { iFile, iPax, iService } from "../model";
 import dayjs from "dayjs";
 import { LoadingScreen } from "../LoadingScreen";
 import {
@@ -16,6 +15,9 @@ import {
   Button,
   Box,
 } from "@mui/material";
+import { iFile } from "./model";
+import { iPax } from "../Pax/model";
+import { iService } from "../Service/model";
 
 export const FilesProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();

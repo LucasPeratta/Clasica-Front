@@ -1,4 +1,4 @@
-import { iPax } from "../model";
+import { iPax } from "./model";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 

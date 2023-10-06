@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { getPaxById } from "./handler";
-import { iPax } from "../model";
+import { iPax } from "./model";
 import dayjs from "dayjs";
 import { LoadingScreen } from "../LoadingScreen";
 import {

@@ -16,7 +16,6 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { getService, softDeleteService } from "./handler";
-import type { iService } from "../model";
 import { LoadingScreen } from "../LoadingScreen";
 import {
   Alert,
@@ -28,6 +27,7 @@ import {
   DialogTitle,
   Snackbar,
 } from "@mui/material";
+import { iService } from "./model";
 
 export const Service = (): JSX.Element => {
   const [service, setService] = useState<iService[]>([]);

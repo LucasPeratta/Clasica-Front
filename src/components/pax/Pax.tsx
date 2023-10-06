@@ -16,7 +16,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router-dom";
 import { deletePax, getPax } from "./handler";
-import type { iPax } from "../model";
+import type { iPax } from "./model";
 import { Alert, Snackbar } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";

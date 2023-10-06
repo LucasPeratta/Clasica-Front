@@ -1,4 +1,4 @@
-import { iService } from "../model";
+import { iService } from "./model";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
