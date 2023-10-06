@@ -16,7 +16,7 @@ import {
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { isLoggedIn, login } = useAuth();
+  const { login } = useAuth();
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
 
