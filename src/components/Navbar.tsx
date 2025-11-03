@@ -59,15 +59,7 @@ function ResponsiveAppBar() {
               >
                 Paxs
               </Button>
-              <Button
-                color="inherit"
-                sx={{ mx: 0.2, fontSize: "0.8rem" }}
-                onClick={() => {
-                  navigate("/services");
-                }}
-              >
-                Services
-              </Button>
+
               <Button
                 color="inherit"
                 sx={{ mx: 0.2, fontSize: "0.8rem" }}
@@ -76,6 +68,16 @@ function ResponsiveAppBar() {
                 }}
               >
                 Files
+              </Button>
+
+              <Button
+                color="inherit"
+                sx={{ mx: 0.2, fontSize: "0.8rem" }}
+                onClick={() => {
+                  navigate("/grupales");
+                }}
+              >
+                Grupales
               </Button>
             </>
           )}

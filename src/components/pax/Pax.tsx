@@ -1,35 +1,47 @@
 import { useState, useEffect } from "react";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import Paper from "@mui/material/Paper";
-import InputBase from "@mui/material/InputBase";
-import IconButton from "@mui/material/IconButton";
+import {
+  Box,
+  Paper,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Snackbar,
+  Alert,
+  Avatar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import Fab from "@mui/material/Fab";
-import AddIcon from "@mui/icons-material/Add";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
+import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
 import { deletePax, getPax } from "./handler";
 import type { iPax } from "./model";
-import { Alert, Snackbar } from "@mui/material";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
 import { LoadingScreen } from "../LoadingScreen";
+
+function initials(lastname: string, firstname: string) {
+  const a = (lastname || "").trim()[0] ?? "";
+  const b = (firstname || "").trim()[0] ?? "";
+  return (a + b).toUpperCase();
+}
 
 export const Pax = (): JSX.Element => {
   const [pax, setPax] = useState<iPax[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paxToDeleteId, setPaxToDeleteId] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,7 +50,6 @@ export const Pax = (): JSX.Element => {
 
   useEffect(() => {
     setLoading(true);
-
     getPax().then((data) => {
       const sortedPax = data.sort((a, b) =>
         `${a.lastname} ${a.firstname}`.localeCompare(
@@ -50,9 +61,7 @@ export const Pax = (): JSX.Element => {
     });
   }, []);
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   const filteredPax = pax.filter((p) =>
     `${p.lastname} ${p.firstname}`
@@ -60,171 +69,231 @@ export const Pax = (): JSX.Element => {
       .includes(searchTerm.toLowerCase())
   );
 
-  const handleAddButtonClick = () => {
-    navigate("/paxs/create");
-  };
+  const handleAdd = () => navigate("/paxs/create");
+  const handleView = (id: string) => navigate(`/paxs/profile/${id}`);
 
-  const handleViewPaxBottomClick = (id: string) => {
-    navigate(`/paxs/profile/${id}`);
-  };
-
-  const openErrorNotification = () => {
-    setErrorNotificationOpen(true);
-  };
-
-  const handleDeleteButtonClick = (id: string) => {
+  const askDelete = (id: string) => {
     setPaxToDeleteId(id);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeletePax = (id: string) => {
+  const handleDelete = (id: string) => {
     deletePax(id).then(() => {
-      setPax((prevPax) => prevPax.filter((pax) => pax.id !== id));
-      openErrorNotification();
+      setPax((prev) => prev.filter((p) => p.id !== id));
+      setSuccessOpen(true);
     });
   };
 
   return (
-    <div style={{ margin: "0 80px" }}>
-      <div
-        style={{
+    <Box
+      sx={{
+        px: { xs: 2, md: 6 },
+        py: 3,
+        background: "linear-gradient(135deg, #eaf3ff 0%, #dfeefe 100%)",
+        minHeight: "calc(100vh - 64px)",
+      }}
+    >
+      {/* Header */}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 2,
           display: "flex",
           alignItems: "center",
-          marginBottom: "16px",
-          margin: "auto",
+          gap: 2,
+          borderRadius: 2,
         }}
       >
-        <Paper
-          component="form"
+        <TextField
+          fullWidth
+          placeholder="Buscar pasajero"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
           sx={{
-            p: "2px 4px",
-            margin: "auto",
-            display: "flex",
-            alignItems: "center",
-            flex: 1,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              backgroundColor: "#fff",
+            },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Button
+          variant="contained"
+          onClick={handleAdd}
+          startIcon={<AddIcon />}
+          sx={{
+            textTransform: "uppercase",
+            fontWeight: 600,
+            borderRadius: 8,
+            px: 2.5,
+            py: 1,
+            background: "linear-gradient(135deg, #007bff 0%, #6f42c1 100%)",
+            boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
+            color: "#fff",
+            "& .MuiSvgIcon-root": {
+              backgroundColor: "rgba(255,255,255,0.15)",
+              borderRadius: "50%",
+              padding: "4px",
+              fontSize: "1.2rem",
+            },
+            "&:hover": {
+              background: "linear-gradient(135deg, #0056d2 0%, #5936a2 100%)",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+            },
           }}
         >
-          <InputBase
-            sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar Pax"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
-            <SearchIcon />
-          </IconButton>
-        </Paper>
-        <Fab
-          color="success"
-          aria-label="add"
-          sx={{ ml: 2 }}
-          onClick={handleAddButtonClick}
-        >
-          <AddIcon />
-        </Fab>
-      </div>
+          Nuevo pasajero
+        </Button>
+      </Paper>
 
+      {/* Tabla */}
       <TableContainer
         component={Paper}
-        style={{ maxHeight: "53em", overflowY: "auto" }}
+        elevation={1}
+        sx={{
+          maxHeight: "64vh",
+          overflowY: "auto",
+          borderRadius: 2,
+        }}
       >
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+        <Table stickyHeader size="medium" aria-label="tabla de pasajeros">
           <TableHead>
-            <TableRow
-              style={{ position: "sticky", top: 0, background: "#FFF" }}
-            >
-              <TableCell>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  APELLIDO & NOMBRE
-                </Typography>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700, width: "40%" }}>
+                APELLIDO & NOMBRE
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  EMAIL
-                </Typography>
+              <TableCell sx={{ fontWeight: 700, width: "35%" }}>
+                EMAIL
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  PhoneNumber
-                </Typography>
+              <TableCell sx={{ fontWeight: 700, width: "15%" }}>
+                TELÉFONO
               </TableCell>
-              <TableCell align="right"></TableCell>
+              <TableCell sx={{ fontWeight: 700, width: "10%" }} align="right">
+                ACCIONES
+              </TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {filteredPax.map((pax) => (
-              <TableRow key={pax.id}>
-                <TableCell component="th" scope="row">
-                  {`${pax.lastname} ${pax.firstname} `}
-                </TableCell>
-                <TableCell align="right">{pax.email}</TableCell>
-                <TableCell align="right">{pax.phoneNumber}</TableCell>
-                <TableCell align="right">
-                  <Tooltip title="Eliminar pax" placement="top">
-                    <IconButton
-                      aria-label="delete"
-                      color="error"
-                      onClick={() => handleDeleteButtonClick(pax.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Ver Detalles" placement="top">
-                    <IconButton
-                      aria-label="details"
-                      color="primary"
-                      onClick={() => handleViewPaxBottomClick(pax.id)}
-                    >
-                      <AddIcon />
-                    </IconButton>
-                  </Tooltip>
+            {filteredPax.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No hay resultados para “{searchTerm}”.
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredPax.map((row, idx) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  onClick={() => handleView(row.id)}
+                  sx={{
+                    backgroundColor:
+                      idx % 2
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(255,255,255,0.9)",
+                    cursor: "pointer",
+                    "&:hover": { backgroundColor: "rgba(2,136,209,0.08)" },
+                  }}
+                >
+                  <TableCell>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                    >
+                      <Avatar
+                        sx={{ bgcolor: "primary.main", width: 34, height: 34 }}
+                      >
+                        {initials(row.lastname, row.firstname)}
+                      </Avatar>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {row.lastname} {row.firstname}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+
+                  <TableCell>
+                    <Typography sx={{ color: "text.primary" }}>
+                      {row.email || "—"}
+                    </Typography>
+                  </TableCell>
+
+                  <TableCell>
+                    <Typography sx={{ color: "text.secondary" }}>
+                      {row.phoneNumber || "—"}
+                    </Typography>
+                  </TableCell>
+
+                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                    <Tooltip title="Ver detalles">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleView(row.id)}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar">
+                      <IconButton
+                        color="error"
+                        onClick={() => askDelete(row.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Notificación de éxito */}
       <Snackbar
-        open={errorNotificationOpen}
+        open={successOpen}
         autoHideDuration={3000}
-        onClose={() => setErrorNotificationOpen(false)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
+        onClose={() => setSuccessOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setErrorNotificationOpen(false)}
-          severity="success"
-        >
-          Pax eliminado con exito!
+        <Alert onClose={() => setSuccessOpen(false)} severity="success">
+          ¡Pasajero eliminado con éxito!
         </Alert>
       </Snackbar>
+
+      {/* Confirmación de borrado */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar este Pax?
+            ¿Estás seguro de que deseas eliminar este pasajero?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
-            Cancelar
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
           <Button
+            color="error"
             onClick={() => {
               setDeleteDialogOpen(false);
-              handleDeletePax(paxToDeleteId);
+              handleDelete(paxToDeleteId);
             }}
-            color="error"
           >
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };

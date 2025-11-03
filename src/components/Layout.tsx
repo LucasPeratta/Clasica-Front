@@ -9,12 +9,15 @@ export const Layout = ({ children }: Props) => {
   return (
     <div
       style={{
+        display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
       }}
     >
       <Navbar />
-      <div style={{ padding: "2em 2em" }}>{children}</div>
+      {/* Quitamos padding y el margen blanco entre navbar y contenido */}
+      <div style={{ flex: 1 }}>{children}</div>
     </div>
   );
 };

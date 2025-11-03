@@ -1,23 +1,19 @@
 import { useState, useEffect } from "react";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import Paper from "@mui/material/Paper";
-import InputBase from "@mui/material/InputBase";
-import IconButton from "@mui/material/IconButton";
-import SearchIcon from "@mui/icons-material/Search";
-import Fab from "@mui/material/Fab";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
-import { useNavigate } from "react-router-dom";
-import { getService, softDeleteService } from "./handler";
-import { LoadingScreen } from "../LoadingScreen";
 import {
+  Box,
+  Paper,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Snackbar,
   Alert,
   Button,
   Dialog,
@@ -25,215 +21,221 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Snackbar,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import AddIcon from "@mui/icons-material/Add";
+import { useNavigate } from "react-router-dom";
+import { getService, softDeleteService } from "./handler";
+import { LoadingScreen } from "../LoadingScreen";
 import { iService } from "./model";
 
 export const Service = (): JSX.Element => {
-  const [service, setService] = useState<iService[]>([]);
+  const [services, setServices] = useState<iService[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDeleteId, setServiceToDeleteId] = useState("");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    setLoading(true);
     getService().then((data) => {
-      setLoading(true);
-
-      const sortedService = data.sort((a, b) =>
+      const sorted = data.sort((a, b) =>
         a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
       );
-      setService(sortedService);
+      setServices(sorted);
       setLoading(false);
     });
-  }, [setService, setLoading]);
+  }, []);
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
-  const filteredService = service.filter((p) =>
-    `${p.provider}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredServices = services.filter((s) =>
+    s.provider?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddButtonClick = () => {
-    navigate("/services/create");
-  };
+  const handleAdd = () => navigate("/services/create");
+  const handleView = (id: string) => navigate(`/services/profile/${id}`);
 
-  const handleViewserviceBottomClick = (id: string) => {
-    navigate(`/services/profile/${id}`);
-  };
-
-  const openDeletedNotification = () => {
-    setErrorNotificationOpen(true);
-  };
-
-  const handleDeleteButtonClick = (id: string) => {
+  const askDelete = (id: string) => {
     setServiceToDeleteId(id);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteService = async (idService: string) => {
-    const response = await softDeleteService(idService);
-    console.log(response);
+  const handleDelete = async (id: string) => {
+    const response = await softDeleteService(id);
     if (response?.ok) {
-      openDeletedNotification();
+      setServices((prev) => prev.filter((s) => s.id !== id));
+      setSuccessOpen(true);
       setDeleteDialogOpen(false);
-      setService((prevService) => {
-        return prevService.filter((service) => service.id !== idService);
-      });
     }
   };
 
   return (
-    <div style={{ margin: "0 80px" }}>
-      <div
-        style={{
+    <Box
+      sx={{
+        px: { xs: 2, md: 6 },
+        py: 3,
+        background: "linear-gradient(135deg, #eaf3ff 0%, #dfeefe 100%)",
+        minHeight: "calc(100vh - 64px)",
+      }}
+    >
+      {/* Header: buscador + botón */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 2,
+          mb: 2,
           display: "flex",
           alignItems: "center",
-          marginBottom: "16px",
-          margin: "auto",
+          gap: 2,
         }}
       >
-        <Paper
-          component="form"
+        <TextField
+          fullWidth
+          placeholder="Buscar servicio"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<AddIcon />}
+          onClick={handleAdd}
           sx={{
-            p: "2px 4px",
-            margin: "auto",
-            display: "flex",
-            alignItems: "center",
-            flex: 1,
+            textTransform: "none",
+            fontWeight: 600,
+            fontSize: "0.85rem",
+            px: 1.5,
+            py: 0.5,
+            height: 36,
           }}
         >
-          <InputBase
-            sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar service"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <IconButton type="button" sx={{ p: "10px" }} aria-label="search">
-            <SearchIcon />
-          </IconButton>
-        </Paper>
-        <Fab
-          color="success"
-          aria-label="add"
-          sx={{ ml: 2 }}
-          onClick={handleAddButtonClick}
-        >
-          <AddIcon />
-        </Fab>
-      </div>
+          Nuevo servicio
+        </Button>
+      </Paper>
 
+      {/* Tabla */}
       <TableContainer
         component={Paper}
-        style={{ maxHeight: "53em", overflowY: "auto" }}
+        elevation={2}
+        sx={{
+          maxHeight: "64vh",
+          overflowY: "auto",
+          borderRadius: 2,
+        }}
       >
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+        <Table stickyHeader size="medium" aria-label="tabla de servicios">
           <TableHead>
-            <TableRow
-              style={{ position: "sticky", top: 0, background: "#FFF" }}
-            >
-              <TableCell>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Proveedor
-                </Typography>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700 }}>Proveedor</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                Precio neto
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  PRECIO NETO
-                </Typography>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                Tarifa
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  TARIFA
-                </Typography>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                Moneda
               </TableCell>
-              <TableCell align="right">
-                <Typography variant="subtitle1" fontWeight="bold">
-                  $
-                </Typography>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                Acciones
               </TableCell>
-              <TableCell align="right"></TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {filteredService.map((service) => (
-              <TableRow key={service.id}>
-                <TableCell component="th" scope="row">
-                  {`${service.provider}`}
-                </TableCell>
-                <TableCell align="right">{service.precioNeto}</TableCell>
-                <TableCell align="right">{service.tarifa}</TableCell>
-                <TableCell align="right">{service.currency}</TableCell>
-                <TableCell align="right">
-                  <Tooltip title="Eliminar service" placement="top">
-                    <IconButton
-                      aria-label="delete"
-                      color="error"
-                      onClick={() => handleDeleteButtonClick(service.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Ver Detalles" placement="top">
-                    <IconButton
-                      aria-label="details"
-                      color="primary"
-                      onClick={() => handleViewserviceBottomClick(service.id)}
-                    >
-                      <AddIcon />
-                    </IconButton>
-                  </Tooltip>
+            {filteredServices.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No se encontraron servicios para “{searchTerm}”.
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredServices.map((row, idx) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  sx={{
+                    backgroundColor:
+                      idx % 2
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(255,255,255,0.85)",
+                    "&:hover": { backgroundColor: "rgba(2,136,209,0.08)" },
+                  }}
+                >
+                  <TableCell>{row.provider}</TableCell>
+                  <TableCell align="right">{row.precioNeto}</TableCell>
+                  <TableCell align="right">{row.tarifa}</TableCell>
+                  <TableCell align="right">{row.currency}</TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="Ver detalles">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleView(row.id)}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Eliminar servicio">
+                      <IconButton
+                        color="error"
+                        onClick={() => askDelete(row.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Notificación de eliminación */}
       <Snackbar
-        open={errorNotificationOpen}
+        open={successOpen}
         autoHideDuration={3000}
-        onClose={() => setErrorNotificationOpen(false)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
+        onClose={() => setSuccessOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setErrorNotificationOpen(false)}
-          severity="success"
-        >
-          Servicio eliminado con exito!
+        <Alert onClose={() => setSuccessOpen(false)} severity="success">
+          ¡Servicio eliminado con éxito!
         </Alert>
       </Snackbar>
+
+      {/* Confirmación de borrado */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            ¿Estás seguro de que deseas eliminar este Servicio?
+            ¿Estás seguro de que deseas eliminar este servicio?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              handleDeleteService(serviceToDeleteId);
-            }}
-            color="error"
-          >
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button color="error" onClick={() => handleDelete(serviceToDeleteId)}>
             Eliminar
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
