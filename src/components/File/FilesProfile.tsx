@@ -7,7 +7,7 @@ import { FileProfileClients } from "./profile/components/FileProfileClients";
 import { FileProfileServices } from "./profile/components/FileProfileServices";
 
 export const FilesProfile = (): JSX.Element => {
-  const { id, file, loading } = useFileProfile();
+  const { file, loading } = useFileProfile();
 
   if (loading) return <LoadingScreen />;
   if (!file) return <Typography>Error al cargar el archivo.</Typography>;
