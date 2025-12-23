@@ -49,15 +49,29 @@ export const FileFormFields = ({
         id="precioNetoTotal"
         label="Precio Neto Total *"
         value={formData.precioNetoTotal}
-        onChange={handleChange}
-        required
+        InputProps={{
+          readOnly: true,
+        }}
+        sx={{
+          "& .MuiInputBase-input": {
+            cursor: "not-allowed",
+            backgroundColor: "rgba(0, 0, 0, 0.05)",
+          },
+        }}
       />
       <TextField
         id="tarifaTotal"
         label="Tarifa Total *"
         value={formData.tarifaTotal}
-        onChange={handleChange}
-        required
+        InputProps={{
+          readOnly: true,
+        }}
+        sx={{
+          "& .MuiInputBase-input": {
+            cursor: "not-allowed",
+            backgroundColor: "rgba(0, 0, 0, 0.05)",
+          },
+        }}
       />
       <TextField
         id="tarifaAlternativa"

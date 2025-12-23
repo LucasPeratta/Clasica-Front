@@ -74,6 +74,25 @@ export const useFileForm = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Calcular automáticamente los totales cuando cambien los servicios
+  useEffect(() => {
+    const precioNetoTotal = fileServices.reduce((sum, service) => {
+      const precioNeto = Number(service.precioNeto) || 0;
+      return sum + precioNeto;
+    }, 0);
+
+    const tarifaTotal = fileServices.reduce((sum, service) => {
+      const tarifa = Number(service.tarifa) || 0;
+      return sum + tarifa;
+    }, 0);
+
+    setFormData((prev) => ({
+      ...prev,
+      precioNetoTotal: precioNetoTotal.toString(),
+      tarifaTotal: tarifaTotal.toString(),
+    }));
+  }, [fileServices]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
