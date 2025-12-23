@@ -54,9 +54,14 @@ export const Service = (): JSX.Element => {
 
   if (loading) return <LoadingScreen />;
 
-  const filteredServices = services.filter((s) =>
-    s.provider?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredServices = services.filter((s) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      s.nombre?.toLowerCase().includes(search) ||
+      s.provider?.toLowerCase().includes(search) ||
+      s.localizador?.toLowerCase().includes(search)
+    );
+  });
 
   const handleAdd = () => navigate("/services/create");
   const handleView = (id: string) => navigate(`/services/profile/${id}`);
@@ -139,7 +144,9 @@ export const Service = (): JSX.Element => {
         <Table stickyHeader size="medium" aria-label="tabla de servicios">
           <TableHead>
             <TableRow>
+              <TableCell sx={{ fontWeight: 700 }}>Nombre</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>Proveedor</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Localizador</TableCell>
               <TableCell align="right" sx={{ fontWeight: 700 }}>
                 Precio neto
               </TableCell>
@@ -158,9 +165,9 @@ export const Service = (): JSX.Element => {
           <TableBody>
             {filteredServices.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                   <Typography variant="body1" color="text.secondary">
-                    No se encontraron servicios para “{searchTerm}”.
+                    No se encontraron servicios para "{searchTerm}".
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -177,7 +184,9 @@ export const Service = (): JSX.Element => {
                     "&:hover": { backgroundColor: "rgba(2,136,209,0.08)" },
                   }}
                 >
+                  <TableCell>{row.nombre || "Sin nombre"}</TableCell>
                   <TableCell>{row.provider}</TableCell>
+                  <TableCell>{row.localizador || "—"}</TableCell>
                   <TableCell align="right">{row.precioNeto}</TableCell>
                   <TableCell align="right">{row.tarifa}</TableCell>
                   <TableCell align="right">{row.currency}</TableCell>

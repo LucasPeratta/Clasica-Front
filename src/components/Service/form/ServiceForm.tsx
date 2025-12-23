@@ -20,10 +20,12 @@ import { iService } from "../model";
 
 const initialState: iService = {
   id: "",
+  nombre: "",
+  provider: "",
   precioNeto: "",
   tarifa: "",
   currency: "",
-  provider: "",
+  localizador: "",
   obs: "",
   createdAt: null,
   deleted_at: null,
@@ -102,14 +104,15 @@ export const ServiceForm = () => {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const requiredFields = ["provider", "precioNeto", "tarifa", "currency"];
+    const requiredFields = ["nombre", "provider", "precioNeto", "tarifa", "currency"];
 
     const missingFields = requiredFields.filter(
       (field) => !formData[field as keyof typeof formData]
     );
 
     if (missingFields.length > 0) {
-      console.log(missingFields);
+      console.log("Campos faltantes:", missingFields);
+      openErrorNotification();
       return;
     }
 
@@ -165,17 +168,26 @@ export const ServiceForm = () => {
           <form onSubmit={handleFormSubmit}>
             <div className="form-row">
               <TextField
+                id="nombre"
+                label="Nombre del servicio"
+                variant="outlined"
+                required
+                inputProps={{ maxLength: 50 }}
+                value={formData.nombre}
+                onChange={handleChange}
+              />
+              <TextField
                 id="provider"
                 label="Proveedor"
                 variant="outlined"
                 required
-                inputProps={{ maxLength: 15 }}
+                inputProps={{ maxLength: 50 }}
                 value={formData.provider}
                 onChange={handleChange}
               />
               <TextField
                 id="precioNeto"
-                label="Precio Neto"
+                label="Precio Neto *"
                 variant="outlined"
                 required
                 inputProps={{ maxLength: 15 }}
@@ -184,7 +196,7 @@ export const ServiceForm = () => {
               />
               <TextField
                 id="tarifa"
-                label="Tarifa"
+                label="Tarifa *"
                 variant="outlined"
                 required
                 inputProps={{ maxLength: 15 }}
@@ -218,9 +230,9 @@ export const ServiceForm = () => {
             <div className="obs-field">
               <TextField
                 id="obs"
-                label="Observaciones"
+                label="Observaciones (Opcional)"
                 multiline
-                inputProps={{ maxLength: 200 }}
+                inputProps={{ maxLength: 300 }}
                 rows={5}
                 variant="outlined"
                 value={formData.obs}

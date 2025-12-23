@@ -1,102 +1,81 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { getPaxById } from "./handler";
-import { iPax } from "./model";
-import dayjs from "dayjs";
+import { Box, Paper, Typography } from "@mui/material";
 import { LoadingScreen } from "../LoadingScreen";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Paper,
-  Typography,
-  Button,
-} from "@mui/material";
+import { usePaxProfile } from "./hooks/usePaxProfile";
+import { PaxProfileHeader } from "./profile/components/PaxProfileHeader";
+import { PaxProfileData } from "./profile/components/PaxProfileData";
+import { PaxProfilePhotos } from "./profile/components/PaxProfilePhotos";
 
 export const PaxProfile = (): JSX.Element => {
-  const { id } = useParams<{ id: string }>();
-  const [pax, setPax] = useState<iPax | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { pax, loading, photos, selectedPhoto, setSelectedPhoto, fromFileId } =
+    usePaxProfile();
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getPaxById(id)
-      .then((data) => {
-        setPax(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, [id]);
-
-  if (!pax) {
-    return <div>Error</div>;
-  }
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
+  if (!pax) return <Typography>Error</Typography>;
 
   return (
-    <div>
-      <Typography variant="h4" gutterBottom>
-        {pax.firstname} {pax.lastname}
-      </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell>DNI:</TableCell>
-              <TableCell>{pax.dni}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Pasaporte:</TableCell>
-              <TableCell>{pax.passport}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Fecha de Nacimiento:</TableCell>
-              <TableCell>{dayjs(pax.dob).format("DD-MM-YYYY")}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Dirección:</TableCell>
-              <TableCell>{pax.adress}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Email:</TableCell>
-              <TableCell>{pax.email}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Celular:</TableCell>
-              <TableCell>{pax.phoneNumber}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell>Observaciones:</TableCell>
-              <TableCell>
-                <Typography style={{ whiteSpace: "pre-wrap" }}>
-                  {pax.obs}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Button component={Link} to={`/paxs`} variant="outlined" sx={{ mt: 2 }}>
-        Volver
-      </Button>
-      <Button
-        component={Link}
-        to={`/paxs/update/${pax.id}`}
-        variant="contained"
-        color="primary"
-        sx={{ ml: 2, mt: 2 }}
+    <Box
+      sx={{
+        px: { xs: 2, md: 6 },
+        py: 3,
+        background:
+          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%)",
+        backgroundImage:
+          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%), " +
+          "radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%), " +
+          "radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
+        minHeight: "calc(100vh - 64px)",
+      }}
+    >
+      {/* Header */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          mb: 2,
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderRadius: 3,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+        }}
       >
-        Editar
-      </Button>
-    </div>
+        <PaxProfileHeader pax={pax} fromFileId={fromFileId} />
+      </Paper>
+
+      {/* Datos */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderRadius: 3,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+        }}
+      >
+        <PaxProfileData pax={pax} />
+      </Paper>
+
+      {/* Sección de Fotos */}
+      {photos.length > 0 && (
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            mt: 2,
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(10px)",
+            borderRadius: 3,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+          }}
+        >
+          <PaxProfilePhotos
+            photos={photos}
+            selectedPhoto={selectedPhoto}
+            onPhotoClick={(url) => setSelectedPhoto(url)}
+            onCloseDialog={() => setSelectedPhoto(null)}
+          />
+        </Paper>
+      )}
+    </Box>
   );
 };

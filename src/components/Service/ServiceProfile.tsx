@@ -43,6 +43,10 @@ export const ServiceProfile = (): JSX.Element => {
         <Table>
           <TableBody>
             <TableRow>
+              <TableCell>Nombre:</TableCell>
+              <TableCell>{service.nombre}</TableCell>
+            </TableRow>
+            <TableRow>
               <TableCell>Proveedor:</TableCell>
               <TableCell>{service.provider}</TableCell>
             </TableRow>
@@ -57,6 +61,10 @@ export const ServiceProfile = (): JSX.Element => {
             <TableRow>
               <TableCell>Valor:</TableCell>
               <TableCell>{service.currency}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Localizador:</TableCell>
+              <TableCell>{service.localizador || "—"}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>Observaciones:</TableCell>
