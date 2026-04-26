@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
 
+export type ServiceType = "AEREO" | "HOTEL" | "EXCURSION" | "TRASLADO";
+
 export interface iService {
   id: string;
   nombre: string;
@@ -7,6 +9,7 @@ export interface iService {
   precioNeto: string;
   tarifa: string;
   currency: string;
+  type: ServiceType;
   localizador?: string;
   obs: string;
   createdAt: null | dayjs.Dayjs;

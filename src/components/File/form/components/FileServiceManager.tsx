@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { iService } from "../../../Service/model";
+import { iService, ServiceType } from "../../../Service/model";
 
 interface FileServiceManagerProps {
   fileServices: iService[];
@@ -39,6 +39,7 @@ export const FileServiceManager = ({
     precioNeto: "",
     tarifa: "",
     currency: "USD",
+    type: "AEREO" as ServiceType,
     localizador: "",
     obs: "",
   });
@@ -51,6 +52,7 @@ export const FileServiceManager = ({
       precioNeto: "",
       tarifa: "",
       currency: "USD",
+      type: "AEREO" as ServiceType,
       localizador: "",
       obs: "",
     });
@@ -59,10 +61,14 @@ export const FileServiceManager = ({
   };
 
   const handleServiceFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }
+    >,
   ) => {
-    const { id, value } = e.target;
-    setServiceForm((prev) => ({ ...prev, [id]: value }));
+    const target = e.target as any;
+    const { id, name, value } = target;
+    const fieldName = id || name;
+    setServiceForm((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   const handleSaveService = async () => {
@@ -91,6 +97,7 @@ export const FileServiceManager = ({
         precioNeto: serviceForm.precioNeto,
         tarifa: serviceForm.tarifa,
         currency: serviceForm.currency,
+        type: serviceForm.type,
         localizador: serviceForm.localizador || "",
         obs: serviceForm.obs || "",
         createdAt: null,
@@ -157,7 +164,7 @@ export const FileServiceManager = ({
               }
             >
               <ListItemText
-                primary={s.nombre || "Sin nombre"}
+                primary={`${s.nombre || "Sin nombre"} (${s.type})`}
                 secondary={`${s.tarifa} ${s.currency}`}
                 primaryTypographyProps={{ fontWeight: 600 }}
               />
@@ -224,6 +231,22 @@ export const FileServiceManager = ({
             <MenuItem value="USD">USD</MenuItem>
             <MenuItem value="PESOS">PESOS</MenuItem>
             <MenuItem value="EURO">EURO</MenuItem>
+          </TextField>
+
+          <TextField
+            name="type" // Muy importante
+            label="Tipo de Servicio *"
+            select
+            fullWidth
+            sx={{ mb: 2 }}
+            value={serviceForm.type}
+            onChange={handleServiceFormChange}
+            required
+          >
+            <MenuItem value="AEREO">Aéreo (Vuelos)</MenuItem>
+            <MenuItem value="HOTEL">Hotel (Alojamiento)</MenuItem>
+            <MenuItem value="TRASLADO">Traslado (Transporte)</MenuItem>
+            <MenuItem value="EXCURSION">Excursión</MenuItem>
           </TextField>
           <TextField
             id="localizador"

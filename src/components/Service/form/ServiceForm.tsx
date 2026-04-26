@@ -14,9 +14,11 @@ import {
   CircularProgress,
   FormControlLabel,
   RadioGroup,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import Radio from "@mui/material/Radio";
-import { iService } from "../model";
+import { iService, ServiceType } from "../model";
 
 const initialState: iService = {
   id: "",
@@ -24,7 +26,8 @@ const initialState: iService = {
   provider: "",
   precioNeto: "",
   tarifa: "",
-  currency: "",
+  currency: "USD",
+  type: "AEREO" as ServiceType,
   localizador: "",
   obs: "",
   createdAt: null,
@@ -104,10 +107,17 @@ export const ServiceForm = () => {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const requiredFields = ["nombre", "provider", "precioNeto", "tarifa", "currency"];
+    const requiredFields = [
+      "nombre",
+      "provider",
+      "precioNeto",
+      "tarifa",
+      "currency",
+      "type",
+    ];
 
     const missingFields = requiredFields.filter(
-      (field) => !formData[field as keyof typeof formData]
+      (field) => !formData[field as keyof typeof formData],
     );
 
     if (missingFields.length > 0) {
@@ -119,6 +129,12 @@ export const ServiceForm = () => {
     const allowedCurrencies = ["USD", "PESOS", "EURO"];
     if (!allowedCurrencies.includes(formData.currency)) {
       alert("Error: El tipo de moneda no es válido.");
+      return;
+    }
+
+    const allowedTypes = ["AEREO", "HOTEL", "EXCURSION", "TRASLADO"];
+    if (!allowedTypes.includes(formData.type)) {
+      alert("Error: El tipo de servicio no es válido.");
       return;
     }
 
@@ -226,6 +242,21 @@ export const ServiceForm = () => {
                   label="EURO"
                 />
               </RadioGroup>
+
+              <TextField
+                id="type"
+                label="Tipo de Servicio *"
+                select
+                required
+                value={formData.type}
+                onChange={handleChange}
+                variant="outlined"
+              >
+                <MenuItem value="AEREO">Aéreo (Vuelos)</MenuItem>
+                <MenuItem value="HOTEL">Hotel (Alojamiento)</MenuItem>
+                <MenuItem value="TRASLADO">Traslado (Transporte)</MenuItem>
+                <MenuItem value="EXCURSION">Excursión</MenuItem>
+              </TextField>
             </div>
             <div className="obs-field">
               <TextField
