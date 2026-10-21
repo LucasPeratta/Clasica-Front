@@ -9,9 +9,11 @@ const TAB_FILTER = { key: "tab", defaultValue: "current" };
 export const useFiles = () => {
   const list = usePaginatedList(getFilePage, TAB_FILTER);
 
+  // Devuelve true si se eliminó
   const handleDelete = async (id: string) => {
-    await deleteFile(id);
-    list.reload();
+    const ok = await deleteFile(id);
+    if (ok) list.reload();
+    return ok;
   };
 
   return {

@@ -27,13 +27,16 @@ export const getFile = async (): Promise<iFile[]> => {
   }
 };
 
-export const deleteFile = async (id: string): Promise<void> => {
+// Devuelve true si se eliminó
+export const deleteFile = async (id: string): Promise<boolean> => {
   try {
-    await apiFetch(`${apiUrl}/file/${id}`, {
+    const response = await apiFetch(`${apiUrl}/file/${id}`, {
       method: "DELETE",
     });
+    return response.ok;
   } catch (error) {
     console.error(error);
+    return false;
   }
 };
 

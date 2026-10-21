@@ -6,7 +6,8 @@ import { useFiles, FileTab } from "./hooks/useFiles";
 import { FileTabs } from "./components/FileTabs";
 import { FileSearchBar } from "./components/FileSearchBar";
 import { FileTable } from "./components/FileTable";
-import { FileDeleteDialog } from "./components/FileDeleteDialog";
+import { FileDeleteDialog, iFileToDelete } from "./components/FileDeleteDialog";
+import { getFileById } from "./handler";
 import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
 
 export const Files = (): JSX.Element => {
@@ -30,6 +31,10 @@ export const Files = (): JSX.Element => {
   const [successOpen, setSuccessOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDeleteId, setFileToDeleteId] = useState("");
+  const [fileToDelete, setFileToDelete] = useState<iFileToDelete | null>(null);
+  const [fileToDeleteError, setFileToDeleteError] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -38,16 +43,26 @@ export const Files = (): JSX.Element => {
   const handleAdd = () => navigate("/files/create");
   const handleView = (id: string) => navigate(`/files/profile/${id}`);
 
+  // Antes de confirmar se carga el detalle, para mostrar qué se va a eliminar
   const handleDeleteConfirm = (id: string, e?: MouseEvent) => {
     e?.stopPropagation();
     setFileToDeleteId(id);
+    setFileToDelete(null);
+    setFileToDeleteError(false);
     setDeleteDialogOpen(true);
+    getFileById(id).then((data) => {
+      if (data) setFileToDelete(data);
+      else setFileToDeleteError(true);
+    });
   };
 
   const confirmDelete = async () => {
-    await handleDelete(fileToDeleteId);
-    setSuccessOpen(true);
+    setDeleting(true);
+    const ok = await handleDelete(fileToDeleteId);
+    setDeleting(false);
     setDeleteDialogOpen(false);
+    if (ok) setSuccessOpen(true);
+    else setErrorOpen(true);
   };
 
   // Mensaje cuando la pestaña no tiene files; si hay resultados en la otra, se ofrece ir
@@ -123,10 +138,25 @@ export const Files = (): JSX.Element => {
         </Alert>
       </Snackbar>
 
+      <Snackbar
+        open={errorOpen}
+        autoHideDuration={4000}
+        onClose={() => setErrorOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={() => setErrorOpen(false)} severity="error">
+          No se pudo eliminar el file. Intentá de nuevo.
+        </Alert>
+      </Snackbar>
+
+      {/* Confirmación: muestra qué contiene el file antes de eliminarlo */}
       <FileDeleteDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
+        file={fileToDelete}
+        fileError={fileToDeleteError}
+        deleting={deleting}
       />
     </Box>
   );
