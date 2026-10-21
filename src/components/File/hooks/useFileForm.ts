@@ -124,6 +124,10 @@ export const useFileForm = () => {
       precioNetoTotal: formData.precioNetoTotal,
       tarifaTotal: formData.tarifaTotal,
       tarifaAlternativa: formData.tarifaAlternativa,
+      // Sin importe no se guarda moneda
+      tarifaAlternativaMoneda: formData.tarifaAlternativa?.trim()
+        ? formData.tarifaAlternativaMoneda || "USD"
+        : null,
       destino: formData.destino,
       fechaSalida: dayjs.isDayjs(formData.fechaSalida)
         ? formData.fechaSalida.toDate().toISOString()

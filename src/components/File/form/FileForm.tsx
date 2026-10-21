@@ -40,6 +40,7 @@ import { useFileForm } from "../hooks/useFileForm";
 import { FileFormHeader } from "./components/FileFormHeader";
 import { FileTotals } from "../components/FileTotals";
 import { formatFileNumber } from "../utils/fileNumber";
+import { CURRENCIES } from "../utils/totals";
 import { iService } from "../../Service/model";
 import { createService, updateService } from "../../Service/handler";
 
@@ -230,12 +231,30 @@ export const FileForm = () => {
               fullWidth
               InputLabelProps={{ shrink: true }}
             />
-            <TextField
-              label="Tarifa Alternativa (Opcional)"
-              value={formData.tarifaAlternativa || ""}
-              onChange={(e) => setFormData(prev => ({ ...prev, tarifaAlternativa: e.target.value }))}
-              fullWidth
-            />
+            {/* Tarifa alternativa: lo que se le cobra al pasajero, en una sola moneda */}
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                select
+                label="Moneda"
+                value={formData.tarifaAlternativaMoneda || "USD"}
+                onChange={(e) => setFormData(prev => ({ ...prev, tarifaAlternativaMoneda: e.target.value }))}
+                sx={{ width: 140 }}
+              >
+                {CURRENCIES.map((c) => (
+                  <MenuItem key={c.value} value={c.value}>
+                    {c.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                label="Tarifa Alternativa (Opcional)"
+                helperText="Lo que le cobramos al pasajero. Si queda vacía, se cobra la tarifa sumada de los servicios."
+                type="number"
+                value={formData.tarifaAlternativa || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, tarifaAlternativa: e.target.value }))}
+                fullWidth
+              />
+            </Box>
             <TextField
               label="Observaciones (Opcional)"
               value={formData.obs || ""}
@@ -358,7 +377,11 @@ export const FileForm = () => {
       </Card>
 
       {/* Totales por moneda */}
-      <FileTotals services={fileServices} />
+      <FileTotals
+        services={fileServices}
+        tarifaAlternativa={formData.tarifaAlternativa}
+        tarifaAlternativaMoneda={formData.tarifaAlternativaMoneda || "USD"}
+      />
 
       <Divider sx={{ mb: 3 }} />
 

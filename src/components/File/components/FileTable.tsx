@@ -15,7 +15,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
 import { iFile } from "../model";
-import { formatMoney, getTotalsByCurrency } from "../utils/totals";
+import { formatMoney, getAlternativeTariff, getTotalsByCurrency } from "../utils/totals";
 import { formatFileNumber } from "../utils/fileNumber";
 
 interface FileTableProps {
@@ -96,6 +96,7 @@ export const FileTable = ({
               const tarifas = getTotalsByCurrency(row.services).filter(
                 (t) => t.tarifa !== 0
               );
+              const alternative = getAlternativeTariff(row);
 
               return (
                 <TableRow
@@ -132,7 +133,17 @@ export const FileTable = ({
                     )}
                   </TableCell>
                   <TableCell align="center">
-                    {tarifas.length === 0
+                    {alternative?.currency ? (
+                      // Si se cargó tarifa alternativa, es lo que se le cobra
+                      <>
+                        <Typography variant="body2" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
+                          {formatMoney(alternative.amount, alternative.currency)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          cobrado
+                        </Typography>
+                      </>
+                    ) : tarifas.length === 0
                       ? "—"
                       : tarifas.map((t) => (
                           <Typography

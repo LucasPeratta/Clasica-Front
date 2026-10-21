@@ -305,9 +305,10 @@ export const FilesProfile = (): JSX.Element => {
     }
   };
 
+  // Devuelve true si se guardó
   const handleEditFileSave = async (editedFileData: iFile) => {
-    if (!editedFileData || !id || !file) return;
-    
+    if (!editedFileData || !id || !file) return false;
+
     // Crear estructura para enviar
     const fileToSend = {
       id: editedFileData.id,
@@ -316,6 +317,7 @@ export const FilesProfile = (): JSX.Element => {
       precioNetoTotal: editedFileData.precioNetoTotal,
       tarifaTotal: editedFileData.tarifaTotal,
       tarifaAlternativa: editedFileData.tarifaAlternativa,
+      tarifaAlternativaMoneda: editedFileData.tarifaAlternativaMoneda,
       destino: editedFileData.destino,
       fechaSalida: dayjs.isDayjs(editedFileData.fechaSalida) 
         ? editedFileData.fechaSalida.toDate().toISOString() 
@@ -339,9 +341,21 @@ export const FilesProfile = (): JSX.Element => {
       if (resp.ok) {
         setFile(editedFileData);
       }
+      return resp.ok;
     } catch (error) {
       console.error("Error editando file:", error);
+      return false;
     }
+  };
+
+  // Tarifa alternativa (lo que se le cobra al pasajero); vacía = se quita
+  const handleSaveAlternative = (amount: string, currency: string) => {
+    if (!file) return Promise.resolve(false);
+    return handleEditFileSave({
+      ...file,
+      tarifaAlternativa: amount,
+      tarifaAlternativaMoneda: amount ? currency : null,
+    });
   };
 
   if (loading) return <LoadingScreen />;
@@ -369,7 +383,12 @@ export const FilesProfile = (): JSX.Element => {
         onEditService={handleEditServiceOpen}
         onRemoveService={handleRemoveService}
       />
-      <FileTotals services={file.services} />
+      <FileTotals
+        services={file.services}
+        tarifaAlternativa={file.tarifaAlternativa}
+        tarifaAlternativaMoneda={file.tarifaAlternativaMoneda}
+        onSaveAlternative={handleSaveAlternative}
+      />
       <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
         <CardContent>
           <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0d47a1" />

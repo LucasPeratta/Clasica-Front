@@ -31,6 +31,18 @@ export function getTotalsByCurrency(
 }
 
 /**
+ * Tarifa alternativa (lo que se le cobra al pasajero) si es un importe válido
+ */
+export function getAlternativeTariff(file: {
+  tarifaAlternativa?: string | null;
+  tarifaAlternativaMoneda?: string | null;
+}): { amount: number; currency: string | null } | null {
+  const raw = (file.tarifaAlternativa ?? "").trim();
+  if (!raw || isNaN(Number(raw))) return null;
+  return { amount: Number(raw), currency: file.tarifaAlternativaMoneda ?? null };
+}
+
+/**
  * Formatea un importe con el símbolo de su moneda, ej. "$ 500.000,00" o "USD 1.250,50"
  */
 export function formatMoney(amount: number, currency: string): string {

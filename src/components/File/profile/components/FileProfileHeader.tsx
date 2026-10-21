@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 
 interface FileProfileHeaderProps {
   file: iFile;
-  onSave: (editedFile: iFile) => Promise<void>;
+  onSave: (editedFile: iFile) => Promise<unknown>;
 }
 
 export const FileProfileHeader = ({ file, onSave }: FileProfileHeaderProps) => {

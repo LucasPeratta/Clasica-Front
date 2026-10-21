@@ -12,7 +12,9 @@ export interface iFile {
   obs: string;
   precioNetoTotal: string;
   tarifaTotal: string;
+  // Lo que efectivamente se le cobra al pasajero, en una sola moneda
   tarifaAlternativa?: string;
+  tarifaAlternativaMoneda?: string | null;
   destino: string;
   fechaSalida: null | dayjs.Dayjs;
   clients: iPax[];
