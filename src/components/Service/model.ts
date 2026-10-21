@@ -16,4 +16,13 @@ export interface iService {
   fechaFin: null | dayjs.Dayjs;
   createdAt: null | dayjs.Dayjs;
   deleted_at: null | dayjs.Dayjs;
+  // File al que pertenece (viene en el listado y en el detalle)
+  File?: iServiceFile[];
+}
+
+export interface iServiceFile {
+  id: string;
+  numero?: number | null;
+  anio?: number | null;
+  destino: string;
 }

@@ -14,6 +14,7 @@ import {
   Box,
 } from "@mui/material";
 import { iService } from "./model";
+import { formatFileNumber } from "../File/utils/fileNumber";
 
 export const ServiceProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +35,8 @@ export const ServiceProfile = (): JSX.Element => {
     return <div>Error</div>;
   }
 
+  const file = service.File?.[0];
+
   return (
     <div>
       <Typography variant="h4" gutterBottom>
@@ -42,6 +45,18 @@ export const ServiceProfile = (): JSX.Element => {
       <TableContainer component={Paper}>
         <Table>
           <TableBody>
+            <TableRow>
+              <TableCell>File:</TableCell>
+              <TableCell>
+                {file ? (
+                  <Link to={`/files/profile/${file.id}`}>
+                    {[formatFileNumber(file), file.destino].filter(Boolean).join(" · ")}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </TableCell>
+            </TableRow>
             <TableRow>
               <TableCell>Nombre:</TableCell>
               <TableCell>{service.nombre}</TableCell>

@@ -60,6 +60,7 @@ export const FileForm = () => {
     setErrorNotificationOpen,
     handleSubmit,
     navigate,
+    softDeleteService,
   } = useFileForm();
 
   // Dialog states
@@ -168,6 +169,9 @@ export const FileForm = () => {
 
   const handleRemoveService = (serviceId: string) => {
     setFileServices(fileServices.filter(s => s.id !== serviceId));
+    // Al crear, el servicio ya existe pero todavía no tiene file: se elimina para que no quede suelto
+    // (al editar, el backend lo elimina cuando se guarda el file)
+    if (!id) softDeleteService(serviceId);
   };
 
   if (loading) return <LoadingScreen />;
