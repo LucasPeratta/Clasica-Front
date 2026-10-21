@@ -13,6 +13,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { getDocumentAlerts } from "../../Pax/utils/documentAlerts";
 import dayjs from "dayjs";
 import { iFile } from "../model";
 import { formatMoney, getAlternativeTariff, getTotalsByCurrency } from "../utils/totals";
@@ -97,6 +99,14 @@ export const FileTable = ({
                 (t) => t.tarifa !== 0
               );
               const alternative = getAlternativeTariff(row);
+              // Pasajeros con documentos vencidos o que vencen antes de este viaje (solo vigentes)
+              const documentWarnings = showTripStatus
+                ? (row.clients ?? []).flatMap((client) =>
+                    getDocumentAlerts(client, [row.fechaSalida]).map(
+                      (a) => `${client.lastname} ${client.firstname}: ${a.short}`
+                    )
+                  )
+                : [];
 
               return (
                 <TableRow
@@ -122,7 +132,27 @@ export const FileTable = ({
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>{row.destino}</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>
+                    {row.destino}
+                    {documentWarnings.length > 0 && (
+                      <Tooltip
+                        title={
+                          <>
+                            <strong>Revisar documentación:</strong>
+                            {documentWarnings.map((w) => (
+                              <div key={w}>• {w}</div>
+                            ))}
+                          </>
+                        }
+                      >
+                        <WarningAmberIcon
+                          color="error"
+                          fontSize="small"
+                          sx={{ ml: 1, verticalAlign: "middle" }}
+                        />
+                      </Tooltip>
+                    )}
+                  </TableCell>
                   <TableCell align="center">{paxName}</TableCell>
                   <TableCell align="center">
                     {dayjs(row.fechaSalida).format("DD-MM-YYYY")}

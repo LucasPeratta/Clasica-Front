@@ -275,6 +275,7 @@ export const FilesProfile = (): JSX.Element => {
       <FileProfileClients 
         clients={file.clients} 
         fileId={file.id}
+        fechaSalida={file.fechaSalida}
         onAddClient={handleAddPaxOpen}
         onRemoveClient={handleRemovePax}
       />

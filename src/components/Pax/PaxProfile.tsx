@@ -1,4 +1,5 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Alert, AlertTitle, Box, Paper, Typography } from "@mui/material";
+import { getDocumentAlerts } from "./utils/documentAlerts";
 import { LoadingScreen } from "../LoadingScreen";
 import { usePaxProfile } from "./hooks/usePaxProfile";
 import { PaxProfileHeader } from "./profile/components/PaxProfileHeader";
@@ -20,6 +21,8 @@ export const PaxProfile = (): JSX.Element => {
 
   if (loading) return <LoadingScreen />;
   if (!pax) return <Typography>Error</Typography>;
+
+  const documentAlerts = getDocumentAlerts(pax, pax.File?.map((f) => f.fechaSalida));
 
   // Sube las fotos de a una; devuelve un mensaje de error o null
   const handleUploadPhotos = async (images: File[]) => {
@@ -72,6 +75,19 @@ export const PaxProfile = (): JSX.Element => {
       >
         <PaxProfileHeader pax={pax} fromFileId={fromFileId} />
       </Paper>
+
+      {/* Avisos de documentos (vencidos o que vencen antes de un viaje) */}
+      {documentAlerts.length > 0 && (
+        <Alert
+          severity={documentAlerts.some((a) => a.level === "error") ? "error" : "warning"}
+          sx={{ mb: 2, borderRadius: 3 }}
+        >
+          <AlertTitle>Revisar documentación</AlertTitle>
+          {documentAlerts.map((a) => (
+            <div key={a.short}>• {a.detail}</div>
+          ))}
+        </Alert>
+      )}
 
       {/* Datos */}
       <Paper

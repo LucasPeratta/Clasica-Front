@@ -13,4 +13,14 @@ export interface iPax {
   email: string;
   phoneNumber: string;
   obs: string;
+  // Próximos viajes (viene en el listado y en el perfil), para avisar de documentos que vencen antes
+  File?: iPaxUpcomingFile[];
+}
+
+export interface iPaxUpcomingFile {
+  id: string;
+  numero?: number | null;
+  anio?: number | null;
+  destino: string;
+  fechaSalida: string;
 }

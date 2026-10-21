@@ -16,6 +16,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { iPax } from "../model";
 import { initials } from "../utils/formatters";
+import { getDocumentAlerts } from "../utils/documentAlerts";
+import { DocumentAlertChips } from "./DocumentAlertChips";
 
 interface PaxTableProps {
   pax: iPax[];
@@ -85,9 +87,14 @@ export const PaxTable = ({ pax, onView, onDelete }: PaxTableProps) => {
                     >
                       {initials(row.lastname, row.firstname)}
                     </Avatar>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {row.lastname} {row.firstname}
-                    </Typography>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {row.lastname} {row.firstname}
+                      </Typography>
+                      <DocumentAlertChips
+                        alerts={getDocumentAlerts(row, row.File?.map((f) => f.fechaSalida))}
+                      />
+                    </Box>
                   </Box>
                 </TableCell>
 

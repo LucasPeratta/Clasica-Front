@@ -4,11 +4,16 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { iPax } from "../../../Pax/model";
 import { initials } from "../../utils/formatters";
+import { iFile } from "../../model";
+import { getDocumentAlerts } from "../../../Pax/utils/documentAlerts";
+import { DocumentAlertChips } from "../../../Pax/components/DocumentAlertChips";
 import dayjs from "dayjs";
 
 interface FileProfileClientsProps {
   clients: iPax[];
   fileId: string;
+  // Salida del viaje: los documentos se controlan contra esta fecha
+  fechaSalida?: iFile["fechaSalida"];
   onAddClient?: () => void;
   onRemoveClient?: (clientId: string) => void;
 }
@@ -16,6 +21,7 @@ interface FileProfileClientsProps {
 export const FileProfileClients = ({
   clients,
   fileId,
+  fechaSalida,
   onAddClient,
   onRemoveClient,
 }: FileProfileClientsProps) => {
@@ -89,6 +95,9 @@ export const FileProfileClients = ({
                           <Typography sx={{ fontWeight: 600 }}>
                             {client.lastname} {client.firstname}
                           </Typography>
+                          <DocumentAlertChips
+                            alerts={getDocumentAlerts(client, [fechaSalida])}
+                          />
                         </Box>
                       </Box>
                     </TableCell>
