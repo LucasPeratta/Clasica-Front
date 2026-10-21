@@ -14,7 +14,8 @@ import { FileTotals } from "./components/FileTotals";
 import { updateFile, filePdfsUrl, toFileFormData } from "./handler";
 import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { getPax } from "../Pax/handler";
-import { createService, updateService } from "../Service/handler";
+import { createService, updateService, setServiceLiquidado } from "../Service/handler";
+import { FilePayments } from "./profile/components/FilePayments";
 import { iPax } from "../Pax/model";
 import { iFile } from "./model";
 
@@ -259,8 +260,32 @@ export const FilesProfile = (): JSX.Element => {
     });
   };
 
+  // Marcar un servicio como liquidado (enviado al mayorista) o desmarcarlo
+  const handleToggleLiquidado = async (serviceId: string, liquidado: boolean) => {
+    const ok = await setServiceLiquidado(serviceId, liquidado);
+    if (!ok) return;
+    setFile((prev) =>
+      prev && {
+        ...prev,
+        services: prev.services.map((s) =>
+          s.id === serviceId
+            ? { ...s, liquidado, liquidadoAt: liquidado ? new Date().toISOString() : null }
+            : s
+        ),
+      }
+    );
+  };
+
   if (loading) return <LoadingScreen />;
   if (!file) return <Typography>Error al cargar el archivo.</Typography>;
+
+  // Los pagos se recalculan cuando cambia lo que se cobra (servicios, tarifa alternativa, salida)
+  const paymentsRefreshKey = JSON.stringify([
+    file.services.map((s) => [s.id, s.tarifa, s.currency, s.type]),
+    file.tarifaAlternativa,
+    file.tarifaAlternativaMoneda,
+    file.fechaSalida,
+  ]);
 
   return (
     <Box
@@ -279,8 +304,10 @@ export const FilesProfile = (): JSX.Element => {
         onAddClient={handleAddPaxOpen}
         onRemoveClient={handleRemovePax}
       />
-      <FileProfileServices 
+      <FileProfileServices
         services={file.services}
+        fechaSalida={file.fechaSalida}
+        onToggleLiquidado={handleToggleLiquidado}
         onAddService={handleAddServiceOpen}
         onEditService={handleEditServiceOpen}
         onRemoveService={handleRemoveService}
@@ -291,6 +318,7 @@ export const FilesProfile = (): JSX.Element => {
         tarifaAlternativaMoneda={file.tarifaAlternativaMoneda}
         onSaveAlternative={handleSaveAlternative}
       />
+      <FilePayments fileId={file.id} refreshKey={paymentsRefreshKey} />
       <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
         <CardContent>
           <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0d47a1" />

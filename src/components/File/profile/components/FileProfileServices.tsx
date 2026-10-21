@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
-import { Box, Typography, Card, CardContent, Button, Tooltip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Box, Typography, Card, CardContent, Button, Tooltip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Switch, Chip } from "@mui/material";
+import { getLiquidationAlert } from "../../utils/liquidation";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -9,6 +10,9 @@ import dayjs from "dayjs";
 
 interface FileProfileServicesProps {
   services: iService[];
+  // Salida del viaje: para avisar de servicios sin liquidar
+  fechaSalida?: string | Date | dayjs.Dayjs | null;
+  onToggleLiquidado?: (serviceId: string, liquidado: boolean) => void;
   onAddService?: () => void;
   onEditService?: (serviceId: string) => void;
   onRemoveService?: (serviceId: string) => void;
@@ -42,10 +46,55 @@ const formatDates = (service: iService) => {
   return start || end || "—";
 };
 
-const COLUMNS = 5;
+const COLUMNS = 6;
+
+// Interruptor "liquidado" + aviso si falta poco para la salida y no está liquidado
+const LiquidadoCell = ({
+  service,
+  fechaSalida,
+  onToggle,
+}: {
+  service: iService;
+  fechaSalida: FileProfileServicesProps["fechaSalida"];
+  onToggle?: (serviceId: string, liquidado: boolean) => void;
+}) => {
+  const alert = getLiquidationAlert(service, fechaSalida);
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <Tooltip
+        title={
+          service.liquidado && service.liquidadoAt
+            ? `Liquidado el ${dayjs(service.liquidadoAt).format("DD/MM/YYYY")}`
+            : "Marcar como liquidado"
+        }
+      >
+        <Switch
+          size="small"
+          color="success"
+          checked={!!service.liquidado}
+          disabled={!onToggle}
+          onChange={(e) => onToggle?.(service.id, e.target.checked)}
+        />
+      </Tooltip>
+      {alert && (
+        <Tooltip title={alert.detail}>
+          <Chip
+            size="small"
+            color={alert.level}
+            variant={alert.level === "error" ? "filled" : "outlined"}
+            label={alert.short}
+            sx={{ height: 20, fontWeight: 600 }}
+          />
+        </Tooltip>
+      )}
+    </Box>
+  );
+};
 
 export const FileProfileServices = ({
   services,
+  fechaSalida,
+  onToggleLiquidado,
   onAddService,
   onEditService,
   onRemoveService,
@@ -109,6 +158,7 @@ export const FileProfileServices = ({
                   <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Fechas</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }} align="right">Precio Neto</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }} align="right">Tarifa</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1", textAlign: "center" }}>Liquidado</TableCell>
                   <TableCell sx={{ fontWeight: 700, color: "#0d47a1", textAlign: "center" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -153,6 +203,13 @@ export const FileProfileServices = ({
                         </TableCell>
                         <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
                           {formatAmount(service.tarifa, service.currency)}
+                        </TableCell>
+                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
+                          <LiquidadoCell
+                            service={service}
+                            fechaSalida={fechaSalida}
+                            onToggle={onToggleLiquidado}
+                          />
                         </TableCell>
                         <TableCell sx={{ textAlign: "center" }}>
                           <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>

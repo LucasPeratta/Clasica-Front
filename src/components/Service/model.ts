@@ -16,6 +16,9 @@ export interface iService {
   fechaFin: null | dayjs.Dayjs;
   createdAt: null | dayjs.Dayjs;
   deleted_at: null | dayjs.Dayjs;
+  // Enviado al mayorista para liquidar
+  liquidado?: boolean;
+  liquidadoAt?: string | null;
   // File al que pertenece (viene en el listado y en el detalle)
   File?: iServiceFile[];
 }

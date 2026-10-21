@@ -11,6 +11,21 @@ export const getServicePage = (
 ): Promise<iPaginated<iService>> =>
   fetchPage<iService>(`${apiUrl}/service`, page, search);
 
+// Marca un servicio como liquidado (enviado al mayorista) o no; devuelve true si se guardó
+export const setServiceLiquidado = async (id: string, liquidado: boolean): Promise<boolean> => {
+  try {
+    const response = await apiFetch(`${apiUrl}/service/${id}/liquidado`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ liquidado }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+};
+
 export const softDeleteService = async (id: string): Promise<Response> => {
   try {
     const response = await apiFetch(`${apiUrl}/service/${id}`, {

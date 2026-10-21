@@ -15,6 +15,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { getDocumentAlerts } from "../../Pax/utils/documentAlerts";
+import { getLiquidationAlert } from "../utils/liquidation";
 import dayjs from "dayjs";
 import { iFile } from "../model";
 import { formatMoney, getAlternativeTariff, getTotalsByCurrency } from "../utils/totals";
@@ -99,13 +100,22 @@ export const FileTable = ({
                 (t) => t.tarifa !== 0
               );
               const alternative = getAlternativeTariff(row);
-              // Pasajeros con documentos vencidos o que vencen antes de este viaje (solo vigentes)
+              // Avisos (solo vigentes): pasajeros con documentos vencidos o que vencen antes
+              // del viaje, y servicios sin liquidar cerca de la salida
+              const unsettled = showTripStatus
+                ? (row.services ?? []).filter((s) => getLiquidationAlert(s, row.fechaSalida)).length
+                : 0;
               const documentWarnings = showTripStatus
-                ? (row.clients ?? []).flatMap((client) =>
-                    getDocumentAlerts(client, [row.fechaSalida]).map(
-                      (a) => `${client.lastname} ${client.firstname}: ${a.short}`
-                    )
-                  )
+                ? [
+                    ...(row.clients ?? []).flatMap((client) =>
+                      getDocumentAlerts(client, [row.fechaSalida]).map(
+                        (a) => `${client.lastname} ${client.firstname}: ${a.short}`
+                      )
+                    ),
+                    ...(unsettled > 0
+                      ? [`${unsettled} servicio${unsettled === 1 ? "" : "s"} sin liquidar`]
+                      : []),
+                  ]
                 : [];
 
               return (
@@ -138,7 +148,7 @@ export const FileTable = ({
                       <Tooltip
                         title={
                           <>
-                            <strong>Revisar documentación:</strong>
+                            <strong>Revisar:</strong>
                             {documentWarnings.map((w) => (
                               <div key={w}>• {w}</div>
                             ))}
