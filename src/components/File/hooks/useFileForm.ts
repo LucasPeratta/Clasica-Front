@@ -115,14 +115,35 @@ export const useFileForm = () => {
 
     const paxsId = selectedPaxIds;
     const servicesId = fileServices.map((s) => s.id);
+    
+    // Crear estructura para enviar (serializar solo dates, no clientes)
+    const dataToSend = {
+      id: formData.id,
+      nro: formData.nro,
+      obs: formData.obs,
+      precioNetoTotal: formData.precioNetoTotal,
+      tarifaTotal: formData.tarifaTotal,
+      tarifaAlternativa: formData.tarifaAlternativa,
+      destino: formData.destino,
+      fechaSalida: dayjs.isDayjs(formData.fechaSalida)
+        ? formData.fechaSalida.toDate().toISOString()
+        : formData.fechaSalida,
+      clients: [],
+      services: fileServices.map(s => ({
+        ...s,
+        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
+        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
+      }))
+    };
+    
     let ok = false;
 
     try {
       if (id) {
-        const resp = await updateFile(id, formData, paxsId, servicesId);
+        const resp = await updateFile(id, dataToSend as any, paxsId, servicesId);
         ok = resp.ok;
       } else {
-        const resp = await createFile(formData, paxsId, servicesId);
+        const resp = await createFile(dataToSend as any, paxsId, servicesId);
         ok = resp.ok;
       }
     } catch {

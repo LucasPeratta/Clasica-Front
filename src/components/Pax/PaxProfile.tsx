@@ -4,13 +4,45 @@ import { usePaxProfile } from "./hooks/usePaxProfile";
 import { PaxProfileHeader } from "./profile/components/PaxProfileHeader";
 import { PaxProfileData } from "./profile/components/PaxProfileData";
 import { PaxProfilePhotos } from "./profile/components/PaxProfilePhotos";
+import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
+import { deletePaxPhoto, paxPdfsUrl, uploadPaxPhoto } from "./handler";
 
 export const PaxProfile = (): JSX.Element => {
-  const { pax, loading, photos, selectedPhoto, setSelectedPhoto, fromFileId } =
-    usePaxProfile();
+  const {
+    pax,
+    loading,
+    photos,
+    reloadPhotos,
+    selectedPhoto,
+    setSelectedPhoto,
+    fromFileId,
+  } = usePaxProfile();
 
   if (loading) return <LoadingScreen />;
   if (!pax) return <Typography>Error</Typography>;
+
+  // Sube las fotos de a una; devuelve un mensaje de error o null
+  const handleUploadPhotos = async (images: File[]) => {
+    try {
+      for (const image of images) {
+        const response = await uploadPaxPhoto(pax.id, image);
+        if (!response.ok) return "No se pudo subir la foto.";
+      }
+      return null;
+    } catch {
+      return "No se pudo subir la foto.";
+    } finally {
+      await reloadPhotos();
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    try {
+      await deletePaxPhoto(pax.id, photoId);
+    } finally {
+      await reloadPhotos();
+    }
+  };
 
   return (
     <Box
@@ -55,27 +87,33 @@ export const PaxProfile = (): JSX.Element => {
         <PaxProfileData pax={pax} />
       </Paper>
 
-      {/* Sección de Fotos */}
-      {photos.length > 0 && (
-        <Paper
-          elevation={3}
-          sx={{
-            p: 3,
-            mt: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            borderRadius: 3,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-          }}
+      {/* Fotos y documentos PDF (ej. el pasaporte puede llegar como foto o como PDF) */}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          mt: 2,
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(10px)",
+          borderRadius: 3,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+        }}
+      >
+        <PdfDocuments
+          baseUrl={paxPdfsUrl(pax.id)}
+          title="Fotos y documentos"
+          onImagesSelected={handleUploadPhotos}
+          emptyText={photos.length > 0 ? "" : "No hay fotos ni documentos cargados."}
         >
           <PaxProfilePhotos
             photos={photos}
             selectedPhoto={selectedPhoto}
             onPhotoClick={(url) => setSelectedPhoto(url)}
             onCloseDialog={() => setSelectedPhoto(null)}
+            onDelete={handleDeletePhoto}
           />
-        </Paper>
-      )}
+        </PdfDocuments>
+      </Paper>
     </Box>
   );
 };

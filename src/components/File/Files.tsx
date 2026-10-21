@@ -1,47 +1,39 @@
 import { useState, MouseEvent } from "react";
-import { Box, Snackbar, Alert } from "@mui/material";
+import { Box, Snackbar, Alert, Button, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { LoadingScreen } from "../LoadingScreen";
-import { useFiles } from "./hooks/useFiles";
-import { normalize } from "./utils/formatters";
+import { useFiles, FileTab } from "./hooks/useFiles";
+import { FileTabs } from "./components/FileTabs";
 import { FileSearchBar } from "./components/FileSearchBar";
 import { FileTable } from "./components/FileTable";
 import { FileDeleteDialog } from "./components/FileDeleteDialog";
+import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
 
 export const Files = (): JSX.Element => {
-  const { files, loading, handleDelete } = useFiles();
-  const [searchTerm, setSearchTerm] = useState("");
+  const {
+    files,
+    total,
+    totalPages,
+    pageSize,
+    page,
+    setPage,
+    search,
+    searchInput,
+    setSearchInput,
+    initialLoading,
+    loading,
+    tab,
+    setTab,
+    counts,
+    handleDelete,
+  } = useFiles();
   const [successOpen, setSuccessOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDeleteId, setFileToDeleteId] = useState("");
 
   const navigate = useNavigate();
 
-  if (loading) return <LoadingScreen />;
-
-  const terms = normalize(searchTerm).split(" ").filter(Boolean);
-
-  const filteredFiles = files
-    .filter((f) => {
-      if (!terms.length) return true;
-
-      const dest = normalize(f.destino);
-      const nro = normalize(f.nro || "");
-
-      const allPaxNames =
-        f.clients
-          ?.map((client) => normalize(`${client.lastname} ${client.firstname}`))
-          .join(" ") || "";
-
-      return terms.every(
-        (t) => dest.includes(t) || allPaxNames.includes(t) || nro.includes(t)
-      );
-    })
-    .sort((a, b) => {
-      if (a.fechaSalida && b.fechaSalida)
-        return a.fechaSalida < b.fechaSalida ? -1 : 1;
-      return 0;
-    });
+  if (initialLoading) return <LoadingScreen />;
 
   const handleAdd = () => navigate("/files/create");
   const handleView = (id: string) => navigate(`/files/profile/${id}`);
@@ -58,6 +50,28 @@ export const Files = (): JSX.Element => {
     setDeleteDialogOpen(false);
   };
 
+  // Mensaje cuando la pestaña no tiene files; si hay resultados en la otra, se ofrece ir
+  const otherTab: FileTab = tab === "current" ? "finished" : "current";
+  const tabName = { current: "Vigentes", finished: "Finalizados" };
+  const otherCount = counts?.[otherTab] ?? 0;
+
+  const emptyMessage = (
+    <>
+      <Typography variant="body1" color="text.secondary">
+        {search
+          ? `No hay resultados para "${search}" en ${tabName[tab]}.`
+          : tab === "current"
+            ? "No hay viajes vigentes."
+            : "Todavía no hay files finalizados."}
+      </Typography>
+      {search && otherCount > 0 && (
+        <Button size="small" sx={{ mt: 1 }} onClick={() => setTab(otherTab)}>
+          Ver {otherCount} en {tabName[otherTab]}
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <Box
       sx={{
@@ -73,16 +87,29 @@ export const Files = (): JSX.Element => {
       }}
     >
       <FileSearchBar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        searchTerm={searchInput}
+        onSearchChange={setSearchInput}
         onAdd={handleAdd}
       />
 
-      <FileTable
-        files={filteredFiles}
-        searchTerm={searchTerm}
-        onView={handleView}
-        onDeleteConfirm={handleDeleteConfirm}
+      <FileTabs tab={tab} onChange={setTab} counts={counts} />
+
+      <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
+        <FileTable
+          files={files}
+          emptyMessage={emptyMessage}
+          showTripStatus={tab === "current"}
+          onView={handleView}
+          onDeleteConfirm={handleDeleteConfirm}
+        />
+      </Box>
+
+      <TablePaginationBar
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
       />
 
       <Snackbar

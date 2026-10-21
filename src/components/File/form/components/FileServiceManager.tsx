@@ -100,6 +100,8 @@ export const FileServiceManager = ({
         type: serviceForm.type,
         localizador: serviceForm.localizador || "",
         obs: serviceForm.obs || "",
+        fechaInicio: null,
+        fechaFin: null,
         createdAt: null,
         deleted_at: null,
       });

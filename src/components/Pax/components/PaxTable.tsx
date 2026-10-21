@@ -40,14 +40,14 @@ export const PaxTable = ({ pax, onView, onDelete }: PaxTableProps) => {
       <Table stickyHeader size="medium" aria-label="tabla de pasajeros">
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: 700, width: "40%" }}>
+            <TableCell sx={{ fontWeight: 700, width: "30%" }}>
               APELLIDO & NOMBRE
             </TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "35%" }}>EMAIL</TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "15%" }}>
+            <TableCell sx={{ fontWeight: 700, width: "25%" }}>EMAIL</TableCell>
+            <TableCell sx={{ fontWeight: 700, width: "25%" }}>
               TELÉFONO
             </TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "10%" }} align="right">
+            <TableCell sx={{ fontWeight: 700, width: "20%" }} align="right">
               ACCIONES
             </TableCell>
           </TableRow>

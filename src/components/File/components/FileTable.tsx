@@ -1,5 +1,6 @@
-import { MouseEvent } from "react";
+import { MouseEvent, ReactNode } from "react";
 import {
+  Chip,
   Paper,
   Table,
   TableBody,
@@ -14,17 +15,34 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import dayjs from "dayjs";
 import { iFile } from "../model";
+import { formatMoney, getTotalsByCurrency } from "../utils/totals";
+import { formatFileNumber } from "../utils/fileNumber";
 
 interface FileTableProps {
   files: iFile[];
-  searchTerm: string;
+  // Qué mostrar cuando no hay files
+  emptyMessage: ReactNode;
+  // Marcar los viajes que salen hoy o ya salieron (pestaña de vigentes)
+  showTripStatus?: boolean;
   onView: (id: string) => void;
   onDeleteConfirm: (id: string, e?: MouseEvent) => void;
 }
 
+const TripStatus = ({ fechaSalida }: { fechaSalida: iFile["fechaSalida"] }) => {
+  const salida = dayjs(fechaSalida);
+  if (salida.isSame(dayjs(), "day")) {
+    return <Chip label="Sale hoy" size="small" color="warning" sx={{ mt: 0.5, fontWeight: 600 }} />;
+  }
+  if (salida.isBefore(dayjs(), "day")) {
+    return <Chip label="En curso" size="small" color="success" sx={{ mt: 0.5, fontWeight: 600 }} />;
+  }
+  return null;
+};
+
 export const FileTable = ({
   files,
-  searchTerm,
+  emptyMessage,
+  showTripStatus,
   onView,
   onDeleteConfirm,
 }: FileTableProps) => {
@@ -44,7 +62,7 @@ export const FileTable = ({
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: 700 }}>Número</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>N°</TableCell>
             <TableCell sx={{ fontWeight: 700 }}>Destino</TableCell>
             <TableCell align="center" sx={{ fontWeight: 700 }}>
               Primer pasajero
@@ -65,9 +83,7 @@ export const FileTable = ({
           {files.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No se encontraron resultados para "{searchTerm}".
-                </Typography>
+                {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
@@ -76,6 +92,10 @@ export const FileTable = ({
               const paxName = firstPax
                 ? `${firstPax.lastname} ${firstPax.firstname}`
                 : "—";
+              // Una línea por cada moneda que tenga el file
+              const tarifas = getTotalsByCurrency(row.services).filter(
+                (t) => t.tarifa !== 0
+              );
 
               return (
                 <TableRow
@@ -91,16 +111,38 @@ export const FileTable = ({
                     },
                   }}
                 >
-                  <TableCell>{row.nro || "—"}</TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>
+                    <Typography sx={{ fontWeight: 700, color: "#0D5B75" }}>
+                      {formatFileNumber(row) || "—"}
+                    </Typography>
+                    {row.nro && (
+                      <Typography variant="caption" color="text.secondary">
+                        Ref: {row.nro}
+                      </Typography>
+                    )}
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 500 }}>{row.destino}</TableCell>
                   <TableCell align="center">{paxName}</TableCell>
                   <TableCell align="center">
                     {dayjs(row.fechaSalida).format("DD-MM-YYYY")}
+                    {showTripStatus && (
+                      <div>
+                        <TripStatus fechaSalida={row.fechaSalida} />
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell align="center">
-                    {row.tarifaTotal && !isNaN(Number(row.tarifaTotal))
-                      ? `$${Number(row.tarifaTotal).toFixed(2)}`
-                      : "—"}
+                    {tarifas.length === 0
+                      ? "—"
+                      : tarifas.map((t) => (
+                          <Typography
+                            key={t.currency}
+                            variant="body2"
+                            sx={{ whiteSpace: "nowrap" }}
+                          >
+                            {formatMoney(t.tarifa, t.currency)}
+                          </Typography>
+                        ))}
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Eliminar file">

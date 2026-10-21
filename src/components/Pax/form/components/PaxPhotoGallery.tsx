@@ -30,13 +30,13 @@ export const PaxPhotoGallery = ({
   onDeleteClick,
 }: PaxPhotoGalleryProps) => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handlePhotoUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    if (!id || !event.target.files || event.target.files.length === 0) return;
+  const handlePhotoUpload = async (file: File) => {
+    if (!id || !file) return;
 
-    const file = event.target.files[0];
     setUploadingPhoto(true);
 
     try {
@@ -45,6 +45,8 @@ export const PaxPhotoGallery = ({
         const data = await response.json();
         const newPhoto = data.photo || data;
         setPhotos((prev) => [...prev, newPhoto]);
+        setPreviewUrl(null);
+        setPreviewFile(null);
       } else {
         console.error("Error uploading photo:", response.status);
       }
@@ -52,7 +54,46 @@ export const PaxPhotoGallery = ({
       console.error("Error uploading photo:", error);
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      showPreview(file);
       event.target.value = "";
+    }
+  };
+
+  const showPreview = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPreviewUrl(e.target?.result as string);
+      setPreviewFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith("image/")) {
+        showPreview(file);
+      }
     }
   };
 
@@ -71,17 +112,76 @@ export const PaxPhotoGallery = ({
           component="label"
           variant="contained"
           startIcon={<CloudUploadIcon />}
-          disabled={uploadingPhoto}
+          disabled={uploadingPhoto || previewUrl !== null}
         >
           {uploadingPhoto ? "Subiendo..." : "Subir foto"}
           <input
             type="file"
             hidden
             accept="image/*"
-            onChange={handlePhotoUpload}
+            onChange={handleFileSelect}
           />
         </Button>
       </Stack>
+
+      {/* Área de drag & drop + preview */}
+      <Box
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        sx={{
+          borderRadius: 2,
+          border: "2px dashed",
+          borderColor: dragActive ? "primary.main" : "divider",
+          backgroundColor: dragActive ? "action.hover" : "background.paper",
+          p: 2,
+          mb: 3,
+          transition: "all 0.3s ease",
+          cursor: "pointer",
+          textAlign: "center",
+        }}
+      >
+        {previewUrl ? (
+          <Stack spacing={2} alignItems="center">
+            <Typography variant="subtitle2" color="text.secondary">
+              Vista previa
+            </Typography>
+            <img
+              src={previewUrl}
+              alt="Preview"
+              style={{
+                maxWidth: "200px",
+                maxHeight: "200px",
+                borderRadius: 8,
+              }}
+            />
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => previewFile && handlePhotoUpload(previewFile)}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? "Subiendo..." : "Guardar"}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setPreviewUrl(null);
+                  setPreviewFile(null);
+                }}
+              >
+                Cancelar
+              </Button>
+            </Stack>
+          </Stack>
+        ) : (
+          <Typography color="text.secondary">
+            Arrastra una foto aquí o usa el botón para seleccionar
+          </Typography>
+        )}
+      </Box>
 
       {photos.length === 0 ? (
         <Box

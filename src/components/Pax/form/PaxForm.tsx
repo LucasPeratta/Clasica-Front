@@ -20,6 +20,7 @@ export const PaxForm = () => {
     setNotificationOpen,
     errorNotificationOpen,
     setErrorNotificationOpen,
+    errorMessage,
     handleChange,
     handleSubmit,
   } = usePaxForm();
@@ -124,7 +125,7 @@ export const PaxForm = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={() => setNotificationOpen(false)} severity="success">
-          {id ? "Pax actualizado correctamente" : "Pax creado correctamente"}
+          {id ? "Pasajero actualizado correctamente" : "Pasajero creado correctamente"}
         </Alert>
       </Snackbar>
 
@@ -135,7 +136,7 @@ export const PaxForm = () => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
-          El mail ingresado ya se encuentra registrado
+          {errorMessage}
         </Alert>
       </Snackbar>
 

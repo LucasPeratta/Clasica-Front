@@ -12,6 +12,8 @@ export interface iService {
   type: ServiceType;
   localizador?: string;
   obs: string;
+  fechaInicio: null | dayjs.Dayjs;
+  fechaFin: null | dayjs.Dayjs;
   createdAt: null | dayjs.Dayjs;
   deleted_at: null | dayjs.Dayjs;
 }

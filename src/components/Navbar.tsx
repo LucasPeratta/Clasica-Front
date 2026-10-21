@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Tooltip,
 } from "@mui/material";
 import { useState } from "react";
 
@@ -24,7 +25,7 @@ function ResponsiveAppBar() {
   };
 
   return (
-    <AppBar position="static" sx={{ backgroundColor: "#0D5B75" }}>
+    <AppBar position="sticky" sx={{ backgroundColor: "#0D5B75", zIndex: 1000, top: 0 }}>
       <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
         <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", marginLeft: "16px" }}>
           <img
@@ -66,7 +67,7 @@ function ResponsiveAppBar() {
                   navigate("/paxs");
                 }}
               >
-                PAXS
+                PASAJEROS
               </Button>
 
               <Button
@@ -90,9 +91,9 @@ function ResponsiveAppBar() {
 
               <Button
                 color="inherit"
-                sx={{ 
-                  mx: 1.5, 
-                  fontSize: "0.9rem", 
+                sx={{
+                  mx: 1.5,
+                  fontSize: "0.9rem",
                   fontWeight: 600,
                   transition: "all 0.3s ease",
                   "&:hover": {
@@ -101,11 +102,29 @@ function ResponsiveAppBar() {
                   },
                 }}
                 onClick={() => {
-                  navigate("/grupales");
+                  navigate("/services");
                 }}
               >
-                GRUPALES
+                SERVICIOS
               </Button>
+
+              {/* Sección todavía no desarrollada */}
+              <Tooltip title="Próximamente">
+                <span>
+                  <Button
+                    color="inherit"
+                    disabled
+                    sx={{
+                      mx: 1.5,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      "&.Mui-disabled": { color: "rgba(255, 255, 255, 0.5)" },
+                    }}
+                  >
+                    GRUPALES
+                  </Button>
+                </span>
+              </Tooltip>
             </>
           )}
         </Box>
@@ -150,7 +169,7 @@ function ResponsiveAppBar() {
                 },
               }}
             >
-              EXIT
+              SALIR
             </Button>
           </Box>
         )}

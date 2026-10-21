@@ -5,7 +5,9 @@ export interface iPax {
   firstname: string;
   lastname: string;
   dni: string;
+  dniVto: null | dayjs.Dayjs;
   passport: string;
+  passportVto: null | dayjs.Dayjs;
   dob: null | dayjs.Dayjs;
   adress: string;
   email: string;

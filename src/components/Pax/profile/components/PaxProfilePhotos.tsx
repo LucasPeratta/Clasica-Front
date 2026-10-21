@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Typography,
   ImageList,
@@ -5,10 +6,15 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
   Stack,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { PaxPhoto } from "../../types/paxPhoto";
 
 interface PaxProfilePhotosProps {
@@ -16,6 +22,7 @@ interface PaxProfilePhotosProps {
   selectedPhoto: string | null;
   onPhotoClick: (url: string) => void;
   onCloseDialog: () => void;
+  onDelete?: (photoId: string) => void;
 }
 
 export const PaxProfilePhotos = ({
@@ -23,16 +30,16 @@ export const PaxProfilePhotos = ({
   selectedPhoto,
   onPhotoClick,
   onCloseDialog,
+  onDelete,
 }: PaxProfilePhotosProps) => {
+  const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
+
   if (photos.length === 0) return null;
 
   return (
     <>
-      <Typography variant="h6" fontWeight={600} mb={2}>
-        Fotos del pasajero
-      </Typography>
       <ImageList
-        sx={{ width: "100%", maxHeight: 500 }}
+        sx={{ width: "100%", maxHeight: 500, mt: 1, mb: 2 }}
         cols={4}
         rowHeight={200}
         gap={12}
@@ -48,6 +55,7 @@ export const PaxProfilePhotos = ({
               "&:hover": {
                 transform: "scale(1.05)",
               },
+              "&:hover .delete-photo": { opacity: 1 },
             }}
             onClick={() => onPhotoClick(photo.url)}
           >
@@ -61,6 +69,30 @@ export const PaxProfilePhotos = ({
                 objectFit: "cover",
               }}
             />
+            {onDelete && (
+              <Tooltip title="Eliminar foto">
+                <IconButton
+                  className="delete-photo"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPhotoToDelete(photo.id);
+                  }}
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    opacity: 0,
+                    transition: "opacity 0.2s",
+                    backgroundColor: "rgba(255,255,255,0.9)",
+                    color: "error.main",
+                    "&:hover": { backgroundColor: "#fff" },
+                  }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </ImageListItem>
         ))}
       </ImageList>
@@ -97,6 +129,28 @@ export const PaxProfilePhotos = ({
             />
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Confirmación de borrado */}
+      <Dialog open={photoToDelete !== null} onClose={() => setPhotoToDelete(null)}>
+        <DialogTitle>Eliminar foto</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Seguro que querés eliminar esta foto? No se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPhotoToDelete(null)}>Cancelar</Button>
+          <Button
+            color="error"
+            onClick={() => {
+              if (photoToDelete && onDelete) onDelete(photoToDelete);
+              setPhotoToDelete(null);
+            }}
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

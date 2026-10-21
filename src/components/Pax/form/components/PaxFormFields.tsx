@@ -12,6 +12,15 @@ interface PaxFormFieldsProps {
   setFormData: React.Dispatch<React.SetStateAction<iPax>>;
 }
 
+// Helper para manejar valores dayjs correctamente
+const getDayjsValue = (value: any) => {
+  if (!value) return null;
+  // Si ya es dayjs, devolverlo tal cual
+  if (dayjs.isDayjs(value)) return value;
+  // Si no, parsearlo
+  return dayjs(value);
+};
+
 export const PaxFormFields = ({
   formData,
   handleChange,
@@ -52,6 +61,22 @@ export const PaxFormFields = ({
           inputProps={{ maxLength: 10 }}
         />
       </Grid>
+      {/* DNI Vencimiento */}
+      <Grid item xs={12} md={6}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+          <DatePicker
+            label="Vto DNI (Opcional)"
+            value={getDayjsValue(formData.dniVto)}
+            onChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                dniVto: value ?? null,
+              }))
+            }
+            slotProps={{ textField: { fullWidth: true } }}
+          />
+        </LocalizationProvider>
+      </Grid>
       {/* PASAPORTE */}
       <Grid item xs={12} md={6}>
         <TextField
@@ -63,12 +88,28 @@ export const PaxFormFields = ({
           inputProps={{ maxLength: 9 }}
         />
       </Grid>
+      {/* Pasaporte Vencimiento */}
+      <Grid item xs={12} md={6}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+          <DatePicker
+            label="Vto Pasaporte (Opcional)"
+            value={getDayjsValue(formData.passportVto)}
+            onChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                passportVto: value ?? null,
+              }))
+            }
+            slotProps={{ textField: { fullWidth: true } }}
+          />
+        </LocalizationProvider>
+      </Grid>
       {/* FECHA */}
       <Grid item xs={12} md={6}>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
           <DatePicker
             label="Fecha de nacimiento (Opcional)"
-            value={formData.dob ? dayjs(formData.dob) : null}
+            value={getDayjsValue(formData.dob)}
             onChange={(value) =>
               setFormData((prev) => ({
                 ...prev,

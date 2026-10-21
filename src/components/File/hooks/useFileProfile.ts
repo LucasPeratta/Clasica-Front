@@ -16,12 +16,16 @@ export const useFileProfile = () => {
         setFile(data);
         setLoading(false);
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        setLoading(false);
+      });
   }, [id]);
 
   return {
     id,
     file,
     loading,
+    setFile,
   };
 };

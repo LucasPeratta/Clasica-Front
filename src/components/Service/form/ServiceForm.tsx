@@ -29,6 +29,8 @@ const initialState: iService = {
   type: "AEREO" as ServiceType,
   localizador: "",
   obs: "",
+  fechaInicio: null,
+  fechaFin: null,
   createdAt: null,
   deleted_at: null,
 };

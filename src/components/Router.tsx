@@ -32,6 +32,8 @@ function Router() {
               <Route path="/files/profile/:id" element={<FilesProfile />} />
               <Route path="/files/create" element={<FileForm />} />
               <Route path="/files/update/:id" element={<FileForm />} />
+              {/* Cualquier dirección que no existe vuelve al inicio */}
+              <Route path="*" element={<Navigate to="/" />} />
             </>
           ) : (
             <>

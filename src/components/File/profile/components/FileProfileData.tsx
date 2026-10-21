@@ -6,6 +6,7 @@ import {
   TableRow,
   TableCell,
   Typography,
+  Box,
 } from "@mui/material";
 import dayjs from "dayjs";
 import { iFile } from "../../model";
@@ -19,6 +20,11 @@ export const FileProfileData = ({ file }: FileProfileDataProps) => {
   return (
     <Card elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
       <CardContent>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#0d47a1" }}>
+            Detalles del File
+          </Typography>
+        </Box>
         <Table>
           <TableBody>
             <TableRow>

@@ -1,30 +1,24 @@
-import { useState, useEffect } from "react";
-import { getFile, deleteFile } from "../handler";
-import { iFile } from "../model";
+import { getFilePage, deleteFile } from "../handler";
+import { usePaginatedList } from "../../common/Pagination/usePaginatedList";
+
+export type FileTab = "current" | "finished";
+
+// La pestaña se guarda en la URL (?tab=finished); por defecto, vigentes
+const TAB_FILTER = { key: "tab", defaultValue: "current" };
 
 export const useFiles = () => {
-  const [files, setFiles] = useState<iFile[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    getFile().then((data) => {
-      const sorted = data.sort((a, b) =>
-        a.fechaSalida && b.fechaSalida
-          ? a.fechaSalida < b.fechaSalida
-            ? -1
-            : 1
-          : 0
-      );
-      setFiles(sorted);
-      setLoading(false);
-    });
-  }, []);
+  const list = usePaginatedList(getFilePage, TAB_FILTER);
 
   const handleDelete = async (id: string) => {
     await deleteFile(id);
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    list.reload();
   };
 
-  return { files, loading, handleDelete };
+  return {
+    ...list,
+    files: list.items,
+    tab: list.filter as FileTab,
+    setTab: list.setFilter,
+    handleDelete,
+  };
 };

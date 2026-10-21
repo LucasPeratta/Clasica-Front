@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import PersonIcon from "@mui/icons-material/Person"; // pasajeros
 import AssignmentIcon from "@mui/icons-material/Assignment"; // files
 import GroupsIcon from "@mui/icons-material/Groups"; // salidas grupales
+import RoomServiceIcon from "@mui/icons-material/RoomService"; // servicios
 
 const sections = [
   {
@@ -18,10 +19,18 @@ const sections = [
     color: "#0096c7",
   },
   {
+    title: "SERVICIOS",
+    icon: <RoomServiceIcon sx={{ fontSize: 60, color: "#fff" }} />,
+    route: "/services",
+    color: "#0369a1",
+  },
+  {
     title: "SALIDAS GRUPALES",
     icon: <GroupsIcon sx={{ fontSize: 60, color: "#fff" }} />,
     route: "/groups",
     color: "#023e8a",
+    // Sección todavía no desarrollada
+    comingSoon: true,
   },
 ];
 
@@ -48,57 +57,76 @@ export const Inicio = () => {
         spacing={4}
         justifyContent="center"
         alignItems="center"
-        sx={{ maxWidth: 1000, px: 2, mb: 16 }}
+        sx={{ maxWidth: 1100, px: 2, mb: 16 }}
       >
-        {sections.map((section) => (
-          <Grid item xs={12} sm={6} md={4} key={section.title}>
-            <Link to={section.route} style={{ textDecoration: "none" }}>
-              <Paper
-                elevation={6}
+        {sections.map((section) => {
+          const card = (
+            <Paper
+              elevation={6}
+              sx={{
+                height: 180,
+                width: 220,
+                mx: "auto",
+                backgroundColor: section.color,
+                opacity: section.comingSoon ? 0.55 : 1,
+                cursor: section.comingSoon ? "default" : "pointer",
+                borderRadius: "20px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                border: "2px solid rgba(255, 255, 255, 0.2)",
+                animation: "fadeIn 0.6s ease-out",
+                "@keyframes fadeIn": {
+                  from: { opacity: 0, transform: "translateY(20px)" },
+                  to: { opacity: 1, transform: "translateY(0)" },
+                },
+                "&:hover": section.comingSoon
+                  ? {}
+                  : {
+                      transform: "translateY(-12px) scale(1.05)",
+                      boxShadow: "0 16px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.2)",
+                      border: "2px solid rgba(255, 255, 255, 0.4)",
+                    },
+              }}
+            >
+              {section.icon}
+              <Typography
+                variant="h6"
                 sx={{
-                  height: 180,
-                  width: 220,
-                  mx: "auto",
-                  backgroundColor: section.color,
-                  borderRadius: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  animation: "fadeIn 0.6s ease-out",
-                  "@keyframes fadeIn": {
-                    from: { opacity: 0, transform: "translateY(20px)" },
-                    to: { opacity: 1, transform: "translateY(0)" },
-                  },
-                  "&:hover": {
-                    transform: "translateY(-12px) scale(1.05)",
-                    boxShadow: "0 16px 40px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.2)",
-                    border: "2px solid rgba(255, 255, 255, 0.4)",
-                  },
+                  color: "#fff",
+                  fontWeight: "bold",
+                  mt: 2,
+                  letterSpacing: 1,
+                  textAlign: "center",
+                  lineHeight: 1.2,
+                  maxWidth: "90%",
+                  wordWrap: "break-word",
                 }}
               >
-                {section.icon}
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "#fff",
-                    fontWeight: "bold",
-                    mt: 2,
-                    letterSpacing: 1,
-                    textAlign: "center",
-                    lineHeight: 1.2,
-                    maxWidth: "90%",
-                    wordWrap: "break-word",
-                  }}
-                >
-                  {section.title}
+                {section.title}
+              </Typography>
+              {section.comingSoon && (
+                <Typography variant="caption" sx={{ color: "#fff", mt: 0.5 }}>
+                  Próximamente
                 </Typography>
-              </Paper>
-            </Link>
-          </Grid>
-        ))}
+              )}
+            </Paper>
+          );
+
+          return (
+            <Grid item xs={12} sm={6} md={3} key={section.title}>
+              {section.comingSoon ? (
+                card
+              ) : (
+                <Link to={section.route} style={{ textDecoration: "none" }}>
+                  {card}
+                </Link>
+              )}
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Logo Clásica Moderna */}

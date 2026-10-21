@@ -30,7 +30,7 @@ export const FileSearchBar = ({
     >
       <TextField
         fullWidth
-        placeholder="Buscar por destino o pasajero..."
+        placeholder="Buscar por número (ej. 55), destino o pasajero..."
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
         InputProps={{

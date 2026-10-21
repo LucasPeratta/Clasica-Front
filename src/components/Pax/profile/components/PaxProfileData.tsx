@@ -31,6 +31,20 @@ export const PaxProfileData = ({ pax }: PaxProfileDataProps) => {
         <Divider sx={{ mt: 1.5 }} />
       </Grid>
 
+      {/* DNI Vto */}
+      <Grid item xs={12} md={6}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CalendarMonthIcon color="action" />
+          <Typography variant="subtitle2" color="text.secondary">
+            Vto DNI
+          </Typography>
+        </Stack>
+        <Typography mt={0.5} sx={{ fontWeight: 600 }}>
+          {pax.dniVto ? safeFormatDate(dayjs(pax.dniVto).toDate()) : "—"}
+        </Typography>
+        <Divider sx={{ mt: 1.5 }} />
+      </Grid>
+
       {/* Pasaporte */}
       <Grid item xs={12} md={6}>
         <Stack direction="row" spacing={1} alignItems="center">
@@ -41,6 +55,20 @@ export const PaxProfileData = ({ pax }: PaxProfileDataProps) => {
         </Stack>
         <Typography mt={0.5} sx={{ fontWeight: 600 }}>
           {display(pax.passport)}
+        </Typography>
+        <Divider sx={{ mt: 1.5 }} />
+      </Grid>
+
+      {/* Pasaporte Vto */}
+      <Grid item xs={12} md={6}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CalendarMonthIcon color="action" />
+          <Typography variant="subtitle2" color="text.secondary">
+            Vto Pasaporte
+          </Typography>
+        </Stack>
+        <Typography mt={0.5} sx={{ fontWeight: 600 }}>
+          {pax.passportVto ? safeFormatDate(dayjs(pax.passportVto).toDate()) : "—"}
         </Typography>
         <Divider sx={{ mt: 1.5 }} />
       </Grid>

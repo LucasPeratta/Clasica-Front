@@ -25,8 +25,14 @@ export const usePaxProfile = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const reloadPhotos = async () => {
+    if (!id) return;
+    setPhotos(await getPaxPhotos(id));
+  };
+
   return {
     id,
+    reloadPhotos,
     pax,
     loading,
     photos,

@@ -1,10 +1,24 @@
+import { apiFetch } from "../common/apiFetch";
 import { iFile } from "./model";
+import { fetchPage, iPaginated } from "../common/Pagination/types";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
+// Endpoint de los documentos PDF de un file
+export const filePdfsUrl = (fileId: string) => `${apiUrl}/file/${fileId}/pdfs`;
+
+// Listado paginado y filtrado en el backend
+// status: "current" (vigentes) o "finished" (finalizados)
+export const getFilePage = (
+  page: number,
+  search: string,
+  status: string
+): Promise<iPaginated<iFile>> =>
+  fetchPage<iFile>(`${apiUrl}/file`, page, search, { status });
+
 export const getFile = async (): Promise<iFile[]> => {
   try {
-    const response = await fetch(`${apiUrl}/file`);
+    const response = await apiFetch(`${apiUrl}/file`);
     const data = await response.json();
     return data.files;
   } catch (error) {
@@ -15,7 +29,7 @@ export const getFile = async (): Promise<iFile[]> => {
 
 export const deleteFile = async (id: string): Promise<void> => {
   try {
-    await fetch(`${apiUrl}/file/${id}`, {
+    await apiFetch(`${apiUrl}/file/${id}`, {
       method: "DELETE",
     });
   } catch (error) {
@@ -25,7 +39,7 @@ export const deleteFile = async (id: string): Promise<void> => {
 
 export const getFileById = async (id: string) => {
   try {
-    const response = await fetch(`${apiUrl}/file/${id}`);
+    const response = await apiFetch(`${apiUrl}/file/${id}`);
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -44,7 +58,7 @@ export const createFile = async (
       paxIds,
       serviceIds,
     };
-    const response = await fetch(`${apiUrl}/file/create`, {
+    const response = await apiFetch(`${apiUrl}/file/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -72,7 +86,7 @@ export const updateFile = async (
       serviceIds,
     };
 
-    const response = await fetch(`${apiUrl}/file/update/${idFile}`, {
+    const response = await apiFetch(`${apiUrl}/file/update/${idFile}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

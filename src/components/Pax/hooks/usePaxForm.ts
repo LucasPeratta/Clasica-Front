@@ -10,7 +10,9 @@ const initialState: iPax = {
   firstname: "",
   lastname: "",
   dni: "",
+  dniVto: null,
   passport: "",
+  passportVto: null,
   dob: null,
   adress: "",
   email: "",
@@ -23,6 +25,7 @@ export const usePaxForm = () => {
   const [formData, setFormData] = useState<iPax>(initialState);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [photos, setPhotos] = useState<PaxPhoto[]>([]);
 
   const navigate = useNavigate();
@@ -33,8 +36,39 @@ export const usePaxForm = () => {
       Promise.all([getPaxById(id), getPaxPhotos(id)])
         .then(([pax, photos]) => {
           if (pax) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            pax.dob = pax.dob ? (dayjs(pax.dob) as any) : null;
+            console.log("Pax del backend:", pax);
+            
+            // Manejar nombres viejos si existen
+            if ((pax as any).dniExp && !pax.dniVto) {
+              pax.dniVto = (pax as any).dniExp;
+            }
+            if ((pax as any).passportExp && !pax.passportVto) {
+              pax.passportVto = (pax as any).passportExp;
+            }
+            
+            // Convertir a dayjs - maneja tanto strings ISO como objetos dayjs
+            const parseDate = (value: any) => {
+              if (!value) return null;
+              if (typeof value === 'string' || typeof value === 'number') {
+                return dayjs(value);
+              }
+              // Si ya es un dayjs object, simplemente lo devuelve
+              if (value._isAMomentObject || value.$L !== undefined) {
+                return value;
+              }
+              return dayjs(value);
+            };
+            
+            pax.dob = parseDate(pax.dob);
+            pax.dniVto = parseDate(pax.dniVto);
+            pax.passportVto = parseDate(pax.passportVto);
+            
+            console.log("Después del parse:", {
+              dob: pax.dob,
+              dniVto: pax.dniVto,
+              passportVto: pax.passportVto
+            });
+            
             setFormData(pax);
           }
           setPhotos(photos);
@@ -69,7 +103,18 @@ export const usePaxForm = () => {
   };
 
   const openSuccess = () => setNotificationOpen(true);
-  const openError = () => setErrorNotificationOpen(true);
+  const openError = (message: string) => {
+    setErrorMessage(message);
+    setErrorNotificationOpen(true);
+  };
+
+  // Mensaje de error según lo que respondió el backend
+  const showResponseError = async (resp: Response) => {
+    const err = await resp.json().catch(() => null);
+    if (err?.errorCode === "DUPLICATE_DOCUMENT") openError(err.msg);
+    else if (err?.errorCode === "P2002") openError("El mail ingresado ya se encuentra registrado");
+    else openError("No se pudo guardar el pasajero. Intentá de nuevo.");
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,10 +129,7 @@ export const usePaxForm = () => {
             navigate(`/paxs/profile/${id}`);
           }, 1200);
         } else {
-          const err = await resp.json();
-          if (err.errorCode === "P2002") {
-            openError();
-          }
+          await showResponseError(resp);
         }
       } else {
         const resp = await createPax(formData);
@@ -97,14 +139,12 @@ export const usePaxForm = () => {
             navigate("/paxs");
           }, 1200);
         } else {
-          const err = await resp.json();
-          if (err.errorCode === "P2002") {
-            openError();
-          }
+          await showResponseError(resp);
         }
       }
     } catch (error) {
       console.error("Error:", error);
+      openError("No se pudo guardar el pasajero. Intentá de nuevo.");
     }
   };
 
@@ -119,6 +159,7 @@ export const usePaxForm = () => {
     setNotificationOpen,
     errorNotificationOpen,
     setErrorNotificationOpen,
+    errorMessage,
     handleChange,
     handleSubmit,
     navigate,

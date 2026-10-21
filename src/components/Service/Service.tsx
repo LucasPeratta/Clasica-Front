@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Box,
   Paper,
@@ -27,41 +27,33 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
-import { getService, softDeleteService } from "./handler";
+import { getServicePage, softDeleteService } from "./handler";
 import { LoadingScreen } from "../LoadingScreen";
-import { iService } from "./model";
+import { usePaginatedList } from "../common/Pagination/usePaginatedList";
+import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
 
 export const Service = (): JSX.Element => {
-  const [services, setServices] = useState<iService[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const {
+    items: services,
+    total,
+    totalPages,
+    pageSize,
+    page,
+    setPage,
+    search,
+    searchInput,
+    setSearchInput,
+    initialLoading,
+    loading,
+    reload,
+  } = usePaginatedList(getServicePage);
   const [successOpen, setSuccessOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDeleteId, setServiceToDeleteId] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setLoading(true);
-    getService().then((data) => {
-      const sorted = data.sort((a, b) =>
-        a.createdAt && b.createdAt ? (a.createdAt > b.createdAt ? -1 : 1) : 0
-      );
-      setServices(sorted);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <LoadingScreen />;
-
-  const filteredServices = services.filter((s) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      s.nombre?.toLowerCase().includes(search) ||
-      s.provider?.toLowerCase().includes(search) ||
-      s.localizador?.toLowerCase().includes(search)
-    );
-  });
+  if (initialLoading) return <LoadingScreen />;
 
   const handleAdd = () => navigate("/services/create");
   const handleView = (id: string) => navigate(`/services/profile/${id}`);
@@ -74,7 +66,7 @@ export const Service = (): JSX.Element => {
   const handleDelete = async (id: string) => {
     const response = await softDeleteService(id);
     if (response?.ok) {
-      setServices((prev) => prev.filter((s) => s.id !== id));
+      reload();
       setSuccessOpen(true);
       setDeleteDialogOpen(false);
     }
@@ -103,8 +95,8 @@ export const Service = (): JSX.Element => {
         <TextField
           fullWidth
           placeholder="Buscar servicio"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -139,6 +131,8 @@ export const Service = (): JSX.Element => {
           maxHeight: "64vh",
           overflowY: "auto",
           borderRadius: 2,
+          opacity: loading ? 0.6 : 1,
+          transition: "opacity 0.2s",
         }}
       >
         <Table stickyHeader size="medium" aria-label="tabla de servicios">
@@ -163,16 +157,16 @@ export const Service = (): JSX.Element => {
           </TableHead>
 
           <TableBody>
-            {filteredServices.length === 0 ? (
+            {services.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                   <Typography variant="body1" color="text.secondary">
-                    No se encontraron servicios para "{searchTerm}".
+                    No se encontraron servicios para "{search}".
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredServices.map((row, idx) => (
+              services.map((row, idx) => (
                 <TableRow
                   key={row.id}
                   hover
@@ -214,6 +208,15 @@ export const Service = (): JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Paginación */}
+      <TablePaginationBar
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+      />
 
       {/* Notificación de eliminación */}
       <Snackbar
