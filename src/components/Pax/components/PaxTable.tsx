@@ -40,14 +40,17 @@ export const PaxTable = ({ pax, onView, onDelete }: PaxTableProps) => {
       <Table stickyHeader size="medium" aria-label="tabla de pasajeros">
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: 700, width: "30%" }}>
+            <TableCell sx={{ fontWeight: 700, width: "28%" }}>
               APELLIDO & NOMBRE
             </TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "25%" }}>EMAIL</TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "25%" }}>
+            <TableCell sx={{ fontWeight: 700, width: "17%" }}>
+              DNI / PASAPORTE
+            </TableCell>
+            <TableCell sx={{ fontWeight: 700, width: "22%" }}>EMAIL</TableCell>
+            <TableCell sx={{ fontWeight: 700, width: "18%" }}>
               TELÉFONO
             </TableCell>
-            <TableCell sx={{ fontWeight: 700, width: "20%" }} align="right">
+            <TableCell sx={{ fontWeight: 700, width: "15%" }} align="right">
               ACCIONES
             </TableCell>
           </TableRow>
@@ -56,7 +59,7 @@ export const PaxTable = ({ pax, onView, onDelete }: PaxTableProps) => {
         <TableBody>
           {pax.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+              <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                 <Typography variant="body1" color="text.secondary">
                   No hay resultados.
                 </Typography>
@@ -86,6 +89,15 @@ export const PaxTable = ({ pax, onView, onDelete }: PaxTableProps) => {
                       {row.lastname} {row.firstname}
                     </Typography>
                   </Box>
+                </TableCell>
+
+                <TableCell>
+                  <Typography variant="body2">{row.dni || "—"}</Typography>
+                  {row.passport && (
+                    <Typography variant="caption" color="text.secondary">
+                      Pas. {row.passport}
+                    </Typography>
+                  )}
                 </TableCell>
 
                 <TableCell>

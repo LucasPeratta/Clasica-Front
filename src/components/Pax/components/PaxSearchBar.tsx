@@ -30,7 +30,7 @@ export const PaxSearchBar = ({
     >
       <TextField
         fullWidth
-        placeholder="Buscar pasajero"
+        placeholder="Buscar por nombre, DNI, pasaporte o email"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
         size="small"
