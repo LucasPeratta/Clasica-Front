@@ -6,12 +6,11 @@ import { iPax } from "../../Pax/model";
 import { iService } from "../../Service/model";
 import { getPax } from "../../Pax/handler";
 import {
-  getService,
   createService,
   softDeleteService,
   getServiceById,
 } from "../../Service/handler";
-import { getFileById, createFile, updateFile } from "../handler";
+import { getFileById, createFile, updateFile, toFileFormData } from "../handler";
 
 const initialState: iFile = {
   id: "",
@@ -39,22 +38,15 @@ export const useFileForm = () => {
   const { id } = useParams<{ id?: string }>();
 
   useEffect(() => {
-    const promises = [getPax(), getService()];
-    if (id) promises.push(getFileById(id));
-
-    Promise.allSettled(promises)
-      .then((res) => {
-        let paxData: iPax[] = [];
-        let fileData: iFile | undefined;
-
-        res.forEach((r, index) => {
-          if (r.status !== "fulfilled") return;
-          if (index === 0 && Array.isArray(r.value)) {
-            paxData = r.value as iPax[];
-          } else if (index === 2 && id) {
-            fileData = r.value as unknown as iFile;
-          }
-        });
+    // Pasajeros para el selector y, al editar, el file
+    Promise.allSettled([getPax(), id ? getFileById(id) : Promise.resolve(undefined)])
+      .then(([paxResult, fileResult]) => {
+        const paxData: iPax[] =
+          paxResult.status === "fulfilled" && Array.isArray(paxResult.value)
+            ? paxResult.value
+            : [];
+        const fileData: iFile | undefined =
+          fileResult.status === "fulfilled" ? fileResult.value : undefined;
 
         setPaxs(
           paxData.sort((a, b) =>
@@ -116,38 +108,16 @@ export const useFileForm = () => {
     const paxsId = selectedPaxIds;
     const servicesId = fileServices.map((s) => s.id);
     
-    // Crear estructura para enviar (serializar solo dates, no clientes)
-    const dataToSend = {
-      id: formData.id,
-      nro: formData.nro,
-      obs: formData.obs,
-      precioNetoTotal: formData.precioNetoTotal,
-      tarifaTotal: formData.tarifaTotal,
-      tarifaAlternativa: formData.tarifaAlternativa,
-      // Sin importe no se guarda moneda
-      tarifaAlternativaMoneda: formData.tarifaAlternativa?.trim()
-        ? formData.tarifaAlternativaMoneda || "USD"
-        : null,
-      destino: formData.destino,
-      fechaSalida: dayjs.isDayjs(formData.fechaSalida)
-        ? formData.fechaSalida.toDate().toISOString()
-        : formData.fechaSalida,
-      clients: [],
-      services: fileServices.map(s => ({
-        ...s,
-        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-      }))
-    };
-    
+    const dataToSend = toFileFormData(formData);
+
     let ok = false;
 
     try {
       if (id) {
-        const resp = await updateFile(id, dataToSend as any, paxsId, servicesId);
+        const resp = await updateFile(id, dataToSend, paxsId, servicesId);
         ok = resp.ok;
       } else {
-        const resp = await createFile(dataToSend as any, paxsId, servicesId);
+        const resp = await createFile(dataToSend, paxsId, servicesId);
         ok = resp.ok;
       }
     } catch {

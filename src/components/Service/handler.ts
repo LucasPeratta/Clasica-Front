@@ -11,38 +11,6 @@ export const getServicePage = (
 ): Promise<iPaginated<iService>> =>
   fetchPage<iService>(`${apiUrl}/service`, page, search);
 
-export const getService = async (): Promise<iService[]> => {
-  try {
-    const response = await apiFetch(`${apiUrl}/service`);
-
-    if (!response.ok) {
-      console.error("Error fetching services:", response.status);
-      return [];
-    }
-
-    const data = await response.json();
-    console.log("Services data:", data);
-
-    // El backend puede devolver data.services o data directamente
-    const servicesArray = data.services || data;
-    return Array.isArray(servicesArray) ? servicesArray : [];
-  } catch (error) {
-    console.error("Error in getService:", error);
-    return [];
-  }
-};
-
-export const deleteService = async (id: string) => {
-  try {
-    const response = await apiFetch(`${apiUrl}/service/${id}`, {
-      method: "DELETE",
-    });
-    return response;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 export const softDeleteService = async (id: string): Promise<Response> => {
   try {
     const response = await apiFetch(`${apiUrl}/service/${id}`, {

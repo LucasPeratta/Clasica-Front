@@ -11,7 +11,7 @@ import { FileProfileHeader } from "./profile/components/FileProfileHeader";
 import { FileProfileClients } from "./profile/components/FileProfileClients";
 import { FileProfileServices } from "./profile/components/FileProfileServices";
 import { FileTotals } from "./components/FileTotals";
-import { updateFile, filePdfsUrl } from "./handler";
+import { updateFile, filePdfsUrl, toFileFormData } from "./handler";
 import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { getPax } from "../Pax/handler";
 import { createService, updateService } from "../Service/handler";
@@ -58,32 +58,12 @@ export const FilesProfile = (): JSX.Element => {
       clients: [...file.clients, ...newPaxs]
     };
     
-    // Crear estructura para enviar (sin serializar clientes)
-    const fileToSend = {
-      id: updatedFile.id,
-      nro: updatedFile.nro,
-      obs: updatedFile.obs,
-      precioNetoTotal: updatedFile.precioNetoTotal,
-      tarifaTotal: updatedFile.tarifaTotal,
-      tarifaAlternativa: updatedFile.tarifaAlternativa,
-      destino: updatedFile.destino,
-      fechaSalida: dayjs.isDayjs(updatedFile.fechaSalida) 
-        ? updatedFile.fechaSalida.toDate().toISOString() 
-        : updatedFile.fechaSalida,
-      clients: [],
-      services: updatedFile.services.map(s => ({
-        ...s,
-        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-        fechaInicio: dayjs.isDayjs(s.fechaInicio) ? s.fechaInicio.toDate().toISOString() : s.fechaInicio,
-        fechaFin: dayjs.isDayjs(s.fechaFin) ? s.fechaFin.toDate().toISOString() : s.fechaFin,
-      }))
-    };
+    const fileToSend = toFileFormData(updatedFile);
     
     try {
       const resp = await updateFile(
         id, 
-        fileToSend as any, 
+        fileToSend, 
         updatedFile.clients.map(c => c.id),
         file.services.map(s => s.id)
       );
@@ -107,32 +87,12 @@ export const FilesProfile = (): JSX.Element => {
       clients: file.clients.filter(c => c.id !== paxId)
     };
     
-    // Crear estructura para enviar
-    const fileToSend = {
-      id: updatedFile.id,
-      nro: updatedFile.nro,
-      obs: updatedFile.obs,
-      precioNetoTotal: updatedFile.precioNetoTotal,
-      tarifaTotal: updatedFile.tarifaTotal,
-      tarifaAlternativa: updatedFile.tarifaAlternativa,
-      destino: updatedFile.destino,
-      fechaSalida: dayjs.isDayjs(updatedFile.fechaSalida) 
-        ? updatedFile.fechaSalida.toDate().toISOString() 
-        : updatedFile.fechaSalida,
-      clients: [],
-      services: updatedFile.services.map(s => ({
-        ...s,
-        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-        fechaInicio: dayjs.isDayjs(s.fechaInicio) ? s.fechaInicio.toDate().toISOString() : s.fechaInicio,
-        fechaFin: dayjs.isDayjs(s.fechaFin) ? s.fechaFin.toDate().toISOString() : s.fechaFin,
-      }))
-    };
+    const fileToSend = toFileFormData(updatedFile);
     
     try {
       const resp = await updateFile(
         id,
-        fileToSend as any,
+        fileToSend,
         updatedFile.clients.map(c => c.id),
         file.services.map(s => s.id)
       );
@@ -153,32 +113,12 @@ export const FilesProfile = (): JSX.Element => {
       services: file.services.filter(s => s.id !== serviceId)
     };
     
-    // Crear estructura para enviar
-    const fileToSend = {
-      id: updatedFile.id,
-      nro: updatedFile.nro,
-      obs: updatedFile.obs,
-      precioNetoTotal: updatedFile.precioNetoTotal,
-      tarifaTotal: updatedFile.tarifaTotal,
-      tarifaAlternativa: updatedFile.tarifaAlternativa,
-      destino: updatedFile.destino,
-      fechaSalida: dayjs.isDayjs(updatedFile.fechaSalida) 
-        ? updatedFile.fechaSalida.toDate().toISOString() 
-        : updatedFile.fechaSalida,
-      clients: [],
-      services: updatedFile.services.map(s => ({
-        ...s,
-        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-        fechaInicio: dayjs.isDayjs(s.fechaInicio) ? s.fechaInicio.toDate().toISOString() : s.fechaInicio,
-        fechaFin: dayjs.isDayjs(s.fechaFin) ? s.fechaFin.toDate().toISOString() : s.fechaFin,
-      }))
-    };
+    const fileToSend = toFileFormData(updatedFile);
     
     try {
       const resp = await updateFile(
         id,
-        fileToSend as any,
+        fileToSend,
         file.clients.map(c => c.id),
         updatedFile.services.map(s => s.id)
       );
@@ -264,31 +204,11 @@ export const FilesProfile = (): JSX.Element => {
         };
       }
       
-      // Crear estructura para enviar al update (con el ID real del servicio)
-      const fileToSend = {
-        id: updatedFile.id,
-        nro: updatedFile.nro,
-        obs: updatedFile.obs,
-        precioNetoTotal: updatedFile.precioNetoTotal,
-        tarifaTotal: updatedFile.tarifaTotal,
-        tarifaAlternativa: updatedFile.tarifaAlternativa,
-        destino: updatedFile.destino,
-        fechaSalida: dayjs.isDayjs(updatedFile.fechaSalida) 
-          ? updatedFile.fechaSalida.toDate().toISOString() 
-          : updatedFile.fechaSalida,
-        clients: [],
-        services: updatedFile.services.map(s => ({
-          ...s,
-          createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-          deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-          fechaInicio: dayjs.isDayjs(s.fechaInicio) ? s.fechaInicio.toDate().toISOString() : s.fechaInicio,
-          fechaFin: dayjs.isDayjs(s.fechaFin) ? s.fechaFin.toDate().toISOString() : s.fechaFin,
-        }))
-      };
+      const fileToSend = toFileFormData(updatedFile);
       
       const resp = await updateFile(
         id,
-        fileToSend as any,
+        fileToSend,
         file.clients.map(c => c.id),
         updatedFile.services.map(s => s.id)
       );
@@ -309,31 +229,12 @@ export const FilesProfile = (): JSX.Element => {
   const handleEditFileSave = async (editedFileData: iFile) => {
     if (!editedFileData || !id || !file) return false;
 
-    // Crear estructura para enviar
-    const fileToSend = {
-      id: editedFileData.id,
-      nro: editedFileData.nro,
-      obs: editedFileData.obs,
-      precioNetoTotal: editedFileData.precioNetoTotal,
-      tarifaTotal: editedFileData.tarifaTotal,
-      tarifaAlternativa: editedFileData.tarifaAlternativa,
-      tarifaAlternativaMoneda: editedFileData.tarifaAlternativaMoneda,
-      destino: editedFileData.destino,
-      fechaSalida: dayjs.isDayjs(editedFileData.fechaSalida) 
-        ? editedFileData.fechaSalida.toDate().toISOString() 
-        : editedFileData.fechaSalida,
-      clients: [],
-      services: editedFileData.services.map(s => ({
-        ...s,
-        createdAt: dayjs.isDayjs(s.createdAt) ? s.createdAt.toDate().toISOString() : s.createdAt,
-        deleted_at: dayjs.isDayjs(s.deleted_at) ? s.deleted_at.toDate().toISOString() : s.deleted_at,
-      }))
-    };
+    const fileToSend = toFileFormData(editedFileData);
     
     try {
       const resp = await updateFile(
         id,
-        fileToSend as any,
+        fileToSend,
         file.clients.map(c => c.id),
         file.services.map(s => s.id)
       );

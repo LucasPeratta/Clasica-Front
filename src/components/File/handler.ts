@@ -1,8 +1,31 @@
 import { apiFetch } from "../common/apiFetch";
+import dayjs from "dayjs";
 import { iFile } from "./model";
 import { fetchPage, iPaginated } from "../common/Pagination/types";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
+
+// Datos del file que el backend guarda al crear/editar (pasajeros, servicios y totales van aparte)
+export interface iFileFormData {
+  nro?: string;
+  obs: string;
+  tarifaAlternativa?: string;
+  tarifaAlternativaMoneda?: string | null;
+  destino: string;
+  fechaSalida: string | null;
+}
+
+export const toFileFormData = (file: iFile): iFileFormData => ({
+  nro: file.nro,
+  obs: file.obs,
+  tarifaAlternativa: file.tarifaAlternativa,
+  // Sin importe no se guarda moneda
+  tarifaAlternativaMoneda: file.tarifaAlternativa?.trim()
+    ? file.tarifaAlternativaMoneda || "USD"
+    : null,
+  destino: file.destino,
+  fechaSalida: file.fechaSalida ? dayjs(file.fechaSalida).toISOString() : null,
+});
 
 // Endpoint de los documentos PDF de un file
 export const filePdfsUrl = (fileId: string) => `${apiUrl}/file/${fileId}/pdfs`;
@@ -15,17 +38,6 @@ export const getFilePage = (
   status: string
 ): Promise<iPaginated<iFile>> =>
   fetchPage<iFile>(`${apiUrl}/file`, page, search, { status });
-
-export const getFile = async (): Promise<iFile[]> => {
-  try {
-    const response = await apiFetch(`${apiUrl}/file`);
-    const data = await response.json();
-    return data.files;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
 
 // Devuelve true si se eliminó
 export const deleteFile = async (id: string): Promise<boolean> => {
@@ -51,7 +63,7 @@ export const getFileById = async (id: string) => {
 };
 
 export const createFile = async (
-  formData: iFile,
+  formData: iFileFormData,
   paxIds: string[],
   serviceIds: string[]
 ): Promise<Response> => {
@@ -78,7 +90,7 @@ export const createFile = async (
 
 export const updateFile = async (
   idFile: string,
-  formData: iFile,
+  formData: iFileFormData,
   paxIds: string[],
   serviceIds: string[]
 ): Promise<Response> => {
