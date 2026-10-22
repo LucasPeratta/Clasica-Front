@@ -48,6 +48,24 @@ const formatDates = (service: iService) => {
 
 const COLUMNS = 6;
 
+// Cuánto se le pagó al mayorista por este servicio (sobre su neto)
+const SupplierPaidCaption = ({ service }: { service: iService }) => {
+  const neto = Number(service.precioNeto) || 0;
+  if (neto <= 0 || !service.pagosMayorista) return null;
+  const paid = service.pagosMayorista.reduce((sum, p) => sum + Number(p.importe), 0);
+  const [text, color] =
+    paid >= neto - 0.01
+      ? ["Pagado al mayorista ✓", "success.main"]
+      : paid > 0
+        ? [`Pagado ${formatMoney(paid, service.currency)}`, "warning.dark"]
+        : ["Sin pagar al mayorista", "text.secondary"];
+  return (
+    <Typography variant="caption" display="block" sx={{ color }}>
+      {text}
+    </Typography>
+  );
+};
+
 // Interruptor "liquidado" + aviso si falta poco para la salida y no está liquidado
 const LiquidadoCell = ({
   service,
@@ -200,6 +218,7 @@ export const FileProfileServices = ({
                         </TableCell>
                         <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                           {formatAmount(service.precioNeto, service.currency)}
+                          <SupplierPaidCaption service={service} />
                         </TableCell>
                         <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
                           {formatAmount(service.tarifa, service.currency)}

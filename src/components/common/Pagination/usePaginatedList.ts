@@ -117,6 +117,8 @@ export const usePaginatedList = <T>(
     totalPages: result?.totalPages ?? 0,
     pageSize: result?.pageSize ?? 15,
     counts: result?.counts,
+    // Respuesta completa, por si el backend manda datos extra (ej. totales)
+    response: result,
     page,
     setPage,
     search,

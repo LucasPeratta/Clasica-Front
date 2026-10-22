@@ -19,6 +19,8 @@ export interface iService {
   // Enviado al mayorista para liquidar
   liquidado?: boolean;
   liquidadoAt?: string | null;
+  // Partes de pagos al mayorista que cubren este servicio (viene en el detalle del file)
+  pagosMayorista?: { importe: string | number }[];
   // File al que pertenece (viene en el listado y en el detalle)
   File?: iServiceFile[];
 }

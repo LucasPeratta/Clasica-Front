@@ -5,6 +5,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import InsightsIcon from "@mui/icons-material/Insights";
 import { CountTabs } from "../common/CountTabs";
 import { CobrosTab } from "./CobrosTab";
+import { MayoristasTab } from "./MayoristasTab";
 
 /**
  * Sección "Pagos": cobros a pasajeros, pagos a mayoristas y balance.
@@ -32,12 +33,13 @@ export const Pagos = (): JSX.Element => {
         onChange={(value) => setSearchParams(value === "cobros" ? {} : { seccion: value }, { replace: true })}
         tabs={[
           { value: "cobros", label: "Cobros a pasajeros", icon: <PersonIcon /> },
-          { value: "mayoristas", label: "Pagos a mayoristas", icon: <StorefrontIcon />, disabled: true, badgeText: "Próximamente" },
+          { value: "mayoristas", label: "Pagos a mayoristas", icon: <StorefrontIcon /> },
           { value: "balance", label: "Balance", icon: <InsightsIcon />, disabled: true, badgeText: "Próximamente" },
         ]}
       />
 
       {seccion === "cobros" && <CobrosTab />}
+      {seccion === "mayoristas" && <MayoristasTab />}
     </Box>
   );
 };
