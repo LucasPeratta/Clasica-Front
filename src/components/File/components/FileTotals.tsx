@@ -83,9 +83,9 @@ export const FileTotals = ({
   };
 
   return (
-    <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+    <Card variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
       <CardContent>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: "#0d47a1", mb: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: "#0D5B75", mb: 1 }}>
           Totales
         </Typography>
         <Table size="small">

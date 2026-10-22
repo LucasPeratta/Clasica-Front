@@ -6,6 +6,15 @@ const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 export type PaymentMethod = "EFECTIVO" | "TRANSFERENCIA";
 export type PaymentsStatus = "SIN_PLAN" | "PAGADO" | "VENCIDO" | "POR_VENCER" | "AL_DIA";
 
+// Cómo se muestra cada estado de cobro
+export const PAYMENT_STATUS: Record<PaymentsStatus, { label: string; color: "success" | "error" | "warning" | "info" | "default" }> = {
+  PAGADO: { label: "Pagado", color: "success" },
+  VENCIDO: { label: "Pago vencido", color: "error" },
+  POR_VENCER: { label: "Vence pronto", color: "warning" },
+  AL_DIA: { label: "Al día", color: "info" },
+  SIN_PLAN: { label: "Sin plan", color: "default" },
+};
+
 export interface iCuota {
   id: string | null;
   concepto: string;

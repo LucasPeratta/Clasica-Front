@@ -145,7 +145,7 @@ export const FileProfileServices = ({
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography
           variant="h6"
-          sx={{ fontWeight: 700, color: "#0d47a1" }}
+          sx={{ fontWeight: 700, color: "#0D5B75" }}
         >
           Servicios
         </Typography>
@@ -160,7 +160,7 @@ export const FileProfileServices = ({
           </Button>
         )}
       </Box>
-      <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+      <Card variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
         <CardContent sx={{ p: 0 }}>
           {groups.length === 0 ? (
             <Box sx={{ p: 2 }}>
@@ -172,12 +172,12 @@ export const FileProfileServices = ({
             <Table>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "rgba(13, 71, 161, 0.05)" }}>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Nombre</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Fechas</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }} align="right">Precio Neto</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }} align="right">Tarifa</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1", textAlign: "center" }}>Liquidado</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1", textAlign: "center" }}>Acciones</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>Nombre</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>Fechas</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }} align="right">Precio Neto</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }} align="right">Tarifa</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75", textAlign: "center" }}>Liquidado</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75", textAlign: "center" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -189,7 +189,7 @@ export const FileProfileServices = ({
                         colSpan={COLUMNS}
                         sx={{
                           fontWeight: 700,
-                          color: "#0d47a1",
+                          color: "#0D5B75",
                           backgroundColor: "rgba(13, 71, 161, 0.08)",
                           py: 1,
                         }}
@@ -274,56 +274,56 @@ export const FileProfileServices = ({
 
       {/* Dialog Detalle de Servicio */}
       <Dialog open={openDetail} onClose={() => setOpenDetail(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: "#0d47a1" }}>
+        <DialogTitle sx={{ fontWeight: 700, color: "#0D5B75" }}>
           Detalles del Servicio
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {selectedService && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Tipo de Servicio
                 </Typography>
                 <Typography>{getServiceTypeLabel(selectedService.type)}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Nombre
                 </Typography>
                 <Typography>{selectedService.nombre || "—"}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Proveedor
                 </Typography>
                 <Typography>{selectedService.provider || "—"}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Precio Neto
                 </Typography>
                 <Typography>{formatAmount(selectedService.precioNeto, selectedService.currency)}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Tarifa
                 </Typography>
                 <Typography>{formatAmount(selectedService.tarifa, selectedService.currency)}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Moneda
                 </Typography>
                 <Typography>{selectedService.currency || "—"}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Localizador
                 </Typography>
                 <Typography>{selectedService.localizador || "—"}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Fecha de Inicio
                 </Typography>
                 <Typography>
@@ -333,7 +333,7 @@ export const FileProfileServices = ({
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Fecha de Fin
                 </Typography>
                 <Typography>
@@ -343,7 +343,7 @@ export const FileProfileServices = ({
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Observaciones
                 </Typography>
                 <Typography>{selectedService.obs || "—"}</Typography>

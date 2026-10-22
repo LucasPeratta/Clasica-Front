@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFileProfile } from "./hooks/useFileProfile";
 import { LoadingScreen } from "../LoadingScreen";
-import { Box, Card, CardContent, Snackbar, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, MenuItem, Select, FormControl, InputLabel, List, ListItem, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, Paper, Snackbar, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, MenuItem, Select, FormControl, InputLabel, List, ListItem, FormControlLabel, Checkbox } from "@mui/material";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -13,11 +13,18 @@ import { FileProfileServices } from "./profile/components/FileProfileServices";
 import { FileTotals } from "./components/FileTotals";
 import { updateFile, filePdfsUrl, toFileFormData, deleteFile } from "./handler";
 import { FileDeleteDialog, iFileToDelete } from "./components/FileDeleteDialog";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { getPax } from "../Pax/handler";
 import { createService, updateService, setServiceLiquidado } from "../Service/handler";
 import { FilePayments } from "./profile/components/FilePayments";
+import { FileSummary } from "./profile/components/FileSummary";
+import { getFilePayments, iPaymentsSummary } from "./paymentsHandler";
+import { CountTabs } from "../common/CountTabs";
+import ListAltIcon from "@mui/icons-material/ListAlt";
+import GroupIcon from "@mui/icons-material/Group";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import FolderIcon from "@mui/icons-material/Folder";
 import { MayoristaField } from "../Service/MayoristaField";
 import { iPax } from "../Pax/model";
 import { iFile } from "./model";
@@ -35,6 +42,13 @@ export const FilesProfile = (): JSX.Element => {
   const [deletingFile, setDeletingFile] = useState(false);
   const [deleteFileError, setDeleteFileError] = useState(false);
   const navigate = useNavigate();
+  // Pestaña abierta (en la URL, para volver al mismo lugar)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seccion = searchParams.get("seccion") ?? "servicios";
+  const setSeccion = (value: string) =>
+    setSearchParams(value === "servicios" ? {} : { seccion: value }, { replace: true });
+  // Estado de los cobros, para el resumen de arriba
+  const [payments, setPayments] = useState<iPaymentsSummary | null>(null);
 
   // Eliminar el file desde su perfil; al terminar vuelve a la lista (que muestra el aviso)
   const handleDeleteFile = async () => {
@@ -298,27 +312,39 @@ export const FilesProfile = (): JSX.Element => {
     );
   };
 
-  if (loading) return <LoadingScreen />;
-  if (!file) return <Typography>Error al cargar el archivo.</Typography>;
-
   // Los pagos se recalculan cuando cambia lo que se cobra (servicios, tarifa alternativa, salida)
-  const paymentsRefreshKey = JSON.stringify([
+  const paymentsRefreshKey = file
+    ? JSON.stringify([
     file.services.map((s) => [s.id, s.tarifa, s.currency, s.type]),
     file.tarifaAlternativa,
     file.tarifaAlternativaMoneda,
     file.fechaSalida,
-  ]);
+  ])
+    : "";
+
+  useEffect(() => {
+    if (!id) return;
+    getFilePayments(id).then((result) => result.ok && setPayments(result.data));
+  }, [id, paymentsRefreshKey]);
+
+  if (loading) return <LoadingScreen />;
+  if (!file) return <Typography>Error al cargar el archivo.</Typography>;
 
   return (
     <Box
       sx={{
-        px: { xs: 3, md: 10 },
-        py: 4,
-        background: "linear-gradient(135deg, #eaf3ff 0%, #dfeefe 100%)",
+        px: { xs: 2, md: 6 },
+        py: 3,
+        backgroundImage:
+          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%), " +
+          "radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%), " +
+          "radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
         minHeight: "calc(100vh - 64px)",
       }}
     >
+      <Box sx={{ maxWidth: 1300, mx: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
       <FileProfileHeader file={file} onSave={handleEditFileSave} onDelete={() => setDeleteFileOpen(true)} />
+      <FileSummary file={file} payments={payments} onSelect={setSeccion} />
 
       {/* Confirmación: muestra qué contiene el file antes de eliminarlo */}
       <FileDeleteDialog
@@ -338,33 +364,57 @@ export const FilesProfile = (): JSX.Element => {
           No se pudo eliminar el file. Intentá de nuevo.
         </Alert>
       </Snackbar>
-      <FileProfileClients 
-        clients={file.clients} 
-        fileId={file.id}
-        fechaSalida={file.fechaSalida}
-        onAddClient={handleAddPaxOpen}
-        onRemoveClient={handleRemovePax}
-      />
-      <FileProfileServices
-        services={file.services}
-        fechaSalida={file.fechaSalida}
-        onToggleLiquidado={handleToggleLiquidado}
-        onAddService={handleAddServiceOpen}
-        onEditService={handleEditServiceOpen}
-        onRemoveService={handleRemoveService}
-      />
-      <FileTotals
-        services={file.services}
-        tarifaAlternativa={file.tarifaAlternativa}
-        tarifaAlternativaMoneda={file.tarifaAlternativaMoneda}
-        onSaveAlternative={handleSaveAlternative}
-      />
-      <FilePayments fileId={file.id} refreshKey={paymentsRefreshKey} />
-      <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
-        <CardContent>
-          <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0d47a1" />
-        </CardContent>
-      </Card>
+      <Box>
+        <CountTabs
+          value={seccion}
+          onChange={setSeccion}
+          tabs={[
+            { value: "servicios", label: "Servicios", icon: <ListAltIcon />, count: file.services.length },
+            { value: "pasajeros", label: "Pasajeros", icon: <GroupIcon />, count: file.clients.length },
+            { value: "pagos", label: "Pagos", icon: <PaymentsIcon /> },
+            { value: "documentos", label: "Documentos", icon: <FolderIcon /> },
+          ]}
+        />
+        <Paper
+          elevation={0}
+          sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, backgroundColor: "#fff", boxShadow: "0 4px 14px rgba(0,0,0,0.12)" }}
+        >
+          {seccion === "servicios" && (
+            <>
+              <FileProfileServices
+                services={file.services}
+                fechaSalida={file.fechaSalida}
+                onToggleLiquidado={handleToggleLiquidado}
+                onAddService={handleAddServiceOpen}
+                onEditService={handleEditServiceOpen}
+                onRemoveService={handleRemoveService}
+              />
+              <FileTotals
+                services={file.services}
+                tarifaAlternativa={file.tarifaAlternativa}
+                tarifaAlternativaMoneda={file.tarifaAlternativaMoneda}
+                onSaveAlternative={handleSaveAlternative}
+              />
+            </>
+          )}
+          {seccion === "pasajeros" && (
+            <FileProfileClients
+              clients={file.clients}
+              fileId={file.id}
+              fechaSalida={file.fechaSalida}
+              onAddClient={handleAddPaxOpen}
+              onRemoveClient={handleRemovePax}
+            />
+          )}
+          {seccion === "pagos" && (
+            <FilePayments fileId={file.id} refreshKey={paymentsRefreshKey} onSummaryChange={setPayments} />
+          )}
+          {seccion === "documentos" && (
+            <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0D5B75" />
+          )}
+        </Paper>
+      </Box>
+      </Box>
 
       {/* Dialog para agregar pasajeros - Multi-select */}
       <Dialog open={openAddPax} onClose={() => { setOpenAddPax(false); setSelectedPaxMultiple([]); setSearchTermPax(""); }} maxWidth="sm" fullWidth>

@@ -37,13 +37,13 @@ import {
   appliedAmount,
   deletePago,
   getFilePayments,
+  PAYMENT_STATUS,
   iCuota,
   iCuotaInput,
   iPago,
   iPagoInput,
   iPaymentsSummary,
   PaymentMethod,
-  PaymentsStatus,
   resetPlan,
   savePlan,
   addPago,
@@ -54,15 +54,10 @@ interface FilePaymentsProps {
   fileId: string;
   // Cambia cuando cambian los servicios, la tarifa alternativa o la salida: se recalcula
   refreshKey: string;
+  // Avisa cada vez que cambia el estado de los pagos (para el resumen de arriba)
+  onSummaryChange?: (summary: iPaymentsSummary) => void;
 }
 
-const STATUS_CHIP: Record<PaymentsStatus, { label: string; color: "success" | "error" | "warning" | "info" | "default" }> = {
-  PAGADO: { label: "Pagado", color: "success" },
-  VENCIDO: { label: "Pago vencido", color: "error" },
-  POR_VENCER: { label: "Vence pronto", color: "warning" },
-  AL_DIA: { label: "Al día", color: "info" },
-  SIN_PLAN: { label: "Sin plan", color: "default" },
-};
 
 const METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "TRANSFERENCIA", label: "Transferencia" },
@@ -106,7 +101,7 @@ const CuotaStatus = ({ cuota, money }: { cuota: iCuota; money: (n: number) => st
  * Sección "Pagos" del file: plan de pagos (automático o propio del administrador),
  * pagos recibidos y cuánto falta.
  */
-export const FilePayments = ({ fileId, refreshKey }: FilePaymentsProps) => {
+export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymentsProps) => {
   const [summary, setSummary] = useState<iPaymentsSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -130,9 +125,13 @@ export const FilePayments = ({ fileId, refreshKey }: FilePaymentsProps) => {
     load();
   }, [load, refreshKey]);
 
+  useEffect(() => {
+    if (summary) onSummaryChange?.(summary);
+  }, [summary, onSummaryChange]);
+
   if (!summary) {
     return (
-      <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+      <Card variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
         <CardContent>
           {loadError ? <Alert severity="error">{loadError}</Alert> : <CircularProgress size={24} />}
         </CardContent>
@@ -143,7 +142,7 @@ export const FilePayments = ({ fileId, refreshKey }: FilePaymentsProps) => {
   const currency = summary.moneda;
   const money = (n: number) => (currency ? formatMoney(n, currency) : n.toLocaleString("es-AR"));
   const progress = summary.planTotal > 0 ? Math.min((summary.cobrado / summary.planTotal) * 100, 100) : 0;
-  const status = STATUS_CHIP[summary.estado];
+  const status = PAYMENT_STATUS[summary.estado];
 
   const handleDeletePago = async () => {
     if (!pagoToDelete) return;
@@ -164,7 +163,7 @@ export const FilePayments = ({ fileId, refreshKey }: FilePaymentsProps) => {
     <>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1, mb: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#0d47a1" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#0D5B75" }}>
             Pagos
           </Typography>
           <Chip size="small" color={status.color} label={status.label} sx={{ fontWeight: 600 }} />
@@ -180,7 +179,7 @@ export const FilePayments = ({ fileId, refreshKey }: FilePaymentsProps) => {
         </Button>
       </Box>
 
-      <Card elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+      <Card variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
         <CardContent>
           {actionError && (
             <Alert severity="error" onClose={() => setActionError(null)} sx={{ mb: 2 }}>

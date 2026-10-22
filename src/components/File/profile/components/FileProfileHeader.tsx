@@ -1,252 +1,149 @@
-import { useGoBack } from "../../../common/useGoBack";
-import { Box, Typography, Button, Divider, Card, CardContent, TextField } from "@mui/material";
+import { useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import dayjs from "dayjs";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useGoBack } from "../../../common/useGoBack";
 import { iFile } from "../../model";
 import { formatFileNumber } from "../../utils/fileNumber";
-import dayjs from "dayjs";
-import { useState, useEffect } from "react";
 
 interface FileProfileHeaderProps {
   file: iFile;
-  onSave: (editedFile: iFile) => Promise<unknown>;
+  // Devuelve true si se guardó
+  onSave: (editedFile: iFile) => Promise<boolean>;
   // Abre la confirmación para eliminar el file
   onDelete?: () => void;
 }
 
+const buttonSx = { textTransform: "none", fontSize: "1rem", fontWeight: 600, borderRadius: 2, px: 2.5 };
+
+/**
+ * Encabezado del file: número grande, destino y referencia, y los botones Volver / Editar datos / Eliminar
+ */
 export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderProps) => {
-  const [editedFile, setEditedFile] = useState<iFile>(file);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const goBack = useGoBack("/files");
+  const [editedFile, setEditedFile] = useState<iFile | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  useEffect(() => {
-    setEditedFile(file);
-  }, [file]);
+  const number = formatFileNumber(file);
 
-  const handleEditStart = () => {
+  const openEdit = () => {
     setEditedFile(file);
-    setIsEditing(true);
-  };
-
-  const handleCancel = () => {
-    setEditedFile(file);
-    setIsEditing(false);
+    setSaveError(false);
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave(editedFile);
-      setIsEditing(false);
-    } finally {
-      setIsSaving(false);
-    }
+    if (!editedFile) return;
+    setSaving(true);
+    const ok = await onSave(editedFile);
+    setSaving(false);
+    if (ok) setEditedFile(null);
+    else setSaveError(true);
   };
 
   return (
-    <>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 700, mb: 3, color: "#0d47a1", textAlign: "center" }}
-      >
-        {formatFileNumber(file) ? `File ${formatFileNumber(file)}` : "Detalles del File"}
-      </Typography>
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 2, md: 3 },
+        borderRadius: 3,
+        backgroundColor: "#fff",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "flex-start", sm: "center" },
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Box>
+        <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>
+          {number ? `File ${number}` : "File"}
+          {file.nro ? ` · Ref: ${file.nro}` : ""}
+        </Typography>
+        <Typography component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1.6rem", md: "2rem" }, lineHeight: 1.2 }}>
+          {file.destino || "Sin destino"}
+        </Typography>
+      </Box>
 
-      <Box display="flex" justifyContent="center" gap={2} sx={{ mb: 3 }}>
-        <Button
-          onClick={goBack}
-          variant="outlined"
-          sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}
-        >
+      <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={goBack} sx={buttonSx}>
           Volver
         </Button>
-        {!isEditing && (
-          <Button
-            onClick={handleEditStart}
-            variant="contained"
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              fontWeight: 600,
-              background: "linear-gradient(135deg, #007bff 0%, #6f42c1 100%)",
-            }}
-          >
-            Editar
-          </Button>
-        )}
-        {!isEditing && onDelete && (
-          <Button
-            onClick={onDelete}
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}
-          >
+        <Button
+          variant="contained"
+          startIcon={<EditIcon />}
+          onClick={openEdit}
+          sx={{ ...buttonSx, fontWeight: 700, backgroundColor: "#0D5B75", "&:hover": { backgroundColor: "#0a4a5e" } }}
+        >
+          Editar datos
+        </Button>
+        {onDelete && (
+          <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={onDelete} sx={buttonSx}>
             Eliminar
           </Button>
         )}
       </Box>
 
-      {/* Detalles del File - Campos Editables Inline */}
-      <Card elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#0d47a1", mb: 2 }}>
-            {isEditing ? "Editar Detalles" : "Detalles"}
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Referencia"
-              value={editedFile?.nro || ""}
-              onChange={(e) => setEditedFile(prev => ({ ...prev, nro: e.target.value }))}
-              fullWidth
-              disabled={!isEditing}
-              InputProps={{
-                sx: {
-                  color: "#000",
-                  fontWeight: isEditing ? 400 : 700,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: isEditing ? "inherit" : "#ccc",
-                  },
-                  "&.Mui-disabled": {
-                    color: "#000",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }
-              }}
-            />
+      {/* Editar los datos generales del file */}
+      <Dialog open={!!editedFile} onClose={() => !saving && setEditedFile(null)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Editar datos del file</DialogTitle>
+        {editedFile && (
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}>
+            {saveError && <Alert severity="error">No se pudo guardar. Intentá de nuevo.</Alert>}
             <TextField
               label="Destino"
-              value={editedFile?.destino || ""}
-              onChange={(e) => setEditedFile(prev => ({ ...prev, destino: e.target.value }))}
+              value={editedFile.destino || ""}
+              onChange={(e) => setEditedFile({ ...editedFile, destino: e.target.value })}
               fullWidth
-              disabled={!isEditing}
-              InputProps={{
-                sx: {
-                  color: "#000",
-                  fontWeight: isEditing ? 400 : 700,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: isEditing ? "inherit" : "#ccc",
-                  },
-                  "&.Mui-disabled": {
-                    color: "#000",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }
-              }}
             />
             <TextField
               label="Fecha de salida"
               type="date"
-              value={editedFile?.fechaSalida ? (dayjs.isDayjs(editedFile.fechaSalida) ? editedFile.fechaSalida.format('YYYY-MM-DD') : dayjs(editedFile.fechaSalida).format('YYYY-MM-DD')) : ""}
-              onChange={(e) => setEditedFile(prev => ({ ...prev, fechaSalida: dayjs(e.target.value) }))}
-              fullWidth
+              value={editedFile.fechaSalida ? dayjs(editedFile.fechaSalida).format("YYYY-MM-DD") : ""}
+              onChange={(e) => setEditedFile({ ...editedFile, fechaSalida: dayjs(e.target.value) })}
               InputLabelProps={{ shrink: true }}
-              disabled={!isEditing}
-              InputProps={{
-                sx: {
-                  color: "#000",
-                  fontWeight: isEditing ? 400 : 700,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: isEditing ? "inherit" : "#ccc",
-                  },
-                  "&.Mui-disabled": {
-                    color: "#000",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }
-              }}
+              fullWidth
             />
             <TextField
-              label="Tarifa Alternativa"
-              value={editedFile?.tarifaAlternativa || ""}
-              onChange={(e) => setEditedFile(prev => ({ ...prev, tarifaAlternativa: e.target.value }))}
+              label="Referencia (opcional)"
+              value={editedFile.nro || ""}
+              onChange={(e) => setEditedFile({ ...editedFile, nro: e.target.value })}
+              helperText="Un código propio, por ejemplo el de la reserva del mayorista"
               fullWidth
-              disabled={!isEditing}
-              InputProps={{
-                sx: {
-                  color: "#000",
-                  fontWeight: isEditing ? 400 : 700,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: isEditing ? "inherit" : "#ccc",
-                  },
-                  "&.Mui-disabled": {
-                    color: "#000",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }
-              }}
             />
             <TextField
               label="Observaciones"
-              value={editedFile?.obs || ""}
-              onChange={(e) => setEditedFile(prev => ({ ...prev, obs: e.target.value }))}
-              fullWidth
+              value={editedFile.obs || ""}
+              onChange={(e) => setEditedFile({ ...editedFile, obs: e.target.value })}
               multiline
               rows={3}
-              disabled={!isEditing}
-              InputProps={{
-                sx: {
-                  color: "#000",
-                  fontWeight: isEditing ? 400 : 700,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: isEditing ? "inherit" : "#ccc",
-                  },
-                  "&.Mui-disabled": {
-                    color: "#000",
-                    fontWeight: 700,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }
-              }}
+              fullWidth
             />
-            {isEditing && (
-              <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    fontWeight: 600,
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    fontWeight: 600,
-                    background: "linear-gradient(135deg, #007bff 0%, #6f42c1 100%)",
-                  }}
-                >
-                  {isSaving ? "Guardando..." : "Guardar Cambios"}
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Divider sx={{ mb: 3 }} />
-    </>
+          </DialogContent>
+        )}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEditedFile(null)} disabled={saving}>
+            Cancelar
+          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving || !editedFile?.destino?.trim()}>
+            {saving ? "Guardando..." : "Guardar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Paper>
   );
 };

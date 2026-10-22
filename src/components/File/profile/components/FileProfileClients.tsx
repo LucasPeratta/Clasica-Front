@@ -32,7 +32,7 @@ export const FileProfileClients = ({
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <Typography
           variant="h6"
-          sx={{ fontWeight: 700, color: "#0d47a1" }}
+          sx={{ fontWeight: 700, color: "#0D5B75" }}
         >
           Pasajeros
         </Typography>
@@ -47,7 +47,7 @@ export const FileProfileClients = ({
           </Button>
         )}
       </Box>
-      <Card elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
+      <Card variant="outlined" sx={{ mb: 3, borderRadius: 3 }}>
         <CardContent sx={{ p: 0 }}>
           {clients.length === 0 ? (
             <Box sx={{ p: 2 }}>
@@ -59,11 +59,11 @@ export const FileProfileClients = ({
             <Table>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "rgba(13, 71, 161, 0.05)" }}>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Nombre</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>DNI</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Pasaporte</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1" }}>Fecha de Nacimiento</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#0d47a1", textAlign: "center" }}>Acciones</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>Nombre</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>DNI</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>Pasaporte</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75" }}>Fecha de Nacimiento</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#0D5B75", textAlign: "center" }}>Acciones</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -101,10 +101,10 @@ export const FileProfileClients = ({
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "#0D5B75" }}>
                       {client.dni || "—"}
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: "#0d47a1" }}>
+                    <TableCell sx={{ fontWeight: 600, color: "#0D5B75" }}>
                       {client.passport || "—"}
                     </TableCell>
                     <TableCell>
