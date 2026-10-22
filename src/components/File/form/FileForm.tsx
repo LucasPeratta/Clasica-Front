@@ -41,6 +41,7 @@ import { FileFormHeader } from "./components/FileFormHeader";
 import { FileTotals } from "../components/FileTotals";
 import { formatFileNumber } from "../utils/fileNumber";
 import { CURRENCIES } from "../utils/totals";
+import { MayoristaField } from "../../Service/MayoristaField";
 import { iService } from "../../Service/model";
 import { createService, updateService } from "../../Service/handler";
 
@@ -494,6 +495,10 @@ export const FileForm = () => {
             onChange={(e) => setEditingService(prev => prev ? { ...prev, nombre: e.target.value } : null)}
             fullWidth
           />
+          <MayoristaField
+            value={editingService?.provider || ""}
+            onChange={(provider) => setEditingService(prev => prev ? { ...prev, provider } : null)}
+          />
           <TextField
             label="Precio Neto"
             type="number"
@@ -567,7 +572,7 @@ export const FileForm = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditService(false)}>Cancelar</Button>
-          <Button onClick={handleSaveService} variant="contained">
+          <Button onClick={handleSaveService} variant="contained" disabled={!editingService?.provider?.trim()}>
             {editingService?.id && fileServices.find(s => s.id === editingService.id) ? "Actualizar" : "Agregar"}
           </Button>
         </DialogActions>

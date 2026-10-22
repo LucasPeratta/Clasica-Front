@@ -1,3 +1,4 @@
+import { MayoristaField } from "../MayoristaField";
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -193,14 +194,9 @@ export const ServiceForm = () => {
                 value={formData.nombre}
                 onChange={handleChange}
               />
-              <TextField
-                id="provider"
-                label="Proveedor"
-                variant="outlined"
-                required
-                inputProps={{ maxLength: 50 }}
-                value={formData.provider}
-                onChange={handleChange}
+              <MayoristaField
+                value={formData.provider || ""}
+                onChange={(provider) => setFormData((prev) => ({ ...prev, provider }))}
               />
               <TextField
                 id="precioNeto"

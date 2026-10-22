@@ -16,6 +16,7 @@ import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { getPax } from "../Pax/handler";
 import { createService, updateService, setServiceLiquidado } from "../Service/handler";
 import { FilePayments } from "./profile/components/FilePayments";
+import { MayoristaField } from "../Service/MayoristaField";
 import { iPax } from "../Pax/model";
 import { iFile } from "./model";
 
@@ -413,6 +414,10 @@ export const FilesProfile = (): JSX.Element => {
             onChange={(e) => setEditingService(prev => prev ? { ...prev, nombre: e.target.value } : null)}
             fullWidth
           />
+          <MayoristaField
+            value={editingService?.provider || ""}
+            onChange={(provider) => setEditingService(prev => prev ? { ...prev, provider } : null)}
+          />
           <TextField
             label="Precio Neto"
             type="number"
@@ -486,9 +491,10 @@ export const FilesProfile = (): JSX.Element => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditServiceClose}>Cancelar</Button>
-          <Button 
-            onClick={handleSaveService} 
+          <Button
+            onClick={handleSaveService}
             variant="contained"
+            disabled={!editingService?.provider?.trim()}
           >
             {editingService?.id ? "Actualizar" : "Agregar"}
           </Button>

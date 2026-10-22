@@ -285,7 +285,13 @@ export const NewSupplierPaymentDialog = ({ onClose, onSaved }: NewSupplierPaymen
                   setMayorista(e.target.value);
                   setMayoristaEdited(true);
                 }}
-                helperText={!mayoristaEdited && selected.length > 0 ? "Completado con el proveedor de los servicios" : undefined}
+                helperText={
+                  selected.some((s) => !s.service.provider.trim())
+                    ? "Algún servicio no tiene mayorista cargado: escribilo acá o cargalo en el servicio, dentro del file"
+                    : !mayoristaEdited && selected.length > 0
+                      ? "Completado con el mayorista de los servicios"
+                      : undefined
+                }
               />
               <TextField
                 size="small"

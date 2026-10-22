@@ -11,6 +11,18 @@ export const getServicePage = (
 ): Promise<iPaginated<iService>> =>
   fetchPage<iService>(`${apiUrl}/service`, page, search);
 
+// Mayoristas ya usados en otros servicios (para sugerirlos al cargar uno nuevo)
+export const getProviders = async (): Promise<string[]> => {
+  try {
+    const response = await apiFetch(`${apiUrl}/service/proveedores`);
+    const data = await response.json();
+    return Array.isArray(data.data) ? data.data : [];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
 // Marca un servicio como liquidado (enviado al mayorista) o no; devuelve true si se guardó
 export const setServiceLiquidado = async (id: string, liquidado: boolean): Promise<boolean> => {
   try {
