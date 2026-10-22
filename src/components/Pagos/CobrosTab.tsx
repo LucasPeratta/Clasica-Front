@@ -36,6 +36,8 @@ import {
   iPagoHistorial,
 } from "../File/paymentsHandler";
 import { PaymentDialog } from "../File/profile/components/FilePayments";
+import { HistoryFilters, iHistoryFilter } from "./HistoryFilters";
+import { useDebouncedValue } from "../common/useDebouncedValue";
 import { formatFileNumber } from "../File/utils/fileNumber";
 import { formatMoney } from "../File/utils/totals";
 
@@ -92,24 +94,26 @@ export const CobrosTab = () => {
   const [payingFile, setPayingFile] = useState<iCobranza | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
 
-  // Historial de pagos recibidos (misma búsqueda, paginación propia)
-  const [history, setHistory] = useState<iPaginated<iPagoHistorial> | null>(null);
+  // Historial de pagos recibidos: filtro propio (pasajero y rango de fechas) y paginación propia
+  const [history, setHistory] = useState<(iPaginated<iPagoHistorial> & { totals?: Record<string, number> }) | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyKey, setHistoryKey] = useState(0);
+  const [historyFilter, setHistoryFilter] = useState<iHistoryFilter>({ search: "", desde: "", hasta: "" });
+  const historySearch = useDebouncedValue(historyFilter.search);
 
   useEffect(() => {
     setHistoryPage(1);
-  }, [search]);
+  }, [historySearch, historyFilter.desde, historyFilter.hasta]);
 
   useEffect(() => {
     let cancelled = false;
-    getPaymentsHistoryPage(historyPage, search).then((res) => {
+    getPaymentsHistoryPage(historyPage, historySearch, historyFilter.desde, historyFilter.hasta).then((res) => {
       if (!cancelled) setHistory(res);
     });
     return () => {
       cancelled = true;
     };
-  }, [historyPage, search, historyKey]);
+  }, [historyPage, historySearch, historyFilter.desde, historyFilter.hasta, historyKey]);
 
   if (initialLoading) return <LoadingScreen />;
 
@@ -127,7 +131,7 @@ export const CobrosTab = () => {
         <TextField
           fullWidth
           size="small"
-          placeholder="Buscar por pasajero, destino o número de file (ej. 55)"
+          placeholder="Buscar en pendientes por pasajero, destino o número de file (ej. 55)"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           InputProps={{
@@ -224,6 +228,13 @@ export const CobrosTab = () => {
       <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff", mt: 4, mb: 1 }}>
         Pagos recibidos
       </Typography>
+      <HistoryFilters
+        value={historyFilter}
+        onChange={setHistoryFilter}
+        placeholder="Buscar pagos por pasajero, destino o número de file"
+        totals={history?.totals}
+        totalLabel={historyFilter.desde || historyFilter.hasta ? "Total cobrado en el período" : "Total cobrado"}
+      />
       <TableContainer component={Paper} elevation={3} sx={paperSx}>
         <Table size="small">
           <TableHead>
@@ -240,7 +251,11 @@ export const CobrosTab = () => {
             {!history || history.data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                  <Typography color="text.secondary">Todavía no hay pagos registrados.</Typography>
+                  <Typography color="text.secondary">
+                    {historyFilter.search || historyFilter.desde || historyFilter.hasta
+                      ? "No hay pagos con ese filtro."
+                      : "Todavía no hay pagos registrados."}
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (

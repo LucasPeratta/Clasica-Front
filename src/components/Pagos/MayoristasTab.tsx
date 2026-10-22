@@ -42,6 +42,8 @@ import {
   iSupplierPayment,
 } from "./mayoristasHandler";
 import { NewSupplierPaymentDialog } from "./NewSupplierPaymentDialog";
+import { HistoryFilters, iHistoryFilter } from "./HistoryFilters";
+import { useDebouncedValue } from "../common/useDebouncedValue";
 
 const TYPE_LABEL: Record<string, string> = {
   AEREO: "✈️",
@@ -87,24 +89,26 @@ export const MayoristasTab = () => {
   const [paymentToDelete, setPaymentToDelete] = useState<iSupplierPayment | null>(null);
   const [deleteError, setDeleteError] = useState(false);
 
-  // Pagos hechos (misma búsqueda, paginación propia)
-  const [history, setHistory] = useState<iPaginated<iSupplierPayment> | null>(null);
+  // Pagos hechos: filtro propio (mayorista / pasajero y rango de fechas) y paginación propia
+  const [history, setHistory] = useState<(iPaginated<iSupplierPayment> & { totals?: Record<string, number> }) | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyKey, setHistoryKey] = useState(0);
+  const [historyFilter, setHistoryFilter] = useState<iHistoryFilter>({ search: "", desde: "", hasta: "" });
+  const historySearch = useDebouncedValue(historyFilter.search);
 
   useEffect(() => {
     setHistoryPage(1);
-  }, [search]);
+  }, [historySearch, historyFilter.desde, historyFilter.hasta]);
 
   useEffect(() => {
     let cancelled = false;
-    getSupplierPaymentsPage(historyPage, search).then((res) => {
+    getSupplierPaymentsPage(historyPage, historySearch, historyFilter.desde, historyFilter.hasta).then((res) => {
       if (!cancelled) setHistory(res);
     });
     return () => {
       cancelled = true;
     };
-  }, [historyPage, search, historyKey]);
+  }, [historyPage, historySearch, historyFilter.desde, historyFilter.hasta, historyKey]);
 
   if (initialLoading) return <LoadingScreen />;
 
@@ -128,7 +132,7 @@ export const MayoristasTab = () => {
         <TextField
           size="small"
           sx={{ flex: 1, minWidth: 240 }}
-          placeholder="Buscar por mayorista, pasajero, servicio o número de file"
+          placeholder="Buscar en pendientes por mayorista, pasajero, servicio o número de file"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           InputProps={{
@@ -242,6 +246,13 @@ export const MayoristasTab = () => {
       <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff", mt: 4, mb: 1 }}>
         Pagos hechos
       </Typography>
+      <HistoryFilters
+        value={historyFilter}
+        onChange={setHistoryFilter}
+        placeholder="Buscar pagos por mayorista, pasajero o número de file"
+        totals={history?.totals}
+        totalLabel={historyFilter.desde || historyFilter.hasta ? "Total pagado en el período" : "Total pagado"}
+      />
       <TableContainer component={Paper} elevation={3} sx={paperSx}>
         <Table size="small">
           <TableHead>
@@ -259,7 +270,11 @@ export const MayoristasTab = () => {
             {!history || history.data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                  <Typography color="text.secondary">Todavía no hay pagos a mayoristas.</Typography>
+                  <Typography color="text.secondary">
+                    {historyFilter.search || historyFilter.desde || historyFilter.hasta
+                      ? "No hay pagos con ese filtro."
+                      : "Todavía no hay pagos a mayoristas."}
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (

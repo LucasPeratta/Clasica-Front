@@ -134,11 +134,14 @@ export const getCobranzasPage = (
 ): Promise<iPaginated<iCobranza>> =>
   fetchPage<iCobranza>(`${apiUrl}/cobranzas`, page, search, { filtro });
 
+// desde / hasta: "YYYY-MM-DD" (ambos días incluidos) o vacío; totals: cobrado por moneda
 export const getPaymentsHistoryPage = (
   page: number,
-  search: string
-): Promise<iPaginated<iPagoHistorial>> =>
-  fetchPage<iPagoHistorial>(`${apiUrl}/cobranzas/pagos`, page, search);
+  search: string,
+  desde = "",
+  hasta = ""
+): Promise<iPaginated<iPagoHistorial> & { totals?: Record<string, number> }> =>
+  fetchPage<iPagoHistorial>(`${apiUrl}/cobranzas/pagos`, page, search, { desde, hasta });
 
 /**
  * Cuánto cubre un pago en la moneda del file (misma regla que el backend):

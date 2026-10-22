@@ -88,8 +88,14 @@ export const getPendingSupplierPage = (
 ): Promise<iPaginated<iPendingFile> & { totals?: Record<string, number> }> =>
   fetchPage<iPendingFile>(`${apiUrl}/mayoristas/pendientes`, page, search);
 
-export const getSupplierPaymentsPage = (page: number, search: string): Promise<iPaginated<iSupplierPayment>> =>
-  fetchPage<iSupplierPayment>(`${apiUrl}/mayoristas/pagos`, page, search);
+// desde / hasta: "YYYY-MM-DD" (ambos días incluidos) o vacío; totals: pagado por moneda
+export const getSupplierPaymentsPage = (
+  page: number,
+  search: string,
+  desde = "",
+  hasta = ""
+): Promise<iPaginated<iSupplierPayment> & { totals?: Record<string, number> }> =>
+  fetchPage<iSupplierPayment>(`${apiUrl}/mayoristas/pagos`, page, search, { desde, hasta });
 
 // Devuelve null si salió bien, o el mensaje de error
 export const addSupplierPayment = async (input: iSupplierPaymentInput): Promise<string | null> => {
