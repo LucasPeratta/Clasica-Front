@@ -61,6 +61,8 @@ const TaskCard = ({ task }: { task: (typeof TASKS)[number] }) => (
       gap: 2,
       p: 2.5,
       height: "100%",
+      // El alto incluye el margen interno (si no, la tarjeta se sale de su lugar y tapa lo de abajo)
+      boxSizing: "border-box",
       borderRadius: 3,
       textDecoration: "none",
       color: "inherit",
@@ -113,6 +115,7 @@ const SummaryCard = ({ summary, onClick }: { summary: Summary; onClick: () => vo
       sx={{
         width: "100%",
         height: "100%",
+        boxSizing: "border-box",
         textAlign: "left",
         cursor: "pointer",
         font: "inherit",
