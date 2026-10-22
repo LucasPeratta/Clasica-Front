@@ -1,130 +1,272 @@
 import { useEffect, useState, ReactNode } from "react";
-import { Box, Chip, CircularProgress, Grid, Paper, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Grid, Paper, Typography } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import PersonIcon from "@mui/icons-material/Person"; // pasajeros
-import AssignmentIcon from "@mui/icons-material/Assignment"; // files
-import GroupsIcon from "@mui/icons-material/Groups"; // salidas grupales
-import RoomServiceIcon from "@mui/icons-material/RoomService"; // servicios
-import PaymentsIcon from "@mui/icons-material/Payments"; // pagos
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import StorefrontIcon from "@mui/icons-material/Storefront";
 import AssignmentLateIcon from "@mui/icons-material/AssignmentLate";
 import BadgeIcon from "@mui/icons-material/Badge";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { getHome, iHome } from "./inicioHandler";
 import { formatFileNumber } from "./File/utils/fileNumber";
 import { formatMoney } from "./File/utils/totals";
-import { LIQUIDATION_URGENT_DAYS } from "./File/utils/liquidation";
 
-const sections = [
-  { title: "PASAJEROS", icon: <PersonIcon />, route: "/paxs", color: "#0077b6" },
-  { title: "FILES", icon: <AssignmentIcon />, route: "/files", color: "#0096c7" },
-  { title: "SERVICIOS", icon: <RoomServiceIcon />, route: "/services", color: "#0369a1" },
-  { title: "PAGOS", icon: <PaymentsIcon />, route: "/pagos", color: "#0D5B75" },
-  // Sección todavía no desarrollada
-  { title: "GRUPALES", icon: <GroupsIcon />, route: "/groups", color: "#023e8a", comingSoon: true },
-];
+/* ---------- Textos ---------- */
 
-const TYPE_LABEL: Record<string, string> = { AEREO: "✈️", HOTEL: "🏨", EXCURSION: "🎒", TRASLADO: "🚗" };
-
-const fileLabel = (file: { numero?: number | null; anio?: number | null; destino: string }) =>
-  [formatFileNumber(file), file.destino].filter(Boolean).join(" · ");
-
-// "Vencido hace 3 días" / "Hoy" / "En 5 días"
-const daysText = (days: number, past = "Vencido hace", future = "En") =>
-  days < 0 ? `${past} ${-days} día${days === -1 ? "" : "s"}` : days === 0 ? "Hoy" : `${future} ${days} día${days === 1 ? "" : "s"}`;
-
-const DaysChip = ({ days, warnFrom = 7, past }: { days: number; warnFrom?: number; past?: string }) => {
-  const color = days < 0 ? "error" : days <= warnFrom ? "warning" : "default";
-  return (
-    <Chip
-      size="small"
-      color={color}
-      variant={color === "default" ? "outlined" : "filled"}
-      label={daysText(days, past)}
-      sx={{ fontWeight: 600 }}
-    />
-  );
+const greeting = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Buen día" : hour < 20 ? "Buenas tardes" : "Buenas noches";
 };
 
-/* ---------- Recuadro del tablero ---------- */
+const fullName = (p?: { firstname: string; lastname: string } | null) => (p ? `${p.firstname} ${p.lastname}` : "");
 
-interface PanelProps {
-  title: string;
-  icon: JSX.Element;
-  summary?: ReactNode;
-  link?: string;
-  empty: string;
-  children: ReactNode[];
-}
+// "hoy", "mañana", "en 5 días", "hace 3 días"
+const whenText = (days: number) =>
+  days === 0 ? "hoy" : days === 1 ? "mañana" : days === -1 ? "ayer" : days > 0 ? `en ${days} días` : `hace ${-days} días`;
 
-const Panel = ({ title, icon, summary, link, empty, children }: PanelProps) => (
+const plural = (n: number, singular: string, pluralWord: string) => `${n} ${n === 1 ? singular : pluralWord}`;
+
+/* ---------- Colores del semáforo ---------- */
+
+type Level = "red" | "orange" | "blue" | "green";
+const LEVEL: Record<Level, { main: string; soft: string }> = {
+  red: { main: "#c62828", soft: "#fdecea" },
+  orange: { main: "#b45309", soft: "#fff4e5" },
+  blue: { main: "#0D5B75", soft: "#e6f1f5" },
+  green: { main: "#2e7d32", soft: "#edf7ed" },
+};
+
+/* ---------- 1. Tareas ---------- */
+
+const TASKS = [
+  { title: "Cargar un pasajero", text: "Sus datos, documentos y fotos", icon: <PersonAddIcon />, to: "/paxs/create" },
+  { title: "Crear un file", text: "Un viaje con sus pasajeros y servicios", icon: <NoteAddIcon />, to: "/files/create" },
+  { title: "Registrar un cobro", text: "Cuando un pasajero nos paga", icon: <PaymentsIcon />, to: "/pagos" },
+  { title: "Pagar a un mayorista", text: "Anotar lo que le pagamos", icon: <StorefrontIcon />, to: "/pagos?seccion=mayoristas" },
+];
+
+const TaskCard = ({ task }: { task: (typeof TASKS)[number] }) => (
   <Paper
-    elevation={3}
+    component={Link}
+    to={task.to}
+    elevation={0}
     sx={{
-      p: 2,
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      p: 2.5,
       height: "100%",
       borderRadius: 3,
-      backgroundColor: "rgba(255, 255, 255, 0.96)",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+      textDecoration: "none",
+      color: "inherit",
+      backgroundColor: "#fff",
+      border: "2px solid transparent",
+      boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+      transition: "all 0.2s ease",
+      "&:hover, &:focus-visible": { borderColor: "#0D5B75", transform: "translateY(-3px)", boxShadow: "0 10px 24px rgba(0,0,0,0.18)" },
     }}
   >
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#0D5B75" }}>
-        {icon}
-        <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
-      </Box>
-      {link && (
-        <Typography component={Link} to={link} variant="body2" sx={{ color: "#0D5B75", fontWeight: 600, textDecoration: "none" }}>
-          Ver todo →
-        </Typography>
-      )}
+    <Box
+      sx={{
+        width: 56,
+        height: 56,
+        flexShrink: 0,
+        borderRadius: "50%",
+        display: "grid",
+        placeItems: "center",
+        backgroundColor: "#e6f1f5",
+        color: "#0D5B75",
+        "& svg": { fontSize: 30 },
+      }}
+    >
+      {task.icon}
     </Box>
-    {summary && <Box sx={{ mb: 1 }}>{summary}</Box>}
-    {children.length === 0 ? (
-      <Typography sx={{ color: "success.main", fontWeight: 600, py: 1 }}>✓ {empty}</Typography>
-    ) : (
-      children
-    )}
+    <Box sx={{ minWidth: 0 }}>
+      <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#123" }}>{task.title}</Typography>
+      <Typography sx={{ color: "#4a5b63", fontSize: "0.95rem" }}>{task.text}</Typography>
+    </Box>
   </Paper>
 );
 
-const Row = ({ to, left, right }: { to: string; left: ReactNode; right: ReactNode }) => {
+/* ---------- 2. Resumen "para revisar hoy" ---------- */
+
+interface Summary {
+  key: string;
+  icon: JSX.Element;
+  level: Level;
+  title: string;
+  detail: string;
+}
+
+const SummaryCard = ({ summary, onClick }: { summary: Summary; onClick: () => void }) => {
+  const color = LEVEL[summary.level];
+  return (
+    <Paper
+      component="button"
+      onClick={onClick}
+      elevation={0}
+      sx={{
+        width: "100%",
+        height: "100%",
+        textAlign: "left",
+        cursor: "pointer",
+        font: "inherit",
+        p: 2,
+        borderRadius: 3,
+        border: "none",
+        borderLeft: `6px solid ${color.main}`,
+        backgroundColor: "#fff",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+        display: "flex",
+        gap: 1.5,
+        alignItems: "flex-start",
+        transition: "transform 0.2s ease",
+        "&:hover, &:focus-visible": { transform: "translateY(-2px)" },
+      }}
+    >
+      <Box sx={{ color: color.main, backgroundColor: color.soft, borderRadius: 2, p: 1, display: "flex", "& svg": { fontSize: 26 } }}>
+        {summary.level === "green" ? <CheckCircleIcon /> : summary.icon}
+      </Box>
+      <Box>
+        <Typography sx={{ fontWeight: 700, fontSize: "1.05rem", color: color.main, lineHeight: 1.3 }}>{summary.title}</Typography>
+        <Typography sx={{ color: "#4a5b63", fontSize: "0.9rem", mt: 0.25 }}>{summary.detail}</Typography>
+      </Box>
+    </Paper>
+  );
+};
+
+const buildSummaries = (home: iHome): Summary[] => {
+  const salidas = home.proximasSalidas.length;
+  const cobrosVencidos = home.cobros.vencidos;
+  const cobrosSemana = home.cobros.semana;
+  const mayVencidos = home.mayoristas.vencidos;
+  const maySemana = home.mayoristas.semana;
+  const liquidar = home.sinLiquidar.total;
+  const docProblems = home.documentos.items.filter((d) => d.problema).length;
+  const docs = home.documentos.total;
+
+  return [
+    {
+      key: "salidas",
+      icon: <FlightTakeoffIcon />,
+      level: salidas > 0 ? "blue" : "green",
+      title: salidas > 0 ? `${plural(salidas, "viaje sale", "viajes salen")} pronto` : "No hay salidas próximas",
+      detail: "En los próximos 15 días",
+    },
+    {
+      key: "cobros",
+      icon: <AccountBalanceWalletIcon />,
+      level: cobrosVencidos > 0 ? "red" : cobrosSemana > 0 ? "orange" : "green",
+      title:
+        cobrosVencidos > 0
+          ? `${plural(cobrosVencidos, "cobro vencido", "cobros vencidos")}`
+          : cobrosSemana > 0
+            ? `${plural(cobrosSemana, "cobro vence", "cobros vencen")} esta semana`
+            : "Cobros al día",
+      detail: "Lo que nos tienen que pagar los pasajeros",
+    },
+    {
+      key: "mayoristas",
+      icon: <StorefrontIcon />,
+      level: mayVencidos > 0 ? "red" : maySemana > 0 ? "orange" : "green",
+      title:
+        mayVencidos > 0
+          ? `${plural(mayVencidos, "pago vencido", "pagos vencidos")} a mayoristas`
+          : maySemana > 0
+            ? `${plural(maySemana, "pago a mayorista vence", "pagos a mayoristas vencen")} esta semana`
+            : "Pagos a mayoristas al día",
+      detail: "Lo que tenemos que pagar nosotros",
+    },
+    {
+      key: "liquidar",
+      icon: <AssignmentLateIcon />,
+      level: liquidar > 0 ? "orange" : "green",
+      title: liquidar > 0 ? `${plural(liquidar, "servicio para liquidar", "servicios para liquidar")}` : "Todo liquidado",
+      detail: "De viajes que salen en menos de 30 días",
+    },
+    {
+      key: "documentos",
+      icon: <BadgeIcon />,
+      level: docProblems > 0 ? "red" : docs > 0 ? "orange" : "green",
+      title:
+        docProblems > 0
+          ? `${plural(docProblems, "documento traba", "documentos traban")} un viaje`
+          : docs > 0
+            ? `${plural(docs, "documento vence", "documentos vencen")} pronto`
+            : "Documentos en orden",
+      detail: "DNI y pasaportes de los pasajeros",
+    },
+  ];
+};
+
+/* ---------- 3. Detalle ---------- */
+
+const Panel = ({ id, title, icon, link, linkText, children }: { id: string; title: string; icon: JSX.Element; link?: string; linkText?: string; children: ReactNode[] }) =>
+  children.length === 0 ? null : (
+    <Paper id={id} elevation={0} sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, backgroundColor: "#fff", boxShadow: "0 4px 14px rgba(0,0,0,0.12)", scrollMarginTop: 90 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#0D5B75", "& svg": { fontSize: 26 } }}>
+          {icon}
+          <Typography sx={{ fontWeight: 700, fontSize: "1.15rem" }}>{title}</Typography>
+        </Box>
+        {link && (
+          <Button component={Link} to={link} endIcon={<ChevronRightIcon />} sx={{ textTransform: "none", fontWeight: 600, color: "#0D5B75" }}>
+            {linkText ?? "Ver todo"}
+          </Button>
+        )}
+      </Box>
+      <Box sx={{ display: "flex", flexDirection: "column" }}>{children}</Box>
+    </Paper>
+  );
+
+// Una línea del detalle: frase a la izquierda, dato importante a la derecha; lleva al file o pasajero
+const Line = ({ to, level, main, sub, right }: { to: string; level: Level; main: ReactNode; sub?: ReactNode; right: ReactNode }) => {
   const navigate = useNavigate();
   return (
     <Box
+      role="link"
+      tabIndex={0}
       onClick={() => navigate(to)}
+      onKeyDown={(e) => e.key === "Enter" && navigate(to)}
       sx={{
         display: "flex",
-        justifyContent: "space-between",
         alignItems: "center",
-        gap: 1,
-        py: 0.75,
+        gap: 1.5,
+        py: 1.25,
         px: 1,
         mx: -1,
-        borderRadius: 1.5,
+        borderRadius: 2,
         cursor: "pointer",
-        borderBottom: "1px solid rgba(0,0,0,0.05)",
-        "&:hover": { backgroundColor: "rgba(13, 91, 117, 0.06)" },
+        borderBottom: "1px solid #eef2f4",
+        "&:last-of-type": { borderBottom: "none" },
+        "&:hover, &:focus-visible": { backgroundColor: "#f2f8fa", outline: "none" },
       }}
     >
-      <Box sx={{ minWidth: 0 }}>{left}</Box>
+      <Box sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: LEVEL[level].main, flexShrink: 0 }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "#123" }}>{main}</Typography>
+        {sub && <Typography sx={{ fontSize: "0.9rem", color: "#5b6d74" }}>{sub}</Typography>}
+      </Box>
       <Box sx={{ textAlign: "right", flexShrink: 0 }}>{right}</Box>
+      <ChevronRightIcon sx={{ color: "#9db1b8" }} />
     </Box>
   );
 };
 
-const Primary = ({ children }: { children: ReactNode }) => (
-  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-    {children}
-  </Typography>
+const Right = ({ strong, small, level }: { strong: ReactNode; small?: ReactNode; level?: Level }) => (
+  <>
+    <Typography sx={{ fontWeight: 700, color: level ? LEVEL[level].main : "#123", whiteSpace: "nowrap" }}>{strong}</Typography>
+    {small && <Typography sx={{ fontSize: "0.85rem", color: "#5b6d74", whiteSpace: "nowrap" }}>{small}</Typography>}
+  </>
 );
-const Secondary = ({ children, color = "text.secondary" }: { children: ReactNode; color?: string }) => (
-  <Typography variant="caption" sx={{ color, display: "block" }} noWrap>
-    {children}
-  </Typography>
-);
+
+const fileText = (file: { numero?: number | null; anio?: number | null; destino: string }) =>
+  formatFileNumber(file) ? `${file.destino} (file ${formatFileNumber(file)})` : file.destino;
 
 /* ---------- Inicio ---------- */
 
@@ -140,286 +282,166 @@ export const Inicio = () => {
   }, []);
 
   const today = new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <Box
       sx={{
-        minHeight: "calc(100vh - 64px)",
-        backgroundImage:
-          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%), " +
-          "radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%), " +
-          "radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
+        minHeight: "calc(100vh - 68px)",
+        backgroundImage: "linear-gradient(160deg, #0D5B75 0%, #1a7a99 45%, #89c2d9 100%)",
         px: { xs: 2, md: 6 },
-        py: 3,
+        py: { xs: 3, md: 4 },
       }}
     >
-      <Box sx={{ maxWidth: 1300, mx: "auto" }}>
-        {/* Encabezado */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <Box sx={{ backgroundColor: "#fff", borderRadius: 2, p: 0.75, display: "flex", boxShadow: "0 4px 12px rgba(0,0,0,0.25)" }}>
-            <img src="/clasicalogo.jpg" alt="Clásica Moderna" style={{ height: 44, borderRadius: 6 }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" sx={{ color: "#fff", fontWeight: 700 }}>
-              ¡Hola! 👋
-            </Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.85)", textTransform: "capitalize" }}>{today}</Typography>
-          </Box>
+      <Box sx={{ maxWidth: 1200, mx: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* Saludo */}
+        <Box>
+          <Typography sx={{ color: "#fff", fontWeight: 700, fontSize: { xs: "1.8rem", md: "2.2rem" } }}>{greeting()} 👋</Typography>
+          <Typography sx={{ color: "rgba(255,255,255,0.9)", fontSize: "1.1rem", "&::first-letter": { textTransform: "uppercase" } }}>
+            {today}
+          </Typography>
         </Box>
 
-        {/* Accesos directos */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          {sections.map((section) => {
-            const card = (
-              <Paper
-                elevation={4}
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  borderRadius: 3,
-                  color: "#fff",
-                  backgroundColor: section.color,
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  opacity: section.comingSoon ? 0.55 : 1,
-                  cursor: section.comingSoon ? "default" : "pointer",
-                  transition: "all 0.3s ease",
-                  "& svg": { fontSize: 30 },
-                  "&:hover": section.comingSoon
-                    ? {}
-                    : { transform: "translateY(-4px)", boxShadow: "0 10px 24px rgba(0,0,0,0.35)" },
-                }}
-              >
-                {section.icon}
-                <Box>
-                  <Typography sx={{ fontWeight: 700, letterSpacing: 0.5 }}>{section.title}</Typography>
-                  {section.comingSoon && <Typography variant="caption">Próximamente</Typography>}
-                </Box>
-              </Paper>
-            );
-            return (
-              <Grid item xs={6} sm={4} md key={section.title}>
-                {section.comingSoon ? (
-                  card
-                ) : (
-                  <Link to={section.route} style={{ textDecoration: "none" }}>
-                    {card}
-                  </Link>
-                )}
+        {/* 1. Tareas */}
+        <Box component="section">
+          <Typography sx={{ color: "#fff", fontWeight: 700, fontSize: "1.3rem", mb: 1.5 }}>¿Qué querés hacer?</Typography>
+          <Grid container spacing={2}>
+            {TASKS.map((task) => (
+              <Grid item xs={12} sm={6} md={3} key={task.title}>
+                <TaskCard task={task} />
               </Grid>
-            );
-          })}
-        </Grid>
+            ))}
+          </Grid>
+        </Box>
 
-        {/* Tablero */}
+        {/* 2 y 3. Resumen y detalle */}
         {error ? (
-          <Paper sx={{ p: 2, borderRadius: 3 }}>
-            <Typography color="error">No se pudo cargar el resumen del día.</Typography>
+          <Paper sx={{ p: 2.5, borderRadius: 3 }}>
+            <Typography color="error" sx={{ fontSize: "1.05rem" }}>
+              No se pudo cargar el resumen del día. Probá recargar la página.
+            </Typography>
           </Paper>
         ) : !home ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress sx={{ color: "#fff" }} />
           </Box>
         ) : (
-          <Grid container spacing={2}>
-            {/* Próximas salidas */}
-            <Grid item xs={12} md={6}>
-              <Panel
-                title="Próximas salidas (15 días)"
-                icon={<FlightTakeoffIcon />}
-                link="/files"
-                empty="No hay salidas en los próximos 15 días."
-              >
-                {home.proximasSalidas.map((f) => (
-                  <Row
-                    key={f.id}
-                    to={`/files/profile/${f.id}`}
-                    left={
-                      <>
-                        <Primary>{fileLabel(f)}</Primary>
-                        <Secondary>
-                          {f.primerPasajero ? `${f.primerPasajero.lastname} ${f.primerPasajero.firstname}` : "Sin pasajeros"}
-                          {f.pasajeros > 1 ? ` +${f.pasajeros - 1}` : ""}
-                        </Secondary>
-                        {f.sinLiquidar > 0 && (
-                          <Secondary color="error.main">
-                            ⚠ {f.sinLiquidar} servicio{f.sinLiquidar === 1 ? "" : "s"} sin liquidar
-                          </Secondary>
-                        )}
-                      </>
-                    }
-                    right={
-                      <>
-                        <Chip
-                          size="small"
-                          color={f.diasParaSalida === 0 ? "warning" : "primary"}
-                          label={f.diasParaSalida === 0 ? "Sale hoy" : `En ${f.diasParaSalida} día${f.diasParaSalida === 1 ? "" : "s"}`}
-                          sx={{ fontWeight: 600 }}
-                        />
-                        <Secondary>{dayjs(f.fechaSalida).format("DD/MM/YYYY")}</Secondary>
-                      </>
-                    }
-                  />
+          <>
+            <Box component="section">
+              <Typography sx={{ color: "#fff", fontWeight: 700, fontSize: "1.3rem", mb: 1.5 }}>Para revisar hoy</Typography>
+              <Grid container spacing={2}>
+                {buildSummaries(home).map((summary) => (
+                  <Grid item xs={12} sm={6} md key={summary.key}>
+                    <SummaryCard summary={summary} onClick={() => scrollTo(`detalle-${summary.key}`)} />
+                  </Grid>
                 ))}
-              </Panel>
-            </Grid>
+              </Grid>
+            </Box>
 
-            {/* Cobros a pasajeros */}
-            <Grid item xs={12} md={6}>
-              <Panel
-                title="Cobros a pasajeros"
-                icon={<AccountBalanceWalletIcon />}
-                link="/pagos"
-                empty="No hay cobros vencidos ni que venzan esta semana."
-                summary={
-                  (home.cobros.vencidos > 0 || home.cobros.semana > 0) && (
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                      {home.cobros.vencidos > 0 && <Chip size="small" color="error" label={`${home.cobros.vencidos} vencidos`} />}
-                      {home.cobros.semana > 0 && <Chip size="small" color="warning" label={`${home.cobros.semana} vencen esta semana`} />}
-                    </Box>
-                  )
-                }
-              >
-                {home.cobros.items.map((c) => (
-                  <Row
-                    key={c.id}
-                    to={`/files/profile/${c.id}`}
-                    left={
-                      <>
-                        <Primary>{fileLabel(c)}</Primary>
-                        <Secondary>
-                          {c.pasajero ? `${c.pasajero.lastname} ${c.pasajero.firstname} · ` : ""}
-                          {c.proximoVencimiento?.concepto}
-                        </Secondary>
-                      </>
-                    }
-                    right={
-                      <>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main" }}>
-                          {formatMoney(c.proximoVencimiento?.falta ?? c.falta, c.moneda)}
-                        </Typography>
-                        {c.proximoVencimiento && <DaysChip days={c.proximoVencimiento.diasParaVencer} />}
-                      </>
-                    }
-                  />
-                ))}
+            <Box component="section" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Panel id="detalle-cobros" title="Cobros a pasajeros" icon={<AccountBalanceWalletIcon />} link="/pagos" linkText="Ir a cobros">
+                {home.cobros.items.map((c) => {
+                  const due = c.proximoVencimiento;
+                  const level: Level = due && due.diasParaVencer < 0 ? "red" : "orange";
+                  return (
+                    <Line
+                      key={c.id}
+                      to={`/files/profile/${c.id}`}
+                      level={level}
+                      main={`${fullName(c.pasajero) || "Sin pasajero"} debe ${formatMoney(due?.falta ?? c.falta, c.moneda)}`}
+                      sub={`${due?.concepto ?? "Pago"} · ${fileText(c)}`}
+                      right={
+                        due && (
+                          <Right
+                            level={level}
+                            strong={due.diasParaVencer < 0 ? `Venció ${whenText(due.diasParaVencer)}` : `Vence ${whenText(due.diasParaVencer)}`}
+                            small={dayjs(due.vencimiento).format("DD/MM/YYYY")}
+                          />
+                        )
+                      }
+                    />
+                  );
+                })}
               </Panel>
-            </Grid>
 
-            {/* Pagos a mayoristas */}
-            <Grid item xs={12} md={6}>
-              <Panel
-                title="Pagos a mayoristas"
-                icon={<StorefrontIcon />}
-                link="/pagos?seccion=mayoristas"
-                empty="No hay pagos a mayoristas vencidos ni que venzan esta semana."
-                summary={
-                  (home.mayoristas.vencidos > 0 || home.mayoristas.semana > 0) && (
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                      {home.mayoristas.vencidos > 0 && <Chip size="small" color="error" label={`${home.mayoristas.vencidos} vencidos`} />}
-                      {home.mayoristas.semana > 0 && <Chip size="small" color="warning" label={`${home.mayoristas.semana} vencen esta semana`} />}
-                    </Box>
-                  )
-                }
-              >
-                {home.mayoristas.items.map((s) => (
-                  <Row
-                    key={s.id}
-                    to={s.file ? `/files/profile/${s.file.id}` : "/pagos?seccion=mayoristas"}
-                    left={
-                      <>
-                        <Primary>
-                          {TYPE_LABEL[s.type]} {s.nombre || "Sin nombre"}
-                        </Primary>
-                        <Secondary>
-                          {s.provider || "Sin mayorista"}
-                          {s.file ? ` · ${fileLabel(s.file)}` : ""}
-                        </Secondary>
-                      </>
-                    }
+              <Panel id="detalle-documentos" title="Documentos de pasajeros" icon={<BadgeIcon />} link="/paxs" linkText="Ir a pasajeros">
+                {home.documentos.items.map((d) => (
+                  <Line
+                    key={`${d.paxId}-${d.documento}`}
+                    to={`/paxs/profile/${d.paxId}`}
+                    level={d.problema ? "red" : "orange"}
+                    main={`${d.documento === "DNI" ? "El DNI" : "El pasaporte"} de ${d.pasajero}`}
+                    sub={d.problema ?? `Vence el ${dayjs(d.vencimiento).format("DD/MM/YYYY")}`}
                     right={
-                      <>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "error.main" }}>
-                          {formatMoney(s.falta, s.currency)}
-                        </Typography>
-                        {s.diasParaVencer !== null && <DaysChip days={s.diasParaVencer} />}
-                      </>
-                    }
-                  />
-                ))}
-              </Panel>
-            </Grid>
-
-            {/* Servicios sin liquidar */}
-            <Grid item xs={12} md={6}>
-              <Panel
-                title={`Servicios sin liquidar${home.sinLiquidar.total ? ` (${home.sinLiquidar.total})` : ""}`}
-                icon={<AssignmentLateIcon />}
-                empty="Todos los servicios de los próximos 30 días están liquidados."
-              >
-                {home.sinLiquidar.items.map((s) => (
-                  <Row
-                    key={s.id}
-                    to={`/files/profile/${s.file.id}`}
-                    left={
-                      <>
-                        <Primary>
-                          {TYPE_LABEL[s.type]} {s.nombre || "Sin nombre"}
-                        </Primary>
-                        <Secondary>
-                          {s.provider ? `${s.provider} · ` : ""}
-                          {fileLabel(s.file)}
-                        </Secondary>
-                      </>
-                    }
-                    right={
-                      <Chip
-                        size="small"
-                        color={s.diasParaSalida <= LIQUIDATION_URGENT_DAYS ? "error" : "warning"}
-                        label={s.diasParaSalida === 0 ? "Sale hoy" : `Sale en ${s.diasParaSalida} días`}
-                        sx={{ fontWeight: 600 }}
+                      <Right
+                        level={d.problema ? "red" : "orange"}
+                        strong={d.diasParaVencer < 0 ? "Vencido" : `Vence ${whenText(d.diasParaVencer)}`}
                       />
                     }
                   />
                 ))}
               </Panel>
-            </Grid>
 
-            {/* Documentos */}
-            <Grid item xs={12}>
-              <Panel
-                title={`Documentos por vencer o con problemas${home.documentos.total ? ` (${home.documentos.total})` : ""}`}
-                icon={<BadgeIcon />}
-                link="/paxs"
-                empty="No hay documentos por vencer en los próximos 6 meses."
-              >
-                {home.documentos.items.map((d) => (
-                  <Row
-                    key={`${d.paxId}-${d.documento}`}
-                    to={`/paxs/profile/${d.paxId}`}
-                    left={
-                      <>
-                        <Primary>{d.pasajero}</Primary>
-                        <Secondary>
-                          {d.documento} · vence el {dayjs(d.vencimiento).format("DD/MM/YYYY")}
-                        </Secondary>
-                        {d.problema && <Secondary color="error.main">⚠ {d.problema}</Secondary>}
-                      </>
-                    }
-                    right={
-                      d.problema ? (
-                        <Chip size="small" color="error" label={d.diasParaVencer < 0 ? "Vencido" : "Antes del viaje"} sx={{ fontWeight: 600 }} />
-                      ) : (
-                        <DaysChip days={d.diasParaVencer} warnFrom={60} />
-                      )
-                    }
+              <Panel id="detalle-liquidar" title="Servicios para liquidar" icon={<AssignmentLateIcon />}>
+                {home.sinLiquidar.items.map((s) => (
+                  <Line
+                    key={s.id}
+                    to={`/files/profile/${s.file.id}`}
+                    level={s.diasParaSalida <= 21 ? "red" : "orange"}
+                    main={s.nombre || "Servicio sin nombre"}
+                    sub={`${s.provider ? `${s.provider} · ` : ""}${fileText(s.file)}`}
+                    right={<Right level={s.diasParaSalida <= 21 ? "red" : "orange"} strong={`El viaje sale ${whenText(s.diasParaSalida)}`} />}
                   />
                 ))}
               </Panel>
-            </Grid>
-          </Grid>
+
+              <Panel id="detalle-mayoristas" title="Pagos a mayoristas" icon={<StorefrontIcon />} link="/pagos?seccion=mayoristas" linkText="Ir a mayoristas">
+                {home.mayoristas.items.map((s) => {
+                  const level: Level = s.diasParaVencer !== null && s.diasParaVencer < 0 ? "red" : "orange";
+                  return (
+                    <Line
+                      key={s.id}
+                      to={s.file ? `/files/profile/${s.file.id}` : "/pagos?seccion=mayoristas"}
+                      level={level}
+                      main={`Pagarle ${formatMoney(s.falta, s.currency)} a ${s.provider || "un mayorista sin nombre"}`}
+                      sub={`${s.nombre}${s.file ? ` · ${fileText(s.file)}` : ""}`}
+                      right={
+                        s.diasParaVencer !== null && (
+                          <Right
+                            level={level}
+                            strong={s.diasParaVencer < 0 ? `Venció ${whenText(s.diasParaVencer)}` : `Vence ${whenText(s.diasParaVencer)}`}
+                          />
+                        )
+                      }
+                    />
+                  );
+                })}
+              </Panel>
+
+              <Panel id="detalle-salidas" title="Próximas salidas" icon={<FlightTakeoffIcon />} link="/files" linkText="Ir a files">
+                {home.proximasSalidas.map((f) => (
+                  <Line
+                    key={f.id}
+                    to={`/files/profile/${f.id}`}
+                    level={f.sinLiquidar > 0 ? "orange" : "blue"}
+                    main={fileText(f)}
+                    sub={
+                      <>
+                        {fullName(f.primerPasajero) || "Sin pasajeros"}
+                        {f.pasajeros > 1 ? ` y ${plural(f.pasajeros - 1, "persona más", "personas más")}` : ""}
+                        {f.sinLiquidar > 0 && (
+                          <Box component="span" sx={{ color: LEVEL.orange.main, fontWeight: 600 }}>
+                            {" "}· {plural(f.sinLiquidar, "servicio sin liquidar", "servicios sin liquidar")}
+                          </Box>
+                        )}
+                      </>
+                    }
+                    right={<Right strong={`Sale ${whenText(f.diasParaSalida)}`} small={dayjs(f.fechaSalida).format("DD/MM/YYYY")} />}
+                  />
+                ))}
+              </Panel>
+            </Box>
+          </>
         )}
       </Box>
     </Box>
