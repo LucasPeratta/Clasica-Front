@@ -149,6 +149,7 @@ const buildSummaries = (home: iHome): Summary[] => {
   const cobrosSemana = home.cobros.semana;
   const mayVencidos = home.mayoristas.vencidos;
   const maySemana = home.mayoristas.semana;
+  const nextSupplier = home.mayoristas.items[0];
   const liquidar = home.sinLiquidar.total;
   const docProblems = home.documentos.items.filter((d) => d.problema).length;
   const docs = home.documentos.total;
@@ -176,14 +177,20 @@ const buildSummaries = (home: iHome): Summary[] => {
     {
       key: "mayoristas",
       icon: <StorefrontIcon />,
-      level: mayVencidos > 0 ? "red" : maySemana > 0 ? "orange" : "green",
+      level: mayVencidos > 0 ? "red" : maySemana > 0 ? "orange" : nextSupplier ? "blue" : "green",
       title:
         mayVencidos > 0
           ? `${plural(mayVencidos, "pago vencido", "pagos vencidos")} a mayoristas`
           : maySemana > 0
             ? `${plural(maySemana, "pago a mayorista vence", "pagos a mayoristas vencen")} esta semana`
-            : "Pagos a mayoristas al día",
-      detail: "Lo que tenemos que pagar nosotros",
+            : nextSupplier
+              ? "Próximo pago a mayorista"
+              : "Nada para pagar a mayoristas",
+      // Si no hay nada urgente, cuál es el próximo que se viene
+      detail:
+        mayVencidos === 0 && maySemana === 0 && nextSupplier && nextSupplier.diasParaVencer !== null
+          ? `${nextSupplier.mayorista || "Mayorista"}: ${formatMoney(nextSupplier.falta, nextSupplier.currency)}, vence ${whenText(nextSupplier.diasParaVencer)}`
+          : "Lo que tenemos que pagar nosotros",
     },
     {
       key: "liquidar",
@@ -404,20 +411,23 @@ export const Inicio = () => {
               </Panel>
 
               <Panel id="detalle-mayoristas" title="Pagos a mayoristas" icon={<StorefrontIcon />} link="/pagos?seccion=mayoristas" linkText="Ir a mayoristas">
-                {home.mayoristas.items.map((s) => {
-                  const level: Level = s.diasParaVencer !== null && s.diasParaVencer < 0 ? "red" : "orange";
+                {home.mayoristas.items.map((m) => {
+                  // Rojo vencido, naranja esta semana, azul los que vienen más adelante
+                  const days = m.diasParaVencer;
+                  const level: Level = days !== null && days < 0 ? "red" : days !== null && days <= 7 ? "orange" : "blue";
                   return (
                     <Line
-                      key={s.id}
-                      to={s.file ? `/files/profile/${s.file.id}` : "/pagos?seccion=mayoristas"}
+                      key={m.id}
+                      to={m.file ? `/files/profile/${m.file.id}` : "/pagos?seccion=mayoristas"}
                       level={level}
-                      main={`Pagarle ${formatMoney(s.falta, s.currency)} a ${s.provider || "un mayorista sin nombre"}`}
-                      sub={`${s.nombre}${s.file ? ` · ${fileText(s.file)}` : ""}`}
+                      main={`Pagarle ${formatMoney(m.falta, m.currency)} a ${m.mayorista || "un mayorista sin nombre"}`}
+                      sub={`${m.file ? fileText(m.file) : ""} · ${plural(m.servicios, "servicio", "servicios")}`}
                       right={
-                        s.diasParaVencer !== null && (
+                        days !== null && (
                           <Right
                             level={level}
-                            strong={s.diasParaVencer < 0 ? `Venció ${whenText(s.diasParaVencer)}` : `Vence ${whenText(s.diasParaVencer)}`}
+                            strong={days < 0 ? `Venció ${whenText(days)}` : `Vence ${whenText(days)}`}
+                            small={m.vencimiento ? dayjs(m.vencimiento).format("DD/MM/YYYY") : undefined}
                           />
                         )
                       }

@@ -22,7 +22,21 @@ export interface iHome {
     sinLiquidar: number;
   })[];
   cobros: { vencidos: number; semana: number; items: iCobranza[] };
-  mayoristas: { vencidos: number; semana: number; items: iServiceToPay[] };
+  // Próximos pagos a mayoristas (vencidos primero), uno por file y mayorista
+  mayoristas: {
+    vencidos: number;
+    semana: number;
+    items: {
+      id: string;
+      mayorista: string;
+      currency: string;
+      falta: number;
+      servicios: number;
+      diasParaVencer: number | null;
+      vencimiento: string | null;
+      file: iServiceToPay["file"];
+    }[];
+  };
   sinLiquidar: {
     total: number;
     items: { id: string; nombre: string; type: ServiceType; provider: string; file: iFileRef; diasParaSalida: number }[];
