@@ -19,4 +19,12 @@ export interface iFile {
   fechaSalida: null | dayjs.Dayjs;
   clients: iPax[];
   services: iService[];
+  // Solo en el listado: estado de los cobros al pasajero
+  cobro?: {
+    estado: "SIN_PLAN" | "PAGADO" | "VENCIDO" | "POR_VENCER" | "AL_DIA";
+    moneda: string | null;
+    falta: number;
+    cobrado: number;
+    total: number;
+  };
 }

@@ -3,7 +3,9 @@ import { Box, Snackbar, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { deletePax, getPaxFiles, getPaxPage, iPaxFile } from "./handler";
 import { LoadingScreen } from "../LoadingScreen";
-import { PaxSearchBar } from "./components/PaxSearchBar";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { PageHeader } from "../common/PageHeader";
+import { SearchBox } from "../common/SearchBox";
 import { PaxTable } from "./components/PaxTable";
 import { PaxDeleteDialog } from "./components/PaxDeleteDialog";
 import { usePaginatedList } from "../common/Pagination/usePaginatedList";
@@ -35,7 +37,6 @@ export const Pax = (): JSX.Element => {
 
   if (initialLoading) return <LoadingScreen />;
 
-  const handleAdd = () => navigate("/paxs/create");
   const handleView = (id: string) => navigate(`/paxs/profile/${id}`);
 
   // Antes de confirmar, se buscan los files en los que está el pasajero
@@ -76,26 +77,32 @@ export const Pax = (): JSX.Element => {
         minHeight: "calc(100vh - 64px)",
       }}
     >
-      {/* Barra de búsqueda */}
-      <PaxSearchBar
-        searchTerm={searchInput}
-        onSearchChange={setSearchInput}
-        onAddClick={handleAdd}
-      />
+      <Box sx={{ maxWidth: 1300, mx: "auto" }}>
+        <PageHeader
+          title="Pasajeros"
+          description="Todas las personas que viajan con nosotros. Tocá un pasajero para ver sus datos."
+          action={{ label: "Cargar un pasajero", icon: <PersonAddIcon />, to: "/paxs/create" }}
+        />
+        <SearchBox
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Buscá por nombre, apellido, DNI, pasaporte o email"
+        />
 
-      {/* Tabla */}
-      <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
-        <PaxTable pax={pax} onView={handleView} onDelete={askDelete} />
+        {/* Tabla */}
+        <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
+          <PaxTable pax={pax} onView={handleView} onDelete={askDelete} />
+        </Box>
+
+        {/* Paginación */}
+        <TablePaginationBar
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
       </Box>
-
-      {/* Paginación */}
-      <TablePaginationBar
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        pageSize={pageSize}
-        onPageChange={setPage}
-      />
 
       {/* Notificación de éxito */}
       <Snackbar

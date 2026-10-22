@@ -4,7 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { LoadingScreen } from "../LoadingScreen";
 import { useFiles, FileTab } from "./hooks/useFiles";
 import { FileTabs } from "./components/FileTabs";
-import { FileSearchBar } from "./components/FileSearchBar";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import { PageHeader } from "../common/PageHeader";
+import { SearchBox } from "../common/SearchBox";
 import { FileTable } from "./components/FileTable";
 import { FileDeleteDialog, iFileToDelete } from "./components/FileDeleteDialog";
 import { getFileById } from "./handler";
@@ -49,7 +51,6 @@ export const Files = (): JSX.Element => {
 
   if (initialLoading) return <LoadingScreen />;
 
-  const handleAdd = () => navigate("/files/create");
   const handleView = (id: string) => navigate(`/files/profile/${id}`);
 
   // Antes de confirmar se carga el detalle, para mostrar qué se va a eliminar
@@ -110,31 +111,38 @@ export const Files = (): JSX.Element => {
         minHeight: "calc(100vh - 64px)",
       }}
     >
-      <FileSearchBar
-        searchTerm={searchInput}
-        onSearchChange={setSearchInput}
-        onAdd={handleAdd}
-      />
+      <Box sx={{ maxWidth: 1300, mx: "auto" }}>
+        <PageHeader
+          title="Files"
+          description="Cada file es un viaje vendido, con sus pasajeros, servicios y pagos. Tocá uno para verlo."
+          action={{ label: "Crear un file", icon: <NoteAddIcon />, to: "/files/create" }}
+        />
+        <SearchBox
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Buscá por número de file (ej. 55), destino o pasajero"
+        />
 
-      <FileTabs tab={tab} onChange={setTab} counts={counts} />
+        <FileTabs tab={tab} onChange={setTab} counts={counts} />
 
-      <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
-        <FileTable
-          files={files}
-          emptyMessage={emptyMessage}
-          showTripStatus={tab === "current"}
-          onView={handleView}
-          onDeleteConfirm={handleDeleteConfirm}
+        <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
+          <FileTable
+            files={files}
+            emptyMessage={emptyMessage}
+            showTripStatus={tab === "current"}
+            onView={handleView}
+            onDeleteConfirm={handleDeleteConfirm}
+          />
+        </Box>
+
+        <TablePaginationBar
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
         />
       </Box>
-
-      <TablePaginationBar
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        pageSize={pageSize}
-        onPageChange={setPage}
-      />
 
       <Snackbar
         open={successOpen}
