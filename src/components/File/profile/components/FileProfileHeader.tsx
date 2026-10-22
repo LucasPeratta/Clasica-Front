@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Box, Typography, Button, Divider, Card, CardContent, TextField } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { iFile } from "../../model";
 import { formatFileNumber } from "../../utils/fileNumber";
 import dayjs from "dayjs";
@@ -8,9 +9,11 @@ import { useState, useEffect } from "react";
 interface FileProfileHeaderProps {
   file: iFile;
   onSave: (editedFile: iFile) => Promise<unknown>;
+  // Abre la confirmación para eliminar el file
+  onDelete?: () => void;
 }
 
-export const FileProfileHeader = ({ file, onSave }: FileProfileHeaderProps) => {
+export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderProps) => {
   const [editedFile, setEditedFile] = useState<iFile>(file);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,6 +72,17 @@ export const FileProfileHeader = ({ file, onSave }: FileProfileHeaderProps) => {
             }}
           >
             Editar
+          </Button>
+        )}
+        {!isEditing && onDelete && (
+          <Button
+            onClick={onDelete}
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}
+          >
+            Eliminar
           </Button>
         )}
       </Box>

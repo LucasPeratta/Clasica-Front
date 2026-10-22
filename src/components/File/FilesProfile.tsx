@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useFileProfile } from "./hooks/useFileProfile";
 import { LoadingScreen } from "../LoadingScreen";
-import { Box, Card, CardContent, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, MenuItem, Select, FormControl, InputLabel, List, ListItem, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, Card, CardContent, Snackbar, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Alert, MenuItem, Select, FormControl, InputLabel, List, ListItem, FormControlLabel, Checkbox } from "@mui/material";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -11,7 +11,9 @@ import { FileProfileHeader } from "./profile/components/FileProfileHeader";
 import { FileProfileClients } from "./profile/components/FileProfileClients";
 import { FileProfileServices } from "./profile/components/FileProfileServices";
 import { FileTotals } from "./components/FileTotals";
-import { updateFile, filePdfsUrl, toFileFormData } from "./handler";
+import { updateFile, filePdfsUrl, toFileFormData, deleteFile } from "./handler";
+import { FileDeleteDialog, iFileToDelete } from "./components/FileDeleteDialog";
+import { useNavigate } from "react-router-dom";
 import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { getPax } from "../Pax/handler";
 import { createService, updateService, setServiceLiquidado } from "../Service/handler";
@@ -29,6 +31,24 @@ export const FilesProfile = (): JSX.Element => {
   const [searchTermPax, setSearchTermPax] = useState("");
   const [editingService, setEditingService] = useState<iService | null>(null);
   const [serviceError, setServiceError] = useState(false);
+  const [deleteFileOpen, setDeleteFileOpen] = useState(false);
+  const [deletingFile, setDeletingFile] = useState(false);
+  const [deleteFileError, setDeleteFileError] = useState(false);
+  const navigate = useNavigate();
+
+  // Eliminar el file desde su perfil; al terminar vuelve a la lista (que muestra el aviso)
+  const handleDeleteFile = async () => {
+    if (!id) return;
+    setDeletingFile(true);
+    const ok = await deleteFile(id);
+    setDeletingFile(false);
+    if (ok) {
+      navigate("/files", { state: { fileDeleted: true } });
+    } else {
+      setDeleteFileOpen(false);
+      setDeleteFileError(true);
+    }
+  };
   const [openFechaInicioPicker, setOpenFechaInicioPicker] = useState(false);
   const [openFechaFinPicker, setOpenFechaFinPicker] = useState(false);
 
@@ -297,7 +317,26 @@ export const FilesProfile = (): JSX.Element => {
         minHeight: "calc(100vh - 64px)",
       }}
     >
-      <FileProfileHeader file={file} onSave={handleEditFileSave} />
+      <FileProfileHeader file={file} onSave={handleEditFileSave} onDelete={() => setDeleteFileOpen(true)} />
+
+      {/* Confirmación: muestra qué contiene el file antes de eliminarlo */}
+      <FileDeleteDialog
+        open={deleteFileOpen}
+        onClose={() => setDeleteFileOpen(false)}
+        onConfirm={handleDeleteFile}
+        file={file as iFileToDelete}
+        deleting={deletingFile}
+      />
+      <Snackbar
+        open={deleteFileError}
+        autoHideDuration={4000}
+        onClose={() => setDeleteFileError(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="error" onClose={() => setDeleteFileError(false)}>
+          No se pudo eliminar el file. Intentá de nuevo.
+        </Alert>
+      </Snackbar>
       <FileProfileClients 
         clients={file.clients} 
         fileId={file.id}

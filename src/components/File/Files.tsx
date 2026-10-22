@@ -1,6 +1,6 @@
-import { useState, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent } from "react";
 import { Box, Snackbar, Alert, Button, Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LoadingScreen } from "../LoadingScreen";
 import { useFiles, FileTab } from "./hooks/useFiles";
 import { FileTabs } from "./components/FileTabs";
@@ -37,6 +37,15 @@ export const Files = (): JSX.Element => {
   const [errorOpen, setErrorOpen] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Si se llega después de eliminar un file desde su perfil, mostrar el aviso (una sola vez)
+  useEffect(() => {
+    if ((location.state as { fileDeleted?: boolean } | null)?.fileDeleted) {
+      setSuccessOpen(true);
+      navigate(location.pathname + location.search, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   if (initialLoading) return <LoadingScreen />;
 
