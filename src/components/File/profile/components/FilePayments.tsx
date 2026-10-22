@@ -431,7 +431,7 @@ interface PaymentDialogProps {
   onSaved: (data: iPaymentsSummary) => void;
 }
 
-const PaymentDialog = ({ fileId, chargeCurrency, pago, suggestedAmount, onClose, onSaved }: PaymentDialogProps) => {
+export const PaymentDialog = ({ fileId, chargeCurrency, pago, suggestedAmount, onClose, onSaved }: PaymentDialogProps) => {
   const [fecha, setFecha] = useState(toDateInput(pago?.fecha ?? new Date()));
   const [moneda, setMoneda] = useState(pago?.moneda ?? chargeCurrency);
   const [importe, setImporte] = useState(pago ? String(pago.importe) : suggestedAmount > 0 ? String(suggestedAmount) : "");

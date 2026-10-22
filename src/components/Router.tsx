@@ -5,6 +5,7 @@ import { Pax, PaxProfile, PaxForm } from "./Pax";
 import { Service, ServiceForm, ServiceProfile } from "./Service";
 import { Files, FilesProfile, FileForm } from "./File/index";
 import { Login } from "./login/login";
+import { Pagos } from "./Pagos/Pagos";
 import { useAuth } from "./hooks/useAuth";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
               <Route path="/files/profile/:id" element={<FilesProfile />} />
               <Route path="/files/create" element={<FileForm />} />
               <Route path="/files/update/:id" element={<FileForm />} />
+              <Route path="/pagos" element={<Pagos />} />
               {/* Cualquier dirección que no existe vuelve al inicio */}
               <Route path="*" element={<Navigate to="/" />} />
             </>

@@ -108,6 +108,25 @@ function ResponsiveAppBar() {
                 SERVICIOS
               </Button>
 
+              <Button
+                color="inherit"
+                sx={{
+                  mx: 1.5,
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
+                onClick={() => {
+                  navigate("/pagos");
+                }}
+              >
+                PAGOS
+              </Button>
+
               {/* Sección todavía no desarrollada */}
               <Tooltip title="Próximamente">
                 <span>

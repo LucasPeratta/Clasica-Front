@@ -1,4 +1,5 @@
 import { apiFetch } from "../common/apiFetch";
+import { fetchPage, iPaginated } from "../common/Pagination/types";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
@@ -97,6 +98,47 @@ export const savePlan = (fileId: string, cuotas: iCuotaInput[]) =>
   send(`/${fileId}/plan`, { method: "PUT", body: JSON.stringify({ cuotas }) });
 
 export const resetPlan = (fileId: string) => send(`/${fileId}/plan`, { method: "DELETE" });
+
+/* ---------- Sección "Pagos": cobros de todos los files ---------- */
+
+interface iFileRef {
+  id: string;
+  numero?: number | null;
+  anio?: number | null;
+  destino: string;
+}
+
+// File que todavía debe plata
+export interface iCobranza extends iFileRef {
+  fechaSalida: string;
+  pasajero: { firstname: string; lastname: string } | null;
+  moneda: string;
+  total: number;
+  cobrado: number;
+  falta: number;
+  estado: PaymentsStatus;
+  proximoVencimiento: iPaymentsSummary["proximoVencimiento"];
+}
+
+// Pago recibido, con su file
+export interface iPagoHistorial extends iPago {
+  file: iFileRef;
+  pasajero: { firstname: string; lastname: string } | null;
+}
+
+// filtro: "vencidos" | "semana" | "mes" | "todos"
+export const getCobranzasPage = (
+  page: number,
+  search: string,
+  filtro: string
+): Promise<iPaginated<iCobranza>> =>
+  fetchPage<iCobranza>(`${apiUrl}/cobranzas`, page, search, { filtro });
+
+export const getPaymentsHistoryPage = (
+  page: number,
+  search: string
+): Promise<iPaginated<iPagoHistorial>> =>
+  fetchPage<iPagoHistorial>(`${apiUrl}/cobranzas/pagos`, page, search);
 
 /**
  * Cuánto cubre un pago en la moneda del file (misma regla que el backend):
