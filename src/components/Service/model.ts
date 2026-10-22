@@ -31,3 +31,20 @@ export interface iServiceFile {
   anio?: number | null;
   destino: string;
 }
+
+// Un servicio vacío para "Agregar servicio"
+export const newService = (): iService => ({
+  id: "",
+  nombre: "",
+  type: "AEREO",
+  precioNeto: "",
+  tarifa: "",
+  currency: "USD",
+  provider: "",
+  obs: "",
+  fechaInicio: null,
+  fechaFin: null,
+  createdAt: dayjs(),
+  deleted_at: null,
+});
+

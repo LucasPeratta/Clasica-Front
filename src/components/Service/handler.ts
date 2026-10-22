@@ -103,3 +103,22 @@ export const createService = async (formData: iService): Promise<Response> => {
     throw error;
   }
 };
+
+/**
+ * Crea o actualiza un servicio. Devuelve el servicio guardado (con su id) o null si falló.
+ */
+export const saveService = async (service: iService): Promise<iService | null> => {
+  try {
+    if (service.id) {
+      const resp = await updateService(service.id, service);
+      return resp.ok ? service : null;
+    }
+    const resp = await createService({ ...service, id: undefined } as unknown as iService);
+    if (!resp.ok) return null;
+    const body = await resp.json().catch(() => null);
+    const newId = body?.data?.id || body?.id;
+    return newId ? { ...service, id: newId } : null;
+  } catch {
+    return null;
+  }
+};

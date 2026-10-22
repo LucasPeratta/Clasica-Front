@@ -1,16 +1,11 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { iFile } from "../model";
 import { iPax } from "../../Pax/model";
 import { iService } from "../../Service/model";
-import { getPax } from "../../Pax/handler";
-import {
-  createService,
-  softDeleteService,
-  getServiceById,
-} from "../../Service/handler";
-import { getFileById, createFile, updateFile, toFileFormData } from "../handler";
+import { saveService, softDeleteService } from "../../Service/handler";
+import { createFile, toFileFormData } from "../handler";
 import { useGoBack } from "../../common/useGoBack";
 
 const initialState: iFile = {
@@ -19,143 +14,107 @@ const initialState: iFile = {
   precioNetoTotal: "0",
   tarifaTotal: "0",
   tarifaAlternativa: "",
+  tarifaAlternativaMoneda: null,
   destino: "",
-  fechaSalida: dayjs(),
+  fechaSalida: null,
   clients: [],
   services: [],
   obs: "",
 };
 
+export type FileFormErrors = Partial<Record<"destino" | "fechaSalida", string>>;
+
+/**
+ * Pantalla "Crear un file": datos del viaje, pasajeros y servicios
+ */
 export const useFileForm = () => {
-  const [paxs, setPaxs] = useState<iPax[]>([]);
   const [formData, setFormData] = useState<iFile>(initialState);
-  const [selectedPaxIds, setSelectedPaxIds] = useState<string[]>([]);
-  const [fileServices, setFileServices] = useState<iService[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
+  const [errors, setErrors] = useState<FileFormErrors>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const goBack = useGoBack(id ? `/files/profile/${id}` : "/files");
+  const goBack = useGoBack("/files");
 
-  useEffect(() => {
-    // Pasajeros para el selector y, al editar, el file
-    Promise.allSettled([getPax(), id ? getFileById(id) : Promise.resolve(undefined)])
-      .then(([paxResult, fileResult]) => {
-        const paxData: iPax[] =
-          paxResult.status === "fulfilled" && Array.isArray(paxResult.value)
-            ? paxResult.value
-            : [];
-        const fileData: iFile | undefined =
-          fileResult.status === "fulfilled" ? fileResult.value : undefined;
+  const setField = <K extends keyof iFile>(field: K, value: iFile[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field in errors) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
-        setPaxs(
-          paxData.sort((a, b) =>
-            `${a.lastname} ${a.firstname}`.localeCompare(
-              `${b.lastname} ${b.firstname}`
-            )
-          )
-        );
+  const addPaxs = (paxs: iPax[]) => {
+    setFormData((prev) => ({ ...prev, clients: [...prev.clients, ...paxs] }));
+    return true;
+  };
 
-        if (fileData) {
-          fileData.fechaSalida = dayjs(fileData.fechaSalida);
-          setFormData(fileData);
-          setSelectedPaxIds(fileData.clients.map((c) => c.id));
-          setFileServices(fileData.services);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [id]);
+  const removePax = (paxId: string) =>
+    setFormData((prev) => ({ ...prev, clients: prev.clients.filter((c) => c.id !== paxId) }));
 
-  // Calcular automáticamente los totales cuando cambien los servicios
-  useEffect(() => {
-    const precioNetoTotal = fileServices.reduce((sum, service) => {
-      const precioNeto = Number(service.precioNeto) || 0;
-      return sum + precioNeto;
-    }, 0);
-
-    const tarifaTotal = fileServices.reduce((sum, service) => {
-      const tarifa = Number(service.tarifa) || 0;
-      return sum + tarifa;
-    }, 0);
-
+  // El servicio se guarda enseguida; queda asociado al file cuando se crea el file
+  const saveFileService = async (service: iService) => {
+    const saved = await saveService(service);
+    if (!saved) return false;
     setFormData((prev) => ({
       ...prev,
-      precioNetoTotal: precioNetoTotal.toString(),
-      tarifaTotal: tarifaTotal.toString(),
+      services: prev.services.some((s) => s.id === saved.id)
+        ? prev.services.map((s) => (s.id === saved.id ? saved : s))
+        : [...prev.services, saved],
     }));
-  }, [fileServices]);
+    return true;
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+  const removeService = (serviceId: string) => {
+    setFormData((prev) => ({ ...prev, services: prev.services.filter((s) => s.id !== serviceId) }));
+    // Todavía no tiene file: se elimina para que no quede suelto
+    softDeleteService(serviceId);
   };
 
   const validate = () => {
-    return (
-      !!formData.destino &&
-      !!formData.fechaSalida &&
-      !!formData.precioNetoTotal &&
-      !!formData.tarifaTotal
-    );
+    const found: FileFormErrors = {};
+    if (!formData.destino.trim()) found.destino = "Falta el destino";
+    if (!formData.fechaSalida || !dayjs(formData.fechaSalida).isValid()) found.fechaSalida = "Falta la fecha de salida";
+    setErrors(found);
+    return Object.keys(found).length === 0;
   };
 
   const handleSubmit = async () => {
+    setSaveError(false);
     if (!validate()) {
-      setErrorNotificationOpen(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-
-    const paxsId = selectedPaxIds;
-    const servicesId = fileServices.map((s) => s.id);
-    
-    const dataToSend = toFileFormData(formData);
-
-    let ok = false;
-
+    setSaving(true);
     try {
-      if (id) {
-        const resp = await updateFile(id, dataToSend, paxsId, servicesId);
-        ok = resp.ok;
-      } else {
-        const resp = await createFile(dataToSend, paxsId, servicesId);
-        ok = resp.ok;
+      const resp = await createFile(
+        toFileFormData(formData),
+        formData.clients.map((c) => c.id),
+        formData.services.map((s) => s.id)
+      );
+      const body = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        setSaveError(true);
+        return;
       }
+      // Se abre el file recién creado (replace: "atrás" no vuelve al formulario vacío)
+      navigate(body?.id ? `/files/profile/${body.id}` : "/files", { replace: true });
     } catch {
-      ok = false;
-    }
-
-    if (ok) {
-      setNotificationOpen(true);
-      setTimeout(() => {
-        // Vuelve a donde estaba (el perfil al editar, la lista al crear)
-        goBack();
-      }, 1200);
-    } else {
-      setErrorNotificationOpen(true);
+      setSaveError(true);
+    } finally {
+      setSaving(false);
     }
   };
 
   return {
-    id,
-    paxs,
     formData,
-    setFormData,
-    selectedPaxIds,
-    setSelectedPaxIds,
-    fileServices,
-    setFileServices,
-    loading,
-    notificationOpen,
-    setNotificationOpen,
-    errorNotificationOpen,
-    setErrorNotificationOpen,
-    handleChange,
+    setField,
+    errors,
+    saving,
+    saveError,
+    setSaveError,
+    addPaxs,
+    removePax,
+    saveFileService,
+    removeService,
     handleSubmit,
-    navigate,
-    createService,
-    softDeleteService,
-    getServiceById,
+    goBack,
   };
 };
