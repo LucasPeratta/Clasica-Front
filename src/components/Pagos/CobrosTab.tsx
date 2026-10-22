@@ -22,7 +22,9 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import EventIcon from "@mui/icons-material/Event";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import ListAltIcon from "@mui/icons-material/ListAlt";
-import { Link, useNavigate } from "react-router-dom";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { usePaginatedList } from "../common/Pagination/usePaginatedList";
 import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
@@ -37,6 +39,7 @@ import {
 } from "../File/paymentsHandler";
 import { PaymentDialog } from "../File/profile/components/FilePayments";
 import { HistoryFilters, iHistoryFilter } from "./HistoryFilters";
+import { ViewSwitch } from "./ViewSwitch";
 import { useDebouncedValue } from "../common/useDebouncedValue";
 import { formatFileNumber } from "../File/utils/fileNumber";
 import { formatMoney } from "../File/utils/totals";
@@ -91,6 +94,20 @@ export const CobrosTab = () => {
   } = usePaginatedList(getCobranzasPage, FILTER);
 
   const navigate = useNavigate();
+
+  // Vista elegida (en la URL para volver al mismo lugar): quién nos debe / lo que ya cobramos
+  const [searchParams, setSearchParams] = useSearchParams();
+  const vista = searchParams.get("vista") === "cobrado" ? "cobrado" : "debe";
+  const setVista = (value: string) =>
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (value === "debe") params.delete("vista");
+        else params.set("vista", value);
+        return params;
+      },
+      { replace: true }
+    );
   const [payingFile, setPayingFile] = useState<iCobranza | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
 
@@ -126,170 +143,187 @@ export const CobrosTab = () => {
 
   return (
     <>
-      {/* Buscador */}
-      <Paper elevation={3} sx={{ ...paperSx, p: 2, mb: 2 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Buscar en pendientes por pasajero, destino o número de file (ej. 55)"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Paper>
-
-      <CountTabs
-        value={filter}
-        onChange={setFilter}
-        tabs={[
-          { value: "vencidos", label: "Vencidos", icon: <ErrorOutlineIcon />, count: counts?.vencidos },
-          { value: "semana", label: "Esta semana", icon: <EventIcon />, count: counts?.semana },
-          { value: "mes", label: "Este mes", icon: <DateRangeIcon />, count: counts?.mes },
-          { value: "todos", label: "Todos", icon: <ListAltIcon />, count: counts?.todos },
+      {/* Una lista por vez: quién nos debe / lo que ya cobramos */}
+      <ViewSwitch
+        value={vista}
+        onChange={setVista}
+        options={[
+          { value: "debe", label: "Quién nos debe", description: "Pasajeros con pagos pendientes", icon: <AccountBalanceWalletIcon /> },
+          { value: "cobrado", label: "Lo que ya cobramos", description: "Historial de pagos recibidos", icon: <TaskAltIcon /> },
         ]}
       />
 
-      {/* Quién debe */}
-      <TableContainer component={Paper} elevation={3} sx={{ ...paperSx, opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Pasajero</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Salida</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Próximo vencimiento</TableCell>
-              <TableCell sx={{ fontWeight: 700 }} align="right">Falta</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
-                  <Typography color="text.secondary">
-                    {search ? `No hay cobros ${filterName[filter]} para "${search}".` : `No hay cobros ${filterName[filter]}. 🎉`}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((row) => (
-                // Toda la fila lleva al file
-                <TableRow key={row.id} hover onClick={() => navigate(`/files/profile/${row.id}`)} sx={{ cursor: "pointer" }}>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
-                    {fileLink(row)}
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      {row.destino}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{row.pasajero ? `${row.pasajero.lastname} ${row.pasajero.firstname}` : "—"}</TableCell>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(row.fechaSalida).format("DD/MM/YYYY")}</TableCell>
-                  <TableCell>
-                    {row.proximoVencimiento && (
-                      <>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {row.proximoVencimiento.concepto} · {dayjs(row.proximoVencimiento.vencimiento).format("DD/MM/YYYY")}
-                        </Typography>
-                        <DueChip cobranza={row} />
-                      </>
-                    )}
-                  </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    <Typography sx={{ fontWeight: 700, color: "error.main" }}>{formatMoney(row.falta, row.moneda)}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      cobrado {formatMoney(row.cobrado, row.moneda)} de {formatMoney(row.total, row.moneda)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button size="small" variant="contained" startIcon={<PaymentsIcon />} onClick={(e) => {
-                        // Que el clic no llegue a la fila (que abre el file)
-                        e.stopPropagation();
-                        setPayingFile(row);
-                      }}
-                      sx={{ whiteSpace: "nowrap" }}
-                    >
-                      Registrar pago
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePaginationBar page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+      {vista === "debe" && (
+        <>
+          {/* Buscador */}
+          <Paper elevation={3} sx={{ ...paperSx, p: 2, mb: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Buscar en pendientes por pasajero, destino o número de file (ej. 55)"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Paper>
 
-      {/* Historial */}
-      <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff", mt: 4, mb: 1 }}>
-        Pagos recibidos
-      </Typography>
-      <HistoryFilters
-        value={historyFilter}
-        onChange={setHistoryFilter}
-        placeholder="Buscar pagos por pasajero, destino o número de file"
-        totals={history?.totals}
-        totalLabel={historyFilter.desde || historyFilter.hasta ? "Total cobrado en el período" : "Total cobrado"}
-      />
-      <TableContainer component={Paper} elevation={3} sx={paperSx}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Pasajero</TableCell>
-              <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Medio</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Nota</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {!history || history.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                  <Typography color="text.secondary">
-                    {historyFilter.search || historyFilter.desde || historyFilter.hasta
-                      ? "No hay pagos con ese filtro."
-                      : "Todavía no hay pagos registrados."}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              history.data.map((pago) => (
-                <TableRow key={pago.id} hover onClick={() => navigate(`/files/profile/${pago.file.id}`)} sx={{ cursor: "pointer" }}>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(pago.fecha).format("DD/MM/YYYY")}</TableCell>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
-                    {fileLink(pago.file)} <Typography component="span" variant="caption" color="text.secondary">{pago.file.destino}</Typography>
-                  </TableCell>
-                  <TableCell>{pago.pasajero ? `${pago.pasajero.lastname} ${pago.pasajero.firstname}` : "—"}</TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
-                    {formatMoney(pago.importe, pago.moneda)}
-                    {pago.tipoCambio !== null && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        TC {pago.tipoCambio.toLocaleString("es-AR")}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>{pago.medio === "EFECTIVO" ? "Efectivo" : "Transferencia"}</TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>{pago.nota || "—"}</TableCell>
+          <CountTabs
+            value={filter}
+            onChange={setFilter}
+            tabs={[
+              { value: "vencidos", label: "Vencidos", icon: <ErrorOutlineIcon />, count: counts?.vencidos },
+              { value: "semana", label: "Esta semana", icon: <EventIcon />, count: counts?.semana },
+              { value: "mes", label: "Este mes", icon: <DateRangeIcon />, count: counts?.mes },
+              { value: "todos", label: "Todos", icon: <ListAltIcon />, count: counts?.todos },
+            ]}
+          />
+
+          {/* Quién debe */}
+          <TableContainer component={Paper} elevation={3} sx={{ ...paperSx, opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Pasajero</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Salida</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Próximo vencimiento</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Falta</TableCell>
+                  <TableCell />
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      {history && (
-        <TablePaginationBar
-          page={historyPage}
-          totalPages={history.totalPages}
-          total={history.total}
-          pageSize={history.pageSize}
-          onPageChange={setHistoryPage}
-        />
+              </TableHead>
+              <TableBody>
+                {items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
+                      <Typography color="text.secondary">
+                        {search ? `No hay cobros ${filterName[filter]} para "${search}".` : `No hay cobros ${filterName[filter]}. 🎉`}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  items.map((row) => (
+                    // Toda la fila lleva al file
+                    <TableRow key={row.id} hover onClick={() => navigate(`/files/profile/${row.id}`)} sx={{ cursor: "pointer" }}>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {fileLink(row)}
+                        <Typography variant="caption" display="block" color="text.secondary">
+                          {row.destino}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{row.pasajero ? `${row.pasajero.lastname} ${row.pasajero.firstname}` : "—"}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(row.fechaSalida).format("DD/MM/YYYY")}</TableCell>
+                      <TableCell>
+                        {row.proximoVencimiento && (
+                          <>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {row.proximoVencimiento.concepto} · {dayjs(row.proximoVencimiento.vencimiento).format("DD/MM/YYYY")}
+                            </Typography>
+                            <DueChip cobranza={row} />
+                          </>
+                        )}
+                      </TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                        <Typography sx={{ fontWeight: 700, color: "error.main" }}>{formatMoney(row.falta, row.moneda)}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          cobrado {formatMoney(row.cobrado, row.moneda)} de {formatMoney(row.total, row.moneda)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button size="small" variant="contained" startIcon={<PaymentsIcon />} onClick={(e) => {
+                            // Que el clic no llegue a la fila (que abre el file)
+                            e.stopPropagation();
+                            setPayingFile(row);
+                          }}
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          Registrar pago
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePaginationBar page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+
+        </>
+      )}
+
+      {vista === "cobrado" && (
+        <>
+          {/* Historial */}
+          <HistoryFilters
+            value={historyFilter}
+            onChange={setHistoryFilter}
+            placeholder="Buscar pagos por pasajero, destino o número de file"
+            totals={history?.totals}
+            totalLabel={historyFilter.desde || historyFilter.hasta ? "Total cobrado en el período" : "Total cobrado"}
+          />
+          <TableContainer component={Paper} elevation={3} sx={paperSx}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Pasajero</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Medio</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Nota</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {!history || history.data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                      <Typography color="text.secondary">
+                        {historyFilter.search || historyFilter.desde || historyFilter.hasta
+                          ? "No hay pagos con ese filtro."
+                          : "Todavía no hay pagos registrados."}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.data.map((pago) => (
+                    <TableRow key={pago.id} hover onClick={() => navigate(`/files/profile/${pago.file.id}`)} sx={{ cursor: "pointer" }}>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(pago.fecha).format("DD/MM/YYYY")}</TableCell>
+                      <TableCell sx={{ whiteSpace: "nowrap" }}>
+                        {fileLink(pago.file)} <Typography component="span" variant="caption" color="text.secondary">{pago.file.destino}</Typography>
+                      </TableCell>
+                      <TableCell>{pago.pasajero ? `${pago.pasajero.lastname} ${pago.pasajero.firstname}` : "—"}</TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
+                        {formatMoney(pago.importe, pago.moneda)}
+                        {pago.tipoCambio !== null && (
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            TC {pago.tipoCambio.toLocaleString("es-AR")}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>{pago.medio === "EFECTIVO" ? "Efectivo" : "Transferencia"}</TableCell>
+                      <TableCell sx={{ color: "text.secondary" }}>{pago.nota || "—"}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {history && (
+            <TablePaginationBar
+              page={historyPage}
+              totalPages={history.totalPages}
+              total={history.total}
+              pageSize={history.pageSize}
+              onPageChange={setHistoryPage}
+            />
+          )}
+
+        </>
       )}
 
       {payingFile && (

@@ -16,6 +16,9 @@ import { getHome, iHome } from "./inicioHandler";
 import { formatFileNumber } from "./File/utils/fileNumber";
 import { formatMoney } from "./File/utils/totals";
 
+// Pagos a mayoristas que se muestran en el inicio (el resto, con el botón "Ver los restantes")
+const HOME_SUPPLIER_ITEMS = 4;
+
 /* ---------- Textos ---------- */
 
 const greeting = () => {
@@ -216,7 +219,7 @@ const buildSummaries = (home: iHome): Summary[] => {
 
 /* ---------- 3. Detalle ---------- */
 
-const Panel = ({ id, title, icon, link, linkText, children }: { id: string; title: string; icon: JSX.Element; link?: string; linkText?: string; children: ReactNode[] }) =>
+const Panel = ({ id, title, icon, link, linkText, footer, children }: { id: string; title: string; icon: JSX.Element; link?: string; linkText?: string; footer?: ReactNode; children: ReactNode[] }) =>
   children.length === 0 ? null : (
     <Paper id={id} elevation={0} sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, backgroundColor: "#fff", boxShadow: "0 4px 14px rgba(0,0,0,0.12)", scrollMarginTop: 90 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
@@ -231,6 +234,7 @@ const Panel = ({ id, title, icon, link, linkText, children }: { id: string; titl
         )}
       </Box>
       <Box sx={{ display: "flex", flexDirection: "column" }}>{children}</Box>
+      {footer}
     </Paper>
   );
 
@@ -410,8 +414,28 @@ export const Inicio = () => {
                 ))}
               </Panel>
 
-              <Panel id="detalle-mayoristas" title="Pagos a mayoristas" icon={<StorefrontIcon />} link="/pagos?seccion=mayoristas" linkText="Ir a mayoristas">
-                {home.mayoristas.items.map((m) => {
+              <Panel
+                id="detalle-mayoristas"
+                title="Pagos a mayoristas"
+                icon={<StorefrontIcon />}
+                link="/pagos?seccion=mayoristas"
+                linkText="Ir a mayoristas"
+                footer={
+                  home.mayoristas.total > HOME_SUPPLIER_ITEMS && (
+                    <Button
+                      component={Link}
+                      to="/pagos?seccion=mayoristas"
+                      fullWidth
+                      endIcon={<ChevronRightIcon />}
+                      sx={{ mt: 1, textTransform: "none", fontWeight: 600, fontSize: "0.95rem", color: "#0D5B75", backgroundColor: "#f2f8fa", borderRadius: 2 }}
+                    >
+                      Ver {home.mayoristas.total - HOME_SUPPLIER_ITEMS === 1 ? "el pago restante" : `los ${home.mayoristas.total - HOME_SUPPLIER_ITEMS} pagos restantes`} en Pagos a mayoristas
+                    </Button>
+                  )
+                }
+              >
+                {/* Solo los próximos 4; el resto, en Pagos a mayoristas */}
+                {home.mayoristas.items.slice(0, HOME_SUPPLIER_ITEMS).map((m) => {
                   // Rojo vencido, naranja esta semana, azul los que vienen más adelante
                   const days = m.diasParaVencer;
                   const level: Level = days !== null && days < 0 ? "red" : days !== null && days <= 7 ? "orange" : "blue";

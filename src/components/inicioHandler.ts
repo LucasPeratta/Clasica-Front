@@ -26,6 +26,8 @@ export interface iHome {
   mayoristas: {
     vencidos: number;
     semana: number;
+    // Cuántos pagos próximos hay en total (items trae solo los primeros)
+    total: number;
     items: {
       id: string;
       mayorista: string;
