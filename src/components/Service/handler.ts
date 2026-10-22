@@ -50,25 +50,6 @@ export const softDeleteService = async (id: string): Promise<Response> => {
   }
 };
 
-export const getServiceById = async (id: string) => {
-  try {
-    const response = await apiFetch(`${apiUrl}/service/${id}`);
-
-    if (!response.ok) {
-      console.error("Error fetching service by id:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    console.log("Service by id data:", data);
-
-    // El backend puede devolver data.data, data.service o data directamente
-    return data.data || data.service || data;
-  } catch (error) {
-    console.error("Error in getServiceById:", error);
-    return null;
-  }
-};
 
 export const updateService = async (id: string, formData: iService) => {
   try {
