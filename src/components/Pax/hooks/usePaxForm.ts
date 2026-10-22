@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { iPax } from "../model";
-import { getPaxById, createPax, updatePax, getPaxPhotos } from "../handler";
-import { PaxPhoto } from "../types/paxPhoto";
+import { getPaxById, createPax, updatePax } from "../handler";
 import { useGoBack } from "../../common/useGoBack";
 
 const initialState: iPax = {
@@ -21,150 +20,113 @@ const initialState: iPax = {
   obs: "",
 };
 
+export type PaxFormErrors = Partial<Record<"firstname" | "lastname" | "email", string>>;
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const parseDate = (value: unknown) => (value ? dayjs(value as string) : null);
+
 export const usePaxForm = () => {
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<iPax>(initialState);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [photos, setPhotos] = useState<PaxPhoto[]>([]);
+  const [errors, setErrors] = useState<PaxFormErrors>({});
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(false);
 
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
-  // Después de guardar vuelve a donde estaba (el perfil al editar, la lista al crear)
+  // Al editar, después de guardar vuelve a donde estaba
   const goBack = useGoBack(id ? `/paxs/profile/${id}` : "/paxs");
 
   useEffect(() => {
-    if (id) {
-      Promise.all([getPaxById(id), getPaxPhotos(id)])
-        .then(([pax, photos]) => {
-          if (pax) {
-            console.log("Pax del backend:", pax);
-            
-            // Manejar nombres viejos si existen
-            if ((pax as any).dniExp && !pax.dniVto) {
-              pax.dniVto = (pax as any).dniExp;
-            }
-            if ((pax as any).passportExp && !pax.passportVto) {
-              pax.passportVto = (pax as any).passportExp;
-            }
-            
-            // Convertir a dayjs - maneja tanto strings ISO como objetos dayjs
-            const parseDate = (value: any) => {
-              if (!value) return null;
-              if (typeof value === 'string' || typeof value === 'number') {
-                return dayjs(value);
-              }
-              // Si ya es un dayjs object, simplemente lo devuelve
-              if (value._isAMomentObject || value.$L !== undefined) {
-                return value;
-              }
-              return dayjs(value);
-            };
-            
-            pax.dob = parseDate(pax.dob);
-            pax.dniVto = parseDate(pax.dniVto);
-            pax.passportVto = parseDate(pax.passportVto);
-            
-            console.log("Después del parse:", {
-              dob: pax.dob,
-              dniVto: pax.dniVto,
-              passportVto: pax.passportVto
-            });
-            
-            setFormData(pax);
-          }
-          setPhotos(photos);
-        })
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
-    } else {
+    if (!id) {
       setLoading(false);
-    }
-  }, [id]);
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = event.target;
-
-    if (id === "passport") {
-      const formattedValue = value.toUpperCase();
-      setFormData((prev) => ({ ...prev, passport: formattedValue }));
       return;
     }
+    getPaxById(id)
+      .then((pax) => {
+        if (pax) {
+          setFormData({
+            ...pax,
+            dob: parseDate(pax.dob),
+            dniVto: parseDate(pax.dniVto),
+            passportVto: parseDate(pax.passportVto),
+          });
+        }
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-    setFormData((prev) => ({ ...prev, [id]: value }));
+  const setField = <K extends keyof iPax>(field: K, value: iPax[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field in errors) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const validate = () => {
-    const required = ["firstname", "lastname"];
-    const missing = required.filter(
-      (fld) =>
-        !formData[fld as keyof iPax] ||
-        `${formData[fld as keyof iPax]}`.trim() === ""
-    );
-    return missing.length === 0;
-  };
-
-  const openSuccess = () => setNotificationOpen(true);
-  const openError = (message: string) => {
-    setErrorMessage(message);
-    setErrorNotificationOpen(true);
+    const found: PaxFormErrors = {};
+    if (!formData.firstname?.trim()) found.firstname = "Falta el nombre";
+    if (!formData.lastname?.trim()) found.lastname = "Falta el apellido";
+    if (formData.email?.trim() && !EMAIL_PATTERN.test(formData.email.trim())) {
+      found.email = "El email no parece correcto (ej. nombre@gmail.com)";
+    }
+    setErrors(found);
+    return Object.keys(found).length === 0;
   };
 
   // Mensaje de error según lo que respondió el backend
-  const showResponseError = async (resp: Response) => {
+  const responseError = async (resp: Response) => {
     const err = await resp.json().catch(() => null);
-    if (err?.errorCode === "DUPLICATE_DOCUMENT") openError(err.msg);
-    else if (err?.errorCode === "P2002") openError("El mail ingresado ya se encuentra registrado");
-    else openError("No se pudo guardar el pasajero. Intentá de nuevo.");
+    if (err?.errorCode === "DUPLICATE_DOCUMENT") return err.msg as string;
+    if (err?.errorCode === "P2002") return "Ese email ya está cargado en otro pasajero.";
+    return "No se pudo guardar el pasajero. Intentá de nuevo.";
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validate()) return;
+    setSaveError("");
+    if (!validate()) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
+    setSaving(true);
     try {
+      const resp = id ? await updatePax(id, formData) : await createPax(formData);
+      if (!resp.ok) {
+        setSaveError(await responseError(resp));
+        return;
+      }
+      setSaved(true);
       if (id) {
-        const resp = await updatePax(id, formData);
-        if (resp.ok) {
-          openSuccess();
-          setTimeout(() => {
-            goBack();
-          }, 1200);
-        } else {
-          await showResponseError(resp);
-        }
+        setTimeout(goBack, 900);
       } else {
-        const resp = await createPax(formData);
-        if (resp.ok) {
-          openSuccess();
-          setTimeout(() => {
-            goBack();
-          }, 1200);
-        } else {
-          await showResponseError(resp);
-        }
+        // Recién creado: se abre su ficha, para subir fotos o documentos
+        const body = await resp.json().catch(() => null);
+        const newId = body?.data?.id;
+        setTimeout(() => navigate(newId ? `/paxs/profile/${newId}` : "/paxs", { replace: true }), 900);
       }
     } catch (error) {
       console.error("Error:", error);
-      openError("No se pudo guardar el pasajero. Intentá de nuevo.");
+      setSaveError("No se pudo guardar el pasajero. Intentá de nuevo.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return {
     id,
     loading,
+    saving,
+    saved,
+    setSaved,
     formData,
-    setFormData,
-    photos,
-    setPhotos,
-    notificationOpen,
-    setNotificationOpen,
-    errorNotificationOpen,
-    setErrorNotificationOpen,
-    errorMessage,
-    handleChange,
+    setField,
+    errors,
+    saveError,
+    setSaveError,
     handleSubmit,
-    navigate,
+    goBack,
   };
 };

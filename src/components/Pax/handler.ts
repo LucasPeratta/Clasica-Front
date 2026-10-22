@@ -89,7 +89,6 @@ export const updatePax = async (id: string, formData: iPax) => {
       passportVto: dataToSend.passportVto ? (dataToSend.passportVto as any).toDate().toISOString() : null,
     };
 
-    console.log("Enviando data:", dataToSendSerialized);
 
     const response = await apiFetch(`${apiUrl}/pax/update/${id}`, {
       method: "PUT",
@@ -121,7 +120,6 @@ export const createPax = async (formData: iPax): Promise<Response> => {
       passportVto: dataToSend.passportVto ? (dataToSend.passportVto as any).toDate().toISOString() : null,
     };
 
-    console.log("Enviando data:", dataToSendSerialized);
 
     const response = await apiFetch(`${apiUrl}/pax/create`, {
       method: "POST",

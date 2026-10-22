@@ -1,153 +1,150 @@
-import { useState } from "react";
-import { Box, Paper, Snackbar, Alert } from "@mui/material";
+import { Alert, Grid, Snackbar, TextField } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
+import PersonIcon from "@mui/icons-material/Person";
+import BadgeIcon from "@mui/icons-material/Badge";
+import ContactPhoneIcon from "@mui/icons-material/ContactPhone";
+import NotesIcon from "@mui/icons-material/Notes";
 import { LoadingScreen } from "../../LoadingScreen";
-import { deletePaxPhoto } from "../handler";
 import { usePaxForm } from "../hooks/usePaxForm";
-import { PaxFormHeader } from "./components/PaxFormHeader";
-import { PaxFormFields } from "./components/PaxFormFields";
-import { PaxPhotoGallery } from "./components/PaxPhotoGallery";
-import { PaxPhotoDialogs } from "./components/PaxPhotoDialogs";
+import { FormSection } from "../../common/FormSection";
+import { FormActions, FormHeader, FormPage } from "../../common/FormLayout";
+import { iPax } from "../model";
+
+type DateField = "dob" | "dniVto" | "passportVto";
 
 export const PaxForm = () => {
-  const {
-    id,
-    loading,
-    formData,
-    setFormData,
-    photos,
-    setPhotos,
-    notificationOpen,
-    setNotificationOpen,
-    errorNotificationOpen,
-    setErrorNotificationOpen,
-    errorMessage,
-    handleChange,
-    handleSubmit,
-  } = usePaxForm();
-
-  const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const { id, loading, saving, saved, setSaved, formData, setField, errors, saveError, setSaveError, handleSubmit, goBack } =
+    usePaxForm();
 
   if (loading) return <LoadingScreen />;
 
-  const handleDeletePhoto = async () => {
-    if (!id || !photoToDelete) return;
+  const fullName = `${formData.firstname ?? ""} ${formData.lastname ?? ""}`.trim();
 
-    try {
-      const response = await deletePaxPhoto(id, photoToDelete);
-      if (response.ok) {
-        setPhotos((prev) => prev.filter((p) => p.id !== photoToDelete));
-      }
-    } catch (error) {
-      console.error("Error deleting photo:", error);
-    } finally {
-      setPhotoToDelete(null);
-    }
-  };
+  const text = (field: keyof iPax, label: string, maxLength: number, extra: object = {}) => (
+    <TextField
+      label={label}
+      fullWidth
+      value={(formData[field] as string) ?? ""}
+      onChange={(e) => setField(field, e.target.value as never)}
+      inputProps={{ maxLength }}
+      error={!!errors[field as keyof typeof errors]}
+      helperText={errors[field as keyof typeof errors]}
+      {...extra}
+    />
+  );
+
+  const date = (field: DateField, label: string, helperText?: string) => (
+    <DatePicker
+      label={label}
+      format="DD/MM/YYYY"
+      value={formData[field] ? dayjs(formData[field]) : null}
+      onChange={(value) => setField(field, value ?? null)}
+      slotProps={{ textField: { fullWidth: true, helperText } }}
+    />
+  );
 
   return (
-    <Box
-      sx={{
-        px: { xs: 2, md: 6 },
-        py: 3,
-        background:
-          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%)",
-        backgroundImage:
-          "linear-gradient(135deg, #0D5B75 0%, #1a7a99 50%, #89c2d9 100%), " +
-          "radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%), " +
-          "radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
-        minHeight: "calc(100vh - 64px)",
-      }}
-    >
-      {/* Header */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 3,
-          mb: 2,
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(10px)",
-          borderRadius: 3,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-        }}
-      >
-        <PaxFormHeader formData={formData} id={id} />
-      </Paper>
+    <FormPage>
+      <FormHeader
+        title={id ? `Editar a ${fullName || "pasajero"}` : "Cargar un pasajero"}
+        description={
+          id
+            ? "Cambiá lo que necesites y apretá Guardar."
+            : "Completá lo que tengas. Después vas a poder subir fotos del DNI o pasaporte."
+        }
+        onBack={goBack}
+      />
 
-      {/* Formulario */}
-      <Paper
-        elevation={3}
-        sx={{
-          p: 3,
-          mb: 2,
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(10px)",
-          borderRadius: 3,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-        }}
-      >
-        <form id="pax-form" onSubmit={handleSubmit}>
-          <PaxFormFields
-            formData={formData}
-            handleChange={handleChange}
-            setFormData={setFormData}
-          />
-        </form>
-      </Paper>
-
-      {/* Sección de fotos - Solo en modo edición */}
-      {id && (
-        <Paper
-          elevation={3}
-          sx={{
-            p: 3,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            borderRadius: 3,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-          }}
-        >
-          <PaxPhotoGallery
-            id={id}
-            photos={photos}
-            setPhotos={setPhotos}
-            onPhotoClick={(url) => setSelectedPhoto(url)}
-            onDeleteClick={(photoId) => setPhotoToDelete(photoId)}
-          />
-        </Paper>
+      {saveError && (
+        <Alert severity="error" onClose={() => setSaveError("")} sx={{ borderRadius: 3, fontSize: "1rem" }}>
+          {saveError}
+        </Alert>
       )}
 
-      {/* Snackbars */}
-      <Snackbar
-        open={notificationOpen}
-        autoHideDuration={4000}
-        onClose={() => setNotificationOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert onClose={() => setNotificationOpen(false)} severity="success">
-          {id ? "Pasajero actualizado correctamente" : "Pasajero creado correctamente"}
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+        <form id="pax-form" onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <FormSection title="Nombre" icon={<PersonIcon />}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                {text("firstname", "Nombre *", 25, { autoFocus: !id })}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {text("lastname", "Apellido *", 25)}
+              </Grid>
+            </Grid>
+          </FormSection>
+
+          <FormSection
+            title="Documentos"
+            icon={<BadgeIcon />}
+            description="Con las fechas de vencimiento el sistema avisa si un documento no sirve para un viaje."
+          >
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                {text("dni", "DNI", 10, { helperText: "Con o sin puntos, da igual" })}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {date("dniVto", "Vencimiento del DNI")}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {text("passport", "Pasaporte", 9, {
+                  onChange: (e: React.ChangeEvent<HTMLInputElement>) => setField("passport", e.target.value.toUpperCase()),
+                })}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {date("passportVto", "Vencimiento del pasaporte", "Tiene que seguir vigente 6 meses después del viaje")}
+              </Grid>
+            </Grid>
+          </FormSection>
+
+          <FormSection title="Contacto" icon={<ContactPhoneIcon />}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                {text("phoneNumber", "Celular", 35)}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {text("email", "Email", 35, { type: "email" })}
+              </Grid>
+              <Grid item xs={12}>
+                {text("adress", "Dirección", 30)}
+              </Grid>
+            </Grid>
+          </FormSection>
+
+          <FormSection title="Otros datos" icon={<NotesIcon />}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                {date("dob", "Fecha de nacimiento")}
+              </Grid>
+              <Grid item xs={12}>
+                {text("obs", "Observaciones", 300, {
+                  multiline: true,
+                  rows: 3,
+                  helperText: "Ej. preferencias, alergias, viajero frecuente...",
+                })}
+              </Grid>
+            </Grid>
+          </FormSection>
+
+          <FormActions
+            formId="pax-form"
+            saveLabel={id ? "Guardar cambios" : "Guardar pasajero"}
+            saving={saving}
+            onCancel={goBack}
+            note="Solo el nombre y el apellido son obligatorios."
+          />
+        </form>
+      </LocalizationProvider>
+
+      <Snackbar open={saved} autoHideDuration={3000} onClose={() => setSaved(false)} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert severity="success" variant="filled" onClose={() => setSaved(false)}>
+          {id ? "Cambios guardados" : "Pasajero guardado"}
         </Alert>
       </Snackbar>
-
-      <Snackbar
-        open={errorNotificationOpen}
-        autoHideDuration={4000}
-        onClose={() => setErrorNotificationOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert onClose={() => setErrorNotificationOpen(false)} severity="error">
-          {errorMessage}
-        </Alert>
-      </Snackbar>
-
-      {/* Diálogos de fotos */}
-      <PaxPhotoDialogs
-        selectedPhoto={selectedPhoto}
-        photoToDelete={photoToDelete}
-        onClosePreview={() => setSelectedPhoto(null)}
-        onCloseDelete={() => setPhotoToDelete(null)}
-        onConfirmDelete={handleDeletePhoto}
-      />
-    </Box>
+    </FormPage>
   );
 };
