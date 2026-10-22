@@ -1,11 +1,12 @@
 import { MayoristaField } from "../MayoristaField";
+import { useGoBack } from "../../common/useGoBack";
 import React, { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Snackbar from "@mui/material/Snackbar";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getServiceById, createService, updateService } from "../handler";
 import Grid from "@mui/material/Grid";
 import "dayjs/locale/es";
@@ -39,8 +40,9 @@ const initialState: iService = {
 export const ServiceForm = () => {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(initialState);
-  const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  // Volver / después de guardar: a la pantalla anterior (el detalle al editar, la lista al crear)
+  const goBack = useGoBack(id ? `/services/profile/${id}` : "/services");
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [errorNotificationOpen, setErrorNotificationOpen] = useState(false);
 
@@ -153,7 +155,7 @@ export const ServiceForm = () => {
         if (response.ok) {
           openNotification();
           setTimeout(() => {
-            navigate(`/services/profile/${id}`);
+            goBack();
           }, 1500);
         } else {
           openErrorNotification();
@@ -165,7 +167,7 @@ export const ServiceForm = () => {
           setFormData(initialState);
           openNotification();
           setTimeout(() => {
-            navigate("/services");
+            goBack();
           }, 1500);
         } else {
           openErrorNotification();
@@ -272,11 +274,7 @@ export const ServiceForm = () => {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={
-                    id
-                      ? () => navigate(`/services/profile/${id}`)
-                      : () => navigate("/services")
-                  }
+                  onClick={goBack}
                 >
                   Volver
                 </Button>

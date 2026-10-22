@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { iPax } from "../model";
 import { getPaxById, createPax, updatePax, getPaxPhotos } from "../handler";
 import { PaxPhoto } from "../types/paxPhoto";
+import { useGoBack } from "../../common/useGoBack";
 
 const initialState: iPax = {
   id: "",
@@ -30,6 +31,8 @@ export const usePaxForm = () => {
 
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  // Después de guardar vuelve a donde estaba (el perfil al editar, la lista al crear)
+  const goBack = useGoBack(id ? `/paxs/profile/${id}` : "/paxs");
 
   useEffect(() => {
     if (id) {
@@ -126,7 +129,7 @@ export const usePaxForm = () => {
         if (resp.ok) {
           openSuccess();
           setTimeout(() => {
-            navigate(`/paxs/profile/${id}`);
+            goBack();
           }, 1200);
         } else {
           await showResponseError(resp);
@@ -136,7 +139,7 @@ export const usePaxForm = () => {
         if (resp.ok) {
           openSuccess();
           setTimeout(() => {
-            navigate("/paxs");
+            goBack();
           }, 1200);
         } else {
           await showResponseError(resp);

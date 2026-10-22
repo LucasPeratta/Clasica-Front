@@ -1,5 +1,5 @@
 import { Stack, Avatar, Box, Typography, Chip, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useGoBack } from "../../../common/useGoBack";
 import { initials } from "../../utils/formatters";
 import { iPax } from "../../model";
 
@@ -9,7 +9,7 @@ interface PaxFormHeaderProps {
 }
 
 export const PaxFormHeader = ({ formData, id }: PaxFormHeaderProps) => {
-  const navigate = useNavigate();
+  const goBack = useGoBack(id ? `/paxs/profile/${id}` : "/paxs");
 
   return (
     <Stack
@@ -51,9 +51,7 @@ export const PaxFormHeader = ({ formData, id }: PaxFormHeaderProps) => {
       <Stack direction="row" spacing={1}>
         <Button
           variant="outlined"
-          onClick={() =>
-            id ? navigate(`/paxs/profile/${id}`) : navigate("/paxs")
-          }
+          onClick={goBack}
         >
           Volver
         </Button>

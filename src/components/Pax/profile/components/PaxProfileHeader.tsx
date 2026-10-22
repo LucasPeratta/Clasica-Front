@@ -1,5 +1,6 @@
 import { Stack, Avatar, Box, Typography, Chip, Button } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useGoBack } from "../../../common/useGoBack";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { initials } from "../../utils/formatters";
@@ -14,15 +15,8 @@ export const PaxProfileHeader = ({
   pax,
   fromFileId,
 }: PaxProfileHeaderProps) => {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    if (fromFileId) {
-      navigate(`/files/profile/${fromFileId}`);
-    } else {
-      navigate("/paxs");
-    }
-  };
+  // Vuelve a la pantalla anterior (si se entró desde un file, a ese file)
+  const handleBack = useGoBack(fromFileId ? `/files/profile/${fromFileId}` : "/paxs");
 
   return (
     <Stack

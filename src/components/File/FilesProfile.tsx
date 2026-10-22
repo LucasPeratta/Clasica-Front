@@ -43,7 +43,8 @@ export const FilesProfile = (): JSX.Element => {
     const ok = await deleteFile(id);
     setDeletingFile(false);
     if (ok) {
-      navigate("/files", { state: { fileDeleted: true } });
+      // replace: que "atrás" no vuelva al perfil de un file que ya no existe
+      navigate("/files", { replace: true, state: { fileDeleted: true } });
     } else {
       setDeleteFileOpen(false);
       setDeleteFileError(true);

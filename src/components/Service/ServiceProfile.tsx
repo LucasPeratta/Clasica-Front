@@ -15,10 +15,12 @@ import {
 } from "@mui/material";
 import { iService } from "./model";
 import { formatFileNumber } from "../File/utils/fileNumber";
+import { useGoBack } from "../common/useGoBack";
 
 export const ServiceProfile = (): JSX.Element => {
   const { id } = useParams<{ id: string }>();
   const [service, setService] = useState<iService | null>(null);
+  const goBack = useGoBack("/services");
 
   useEffect(() => {
     if (!id) return;
@@ -100,7 +102,7 @@ export const ServiceProfile = (): JSX.Element => {
         </Table>
       </TableContainer>
       <Box display="flex" justifyContent="center" marginTop={2}>
-        <Button component={Link} to={`/services`} variant="contained">
+        <Button onClick={goBack} variant="contained">
           Volver
         </Button>
       </Box>

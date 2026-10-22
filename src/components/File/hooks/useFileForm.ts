@@ -11,6 +11,7 @@ import {
   getServiceById,
 } from "../../Service/handler";
 import { getFileById, createFile, updateFile, toFileFormData } from "../handler";
+import { useGoBack } from "../../common/useGoBack";
 
 const initialState: iFile = {
   id: "",
@@ -36,6 +37,7 @@ export const useFileForm = () => {
 
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const goBack = useGoBack(id ? `/files/profile/${id}` : "/files");
 
   useEffect(() => {
     // Pasajeros para el selector y, al editar, el file
@@ -127,7 +129,8 @@ export const useFileForm = () => {
     if (ok) {
       setNotificationOpen(true);
       setTimeout(() => {
-        navigate(id ? `/files/profile/${id}` : "/files");
+        // Vuelve a donde estaba (el perfil al editar, la lista al crear)
+        goBack();
       }, 1200);
     } else {
       setErrorNotificationOpen(true);

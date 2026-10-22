@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useGoBack } from "../../../common/useGoBack";
 import { Box, Typography, Button, Divider, Card, CardContent, TextField } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { iFile } from "../../model";
@@ -17,6 +17,7 @@ export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderP
   const [editedFile, setEditedFile] = useState<iFile>(file);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const goBack = useGoBack("/files");
 
   useEffect(() => {
     setEditedFile(file);
@@ -53,8 +54,7 @@ export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderP
 
       <Box display="flex" justifyContent="center" gap={2} sx={{ mb: 3 }}>
         <Button
-          component={Link}
-          to="/files"
+          onClick={goBack}
           variant="outlined"
           sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}
         >

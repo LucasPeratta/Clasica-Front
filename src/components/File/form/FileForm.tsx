@@ -42,6 +42,7 @@ import { FileTotals } from "../components/FileTotals";
 import { formatFileNumber } from "../utils/fileNumber";
 import { CURRENCIES } from "../utils/totals";
 import { MayoristaField } from "../../Service/MayoristaField";
+import { useGoBack } from "../../common/useGoBack";
 import { iService } from "../../Service/model";
 import { createService, updateService } from "../../Service/handler";
 
@@ -61,9 +62,9 @@ export const FileForm = () => {
     errorNotificationOpen,
     setErrorNotificationOpen,
     handleSubmit,
-    navigate,
     softDeleteService,
   } = useFileForm();
+  const goBack = useGoBack(id ? `/files/profile/${id}` : "/files");
 
   // Dialog states
   const [openAddPax, setOpenAddPax] = useState(false);
@@ -392,7 +393,7 @@ export const FileForm = () => {
         <Button
           variant="outlined"
           sx={{ borderRadius: 2, px: 3, fontWeight: 600 }}
-          onClick={() => navigate(id ? `/files/profile/${id}` : "/files")}
+          onClick={goBack}
         >
           Volver
         </Button>
