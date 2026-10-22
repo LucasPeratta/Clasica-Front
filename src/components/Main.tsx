@@ -342,6 +342,29 @@ export const Inicio = () => {
             </Box>
 
             <Box component="section" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Panel id="detalle-salidas" title="Próximas salidas" icon={<FlightTakeoffIcon />} link="/files" linkText="Ir a files">
+                {home.proximasSalidas.map((f) => (
+                  <Line
+                    key={f.id}
+                    to={`/files/profile/${f.id}`}
+                    level={f.sinLiquidar > 0 ? "orange" : "blue"}
+                    main={fileText(f)}
+                    sub={
+                      <>
+                        {fullName(f.primerPasajero) || "Sin pasajeros"}
+                        {f.pasajeros > 1 ? ` y ${plural(f.pasajeros - 1, "persona más", "personas más")}` : ""}
+                        {f.sinLiquidar > 0 && (
+                          <Box component="span" sx={{ color: LEVEL.orange.main, fontWeight: 600 }}>
+                            {" "}· {plural(f.sinLiquidar, "servicio sin liquidar", "servicios sin liquidar")}
+                          </Box>
+                        )}
+                      </>
+                    }
+                    right={<Right strong={`Sale ${whenText(f.diasParaSalida)}`} small={dayjs(f.fechaSalida).format("DD/MM/YYYY")} />}
+                  />
+                ))}
+              </Panel>
+
               <Panel id="detalle-cobros" title="Cobros a pasajeros" icon={<AccountBalanceWalletIcon />} link="/pagos" linkText="Ir a cobros">
                 {home.cobros.items.map((c) => {
                   const due = c.proximoVencimiento;
@@ -365,24 +388,6 @@ export const Inicio = () => {
                     />
                   );
                 })}
-              </Panel>
-
-              <Panel id="detalle-documentos" title="Documentos de pasajeros" icon={<BadgeIcon />} link="/paxs" linkText="Ir a pasajeros">
-                {home.documentos.items.map((d) => (
-                  <Line
-                    key={`${d.paxId}-${d.documento}`}
-                    to={`/paxs/profile/${d.paxId}`}
-                    level={d.problema ? "red" : "orange"}
-                    main={`${d.documento === "DNI" ? "El DNI" : "El pasaporte"} de ${d.pasajero}`}
-                    sub={d.problema ?? `Vence el ${dayjs(d.vencimiento).format("DD/MM/YYYY")}`}
-                    right={
-                      <Right
-                        level={d.problema ? "red" : "orange"}
-                        strong={d.diasParaVencer < 0 ? "Vencido" : `Vence ${whenText(d.diasParaVencer)}`}
-                      />
-                    }
-                  />
-                ))}
               </Panel>
 
               <Panel id="detalle-liquidar" title="Servicios para liquidar" icon={<AssignmentLateIcon />}>
@@ -421,25 +426,20 @@ export const Inicio = () => {
                 })}
               </Panel>
 
-              <Panel id="detalle-salidas" title="Próximas salidas" icon={<FlightTakeoffIcon />} link="/files" linkText="Ir a files">
-                {home.proximasSalidas.map((f) => (
+              <Panel id="detalle-documentos" title="Documentos de pasajeros" icon={<BadgeIcon />} link="/paxs" linkText="Ir a pasajeros">
+                {home.documentos.items.map((d) => (
                   <Line
-                    key={f.id}
-                    to={`/files/profile/${f.id}`}
-                    level={f.sinLiquidar > 0 ? "orange" : "blue"}
-                    main={fileText(f)}
-                    sub={
-                      <>
-                        {fullName(f.primerPasajero) || "Sin pasajeros"}
-                        {f.pasajeros > 1 ? ` y ${plural(f.pasajeros - 1, "persona más", "personas más")}` : ""}
-                        {f.sinLiquidar > 0 && (
-                          <Box component="span" sx={{ color: LEVEL.orange.main, fontWeight: 600 }}>
-                            {" "}· {plural(f.sinLiquidar, "servicio sin liquidar", "servicios sin liquidar")}
-                          </Box>
-                        )}
-                      </>
+                    key={`${d.paxId}-${d.documento}`}
+                    to={`/paxs/profile/${d.paxId}`}
+                    level={d.problema ? "red" : "orange"}
+                    main={`${d.documento === "DNI" ? "El DNI" : "El pasaporte"} de ${d.pasajero}`}
+                    sub={d.problema ?? `Vence el ${dayjs(d.vencimiento).format("DD/MM/YYYY")}`}
+                    right={
+                      <Right
+                        level={d.problema ? "red" : "orange"}
+                        strong={d.diasParaVencer < 0 ? "Vencido" : `Vence ${whenText(d.diasParaVencer)}`}
+                      />
                     }
-                    right={<Right strong={`Sale ${whenText(f.diasParaSalida)}`} small={dayjs(f.fechaSalida).format("DD/MM/YYYY")} />}
                   />
                 ))}
               </Panel>
