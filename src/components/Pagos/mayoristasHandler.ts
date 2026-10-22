@@ -67,12 +67,26 @@ export const searchServicesToPay = async (search: string): Promise<iFileToPay[]>
   }
 };
 
-// Pendiente de pago, por vencimiento; totals: total pendiente por moneda
+// File con lo pendiente de pagar, agrupado por mayorista (y moneda)
+export interface iPendingFile {
+  file: NonNullable<iServiceToPay["file"]>;
+  // El vencimiento más próximo de sus servicios
+  vencimiento: string | null;
+  diasParaVencer: number | null;
+  mayoristas: {
+    mayorista: string;
+    currency: string;
+    falta: number;
+    servicios: { id: string; nombre: string; type: ServiceType; falta: number }[];
+  }[];
+}
+
+// Pendiente de pago, una fila por file, por vencimiento; totals: total pendiente por moneda
 export const getPendingSupplierPage = (
   page: number,
   search: string
-): Promise<iPaginated<iServiceToPay> & { totals?: Record<string, number> }> =>
-  fetchPage<iServiceToPay>(`${apiUrl}/mayoristas/pendientes`, page, search);
+): Promise<iPaginated<iPendingFile> & { totals?: Record<string, number> }> =>
+  fetchPage<iPendingFile>(`${apiUrl}/mayoristas/pendientes`, page, search);
 
 export const getSupplierPaymentsPage = (page: number, search: string): Promise<iPaginated<iSupplierPayment>> =>
   fetchPage<iSupplierPayment>(`${apiUrl}/mayoristas/pagos`, page, search);

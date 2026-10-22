@@ -27,7 +27,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { usePaginatedList } from "../common/Pagination/usePaginatedList";
 import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
@@ -39,7 +39,6 @@ import {
   deleteSupplierPayment,
   getPendingSupplierPage,
   getSupplierPaymentsPage,
-  iServiceToPay,
   iSupplierPayment,
 } from "./mayoristasHandler";
 import { NewSupplierPaymentDialog } from "./NewSupplierPaymentDialog";
@@ -64,8 +63,7 @@ const fileLink = (file: { id: string; numero?: number | null; anio?: number | nu
   </MuiLink>
 );
 
-const DueChip = ({ service }: { service: iServiceToPay }) => {
-  const days = service.diasParaVencer;
+const DueChip = ({ days }: { days: number | null }) => {
   if (days === null) return null;
   const label =
     days < 0 ? `Vencido hace ${-days} día${days === -1 ? "" : "s"}` : days === 0 ? "Vence hoy" : `En ${days} día${days === 1 ? "" : "s"}`;
@@ -83,6 +81,7 @@ export const MayoristasTab = () => {
   // Total pendiente por moneda (de todo lo encontrado, no solo esta página)
   const totals = (response as { totals?: Record<string, number> } | null)?.totals ?? {};
 
+  const navigate = useNavigate();
   const [newPaymentOpen, setNewPaymentOpen] = useState(false);
   const [savedOpen, setSavedOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<iSupplierPayment | null>(null);
@@ -164,51 +163,75 @@ export const MayoristasTab = () => {
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 700 }}>Vence</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Mayorista</TableCell>
               <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Servicio</TableCell>
-              <TableCell sx={{ fontWeight: 700 }} align="right">Neto</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Pendiente por mayorista</TableCell>
               <TableCell sx={{ fontWeight: 700 }} align="right">Falta</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     {search ? `No hay pagos pendientes para "${search}".` : "No hay pagos pendientes a mayoristas. 🎉"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((s) => (
-                <TableRow key={s.id} hover>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
-                    {s.vencimiento ? dayjs(s.vencimiento).format("DD/MM/YYYY") : "—"}
-                    <Box>
-                      <DueChip service={s} />
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{s.provider}</TableCell>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
-                    {s.file ? fileLink(s.file) : "—"}
-                    {s.file?.pasajero && (
-                      <Typography variant="caption" display="block" color="text.secondary">
-                        {s.file.pasajero.lastname} {s.file.pasajero.firstname}
+              items.map((row) => {
+                // Total que falta del file, por moneda
+                const faltaPorMoneda: Record<string, number> = {};
+                for (const m of row.mayoristas) faltaPorMoneda[m.currency] = (faltaPorMoneda[m.currency] ?? 0) + m.falta;
+                return (
+                  // Toda la fila lleva al file
+                  <TableRow key={row.file.id} hover onClick={() => navigate(`/files/profile/${row.file.id}`)} sx={{ cursor: "pointer" }}>
+                    <TableCell sx={{ whiteSpace: "nowrap", verticalAlign: "top" }}>
+                      {row.vencimiento ? dayjs(row.vencimiento).format("DD/MM/YYYY") : "—"}
+                      <Box>
+                        <DueChip days={row.diasParaVencer} />
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: "nowrap", verticalAlign: "top" }}>
+                      <Typography sx={{ fontWeight: 700, color: "#0D5B75" }}>
+                        {formatFileNumber(row.file) || row.file.destino}
                       </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {TYPE_LABEL[s.type]} {s.nombre}
-                  </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    {formatMoney(s.neto, s.currency)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 700, color: "error.main" }}>
-                    {formatMoney(s.falta, s.currency)}
-                  </TableCell>
-                </TableRow>
-              ))
+                      <Typography variant="caption" display="block" color="text.secondary">
+                        {row.file.destino}
+                        {row.file.pasajero ? ` · ${row.file.pasajero.lastname} ${row.file.pasajero.firstname}` : ""}
+                      </Typography>
+                    </TableCell>
+                    <TableCell sx={{ verticalAlign: "top" }}>
+                      {row.mayoristas.map((m) => (
+                        <Box key={`${m.mayorista}-${m.currency}`} sx={{ display: "flex", justifyContent: "space-between", gap: 2, py: 0.25 }}>
+                          <Tooltip
+                            title={m.servicios.map((s) => (
+                              <div key={s.id}>
+                                {TYPE_LABEL[s.type]} {s.nombre} — {formatMoney(s.falta, m.currency)}
+                              </div>
+                            ))}
+                          >
+                            <Typography variant="body2">
+                              <strong>{m.mayorista || "Sin mayorista"}</strong>{" "}
+                              <Typography component="span" variant="caption" color="text.secondary">
+                                · {m.servicios.map((s) => TYPE_LABEL[s.type]).join(" ")} {m.servicios.length} servicio
+                                {m.servicios.length === 1 ? "" : "s"}
+                              </Typography>
+                            </Typography>
+                          </Tooltip>
+                          <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
+                            {formatMoney(m.falta, m.currency)}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 700, color: "error.main", verticalAlign: "top" }}>
+                      {Object.entries(faltaPorMoneda).map(([currency, amount]) => (
+                        <div key={currency}>{formatMoney(amount, currency)}</div>
+                      ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

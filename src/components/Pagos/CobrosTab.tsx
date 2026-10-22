@@ -22,7 +22,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import EventIcon from "@mui/icons-material/Event";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import ListAltIcon from "@mui/icons-material/ListAlt";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { usePaginatedList } from "../common/Pagination/usePaginatedList";
 import { TablePaginationBar } from "../common/Pagination/TablePaginationBar";
@@ -88,6 +88,7 @@ export const CobrosTab = () => {
     reload,
   } = usePaginatedList(getCobranzasPage, FILTER);
 
+  const navigate = useNavigate();
   const [payingFile, setPayingFile] = useState<iCobranza | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
 
@@ -174,7 +175,8 @@ export const CobrosTab = () => {
               </TableRow>
             ) : (
               items.map((row) => (
-                <TableRow key={row.id} hover>
+                // Toda la fila lleva al file
+                <TableRow key={row.id} hover onClick={() => navigate(`/files/profile/${row.id}`)} sx={{ cursor: "pointer" }}>
                   <TableCell sx={{ whiteSpace: "nowrap" }}>
                     {fileLink(row)}
                     <Typography variant="caption" display="block" color="text.secondary">
@@ -200,7 +202,13 @@ export const CobrosTab = () => {
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
-                    <Button size="small" variant="contained" startIcon={<PaymentsIcon />} onClick={() => setPayingFile(row)} sx={{ whiteSpace: "nowrap" }}>
+                    <Button size="small" variant="contained" startIcon={<PaymentsIcon />} onClick={(e) => {
+                        // Que el clic no llegue a la fila (que abre el file)
+                        e.stopPropagation();
+                        setPayingFile(row);
+                      }}
+                      sx={{ whiteSpace: "nowrap" }}
+                    >
                       Registrar pago
                     </Button>
                   </TableCell>
@@ -237,7 +245,7 @@ export const CobrosTab = () => {
               </TableRow>
             ) : (
               history.data.map((pago) => (
-                <TableRow key={pago.id} hover>
+                <TableRow key={pago.id} hover onClick={() => navigate(`/files/profile/${pago.file.id}`)} sx={{ cursor: "pointer" }}>
                   <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(pago.fecha).format("DD/MM/YYYY")}</TableCell>
                   <TableCell sx={{ whiteSpace: "nowrap" }}>
                     {fileLink(pago.file)} <Typography component="span" variant="caption" color="text.secondary">{pago.file.destino}</Typography>
