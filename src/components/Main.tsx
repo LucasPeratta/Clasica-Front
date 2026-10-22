@@ -12,12 +12,17 @@ import AssignmentLateIcon from "@mui/icons-material/AssignmentLate";
 import BadgeIcon from "@mui/icons-material/Badge";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import { LIQUIDATION_URGENT_DAYS, LIQUIDATION_WARNING_DAYS } from "./File/utils/liquidation";
 import { getHome, iHome } from "./inicioHandler";
 import { formatFileNumber } from "./File/utils/fileNumber";
 import { formatMoney } from "./File/utils/totals";
 
 // Pagos a mayoristas que se muestran en el inicio (el resto, con el botón "Ver los restantes")
 const HOME_SUPPLIER_ITEMS = 4;
+// Servicios sin liquidar que se muestran antes de "Ver los restantes"
+const HOME_LIST_ITEMS = 4;
 
 /* ---------- Textos ---------- */
 
@@ -154,6 +159,9 @@ const buildSummaries = (home: iHome): Summary[] => {
   const maySemana = home.mayoristas.semana;
   const nextSupplier = home.mayoristas.items[0];
   const liquidar = home.sinLiquidar.total;
+  // Urgencia: el viaje sale en 21 días o menos (rojo) o en 30 o menos (naranja)
+  const liquidarUrgente = home.sinLiquidar.items.filter((s) => s.diasParaSalida <= LIQUIDATION_URGENT_DAYS).length;
+  const liquidarPronto = home.sinLiquidar.items.filter((s) => s.diasParaSalida <= LIQUIDATION_WARNING_DAYS).length;
   const docProblems = home.documentos.items.filter((d) => d.problema).length;
   const docs = home.documentos.total;
 
@@ -198,9 +206,19 @@ const buildSummaries = (home: iHome): Summary[] => {
     {
       key: "liquidar",
       icon: <AssignmentLateIcon />,
-      level: liquidar > 0 ? "orange" : "green",
-      title: liquidar > 0 ? `${plural(liquidar, "servicio para liquidar", "servicios para liquidar")}` : "Todo liquidado",
-      detail: "De viajes que salen en menos de 30 días",
+      level: liquidarUrgente > 0 ? "red" : liquidarPronto > 0 ? "orange" : liquidar > 0 ? "blue" : "green",
+      title:
+        liquidarPronto > 0
+          ? `${plural(liquidarPronto, "servicio para liquidar ya", "servicios para liquidar ya")}`
+          : liquidar > 0
+            ? `${plural(liquidar, "servicio sin liquidar", "servicios sin liquidar")}`
+            : "Todo liquidado",
+      detail:
+        liquidarPronto > 0
+          ? "Sus viajes salen en menos de 30 días"
+          : liquidar > 0
+            ? `El más próximo sale ${whenText(home.sinLiquidar.items[0].diasParaSalida)}`
+            : "Todos los servicios están liquidados",
     },
     {
       key: "documentos",
@@ -287,6 +305,7 @@ const fileText = (file: { numero?: number | null; anio?: number | null; destino:
 export const Inicio = () => {
   const [home, setHome] = useState<iHome | null>(null);
   const [error, setError] = useState(false);
+  const [showAllUnsettled, setShowAllUnsettled] = useState(false);
 
   useEffect(() => {
     getHome().then((data) => {
@@ -401,17 +420,40 @@ export const Inicio = () => {
                 })}
               </Panel>
 
-              <Panel id="detalle-liquidar" title="Servicios para liquidar" icon={<AssignmentLateIcon />}>
-                {home.sinLiquidar.items.map((s) => (
-                  <Line
-                    key={s.id}
-                    to={`/files/profile/${s.file.id}`}
-                    level={s.diasParaSalida <= 21 ? "red" : "orange"}
-                    main={s.nombre || "Servicio sin nombre"}
-                    sub={`${s.provider ? `${s.provider} · ` : ""}${fileText(s.file)}`}
-                    right={<Right level={s.diasParaSalida <= 21 ? "red" : "orange"} strong={`El viaje sale ${whenText(s.diasParaSalida)}`} />}
-                  />
-                ))}
+              <Panel
+                id="detalle-liquidar"
+                title="Servicios sin liquidar"
+                icon={<AssignmentLateIcon />}
+                footer={
+                  home.sinLiquidar.items.length > HOME_LIST_ITEMS && (
+                    <Button
+                      fullWidth
+                      onClick={() => setShowAllUnsettled((v) => !v)}
+                      endIcon={showAllUnsettled ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      sx={{ mt: 1, textTransform: "none", fontWeight: 600, fontSize: "0.95rem", color: "#0D5B75", backgroundColor: "#f2f8fa", borderRadius: 2 }}
+                    >
+                      {showAllUnsettled
+                        ? "Ver menos"
+                        : `Ver ${home.sinLiquidar.items.length - HOME_LIST_ITEMS === 1 ? "el servicio restante" : `los ${home.sinLiquidar.items.length - HOME_LIST_ITEMS} servicios restantes`}`}
+                    </Button>
+                  )
+                }
+              >
+                {(showAllUnsettled ? home.sinLiquidar.items : home.sinLiquidar.items.slice(0, HOME_LIST_ITEMS)).map((s) => {
+                  // Rojo: sale en 21 días o menos; naranja: 30 o menos; azul: más adelante
+                  const level: Level =
+                    s.diasParaSalida <= LIQUIDATION_URGENT_DAYS ? "red" : s.diasParaSalida <= LIQUIDATION_WARNING_DAYS ? "orange" : "blue";
+                  return (
+                    <Line
+                      key={s.id}
+                      to={`/files/profile/${s.file.id}`}
+                      level={level}
+                      main={s.nombre || "Servicio sin nombre"}
+                      sub={`${s.provider ? `${s.provider} · ` : ""}${fileText(s.file)}`}
+                      right={<Right level={level} strong={`El viaje sale ${whenText(s.diasParaSalida)}`} small={dayjs(s.file.fechaSalida).format("DD/MM/YYYY")} />}
+                    />
+                  );
+                })}
               </Panel>
 
               <Panel
