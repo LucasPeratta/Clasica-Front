@@ -10,7 +10,7 @@ import HikingIcon from "@mui/icons-material/Hiking";
 import AirportShuttleIcon from "@mui/icons-material/AirportShuttle";
 import { formatMoney } from "../../File/utils/totals";
 import { deleteGrupoServicio } from "../handler";
-import { iGrupo, iGrupoServicio } from "../model";
+import { iGrupo, iGrupoServicio, ROOM_TYPES } from "../model";
 import { GrupoServicioDialog } from "./GrupoServicioDialog";
 
 const TYPE_ICONS: Record<string, JSX.Element> = {
@@ -43,7 +43,7 @@ export const ServiciosTab = ({ grupo, onChange }: { grupo: iGrupo; onChange: () 
 
   // Precio de lista por pasajero, sumado por moneda
   const perPax = new Map<string, { neto: number; tarifa: number }>();
-  for (const s of grupo.servicios) {
+  for (const s of grupo.servicios.filter((x) => x.modoPrecio === "POR_PASAJERO")) {
     const t = perPax.get(s.currency) ?? { neto: 0, tarifa: 0 };
     t.neto += s.netoPorPax;
     t.tarifa += s.tarifaPorPax;
@@ -97,12 +97,50 @@ export const ServiciosTab = ({ grupo, onChange }: { grupo: iGrupo; onChange: () 
                     </Box>
                   </TableCell>
                   <TableCell>{s.provider}</TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    {formatMoney(s.netoPorPax, s.currency)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
-                    {formatMoney(s.tarifaPorPax, s.currency)}
-                  </TableCell>
+                  {s.modoPrecio === "POR_HABITACION" ? (
+                    <TableCell align="right" colSpan={2}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Según la habitación (por persona):
+                      </Typography>
+                      {ROOM_TYPES.flatMap((r) => {
+                        const room = s.preciosHabitacion?.[r.value];
+                        return room
+                          ? [
+                              <Typography key={r.value} variant="body2" sx={{ whiteSpace: "nowrap" }}>
+                                {r.label}: {formatMoney(room.tarifa, s.currency)}{" "}
+                                <Box component="span" sx={{ color: "text.secondary" }}>
+                                  (costo {formatMoney(room.neto, s.currency)})
+                                </Box>
+                              </Typography>,
+                            ]
+                          : [];
+                      })}
+                    </TableCell>
+                  ) : (
+                    <>
+                      <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                        {formatMoney(s.netoPorPax, s.currency)}
+                        {s.edadMenor !== null && (
+                          <Typography variant="body2" color="text.secondary">
+                            menor {formatMoney(s.netoMenor ?? 0, s.currency)}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: "nowrap", fontWeight: 600 }}>
+                        {formatMoney(s.tarifaPorPax, s.currency)}
+                        {s.modoPrecio === "POR_RESERVA" && (
+                          <Typography variant="body2" color="text.secondary">
+                            por reserva
+                          </Typography>
+                        )}
+                        {s.edadMenor !== null && (
+                          <Typography variant="body2" color="text.secondary">
+                            menores de {s.edadMenor}: {formatMoney(s.tarifaMenor ?? 0, s.currency)}
+                          </Typography>
+                        )}
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                     <Tooltip title="Editar">
                       <IconButton onClick={() => setEditing(s)}>
@@ -122,7 +160,7 @@ export const ServiciosTab = ({ grupo, onChange }: { grupo: iGrupo; onChange: () 
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mt: 2 }}>
             {[...perPax.entries()].map(([currency, t]) => (
               <Typography key={currency} sx={{ fontWeight: 600 }}>
-                Precio de lista por pasajero: {formatMoney(t.tarifa, currency)}{" "}
+                Por pasajero (sin contar habitación ni lo que va por reserva): {formatMoney(t.tarifa, currency)}{" "}
                 <Box component="span" sx={{ color: "success.dark" }}>
                   (ganancia {formatMoney(t.tarifa - t.neto, currency)})
                 </Box>

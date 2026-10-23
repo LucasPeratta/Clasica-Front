@@ -251,8 +251,10 @@ export const FilesProfile = (): JSX.Element => {
         file={file}
         onSave={handleEditFileSave}
         onDelete={() => setDeleteFileOpen(true)}
-        onReservaSaved={({ nombre, planId }) =>
-          setFile((prev) => prev && { ...prev, reservaNombre: nombre, grupoPlanId: planId, destino: `${prev.grupo?.titulo} · ${nombre}` })
+        onReservaSaved={({ nombre, planId, habitacionTipo }) =>
+          setFile(
+            (prev) => prev && { ...prev, reservaNombre: nombre, grupoPlanId: planId, habitacionTipo, destino: `${prev.grupo?.titulo} · ${nombre}` }
+          )
         }
       />
       <FileSummary file={file} payments={payments} onSelect={setSeccion} />

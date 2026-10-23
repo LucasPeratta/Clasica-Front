@@ -34,6 +34,12 @@ export interface iGrupoListItem {
   estado: PaymentsStatus;
 }
 
+// Cómo se cobra un servicio del grupo
+export type ModoPrecio = "POR_PASAJERO" | "POR_RESERVA" | "POR_HABITACION";
+
+// Precio por persona según el tipo de habitación
+export type PreciosHabitacion = Partial<Record<HabitacionTipo, { neto: number; tarifa: number }>>;
+
 // Servicio del itinerario con su precio de lista por pasajero
 export interface iGrupoServicio {
   id: string;
@@ -43,6 +49,12 @@ export interface iGrupoServicio {
   currency: string;
   netoPorPax: number;
   tarifaPorPax: number;
+  modoPrecio: ModoPrecio;
+  // Menores de edadMenor años (al salir) pagan netoMenor / tarifaMenor
+  edadMenor: number | null;
+  netoMenor: number | null;
+  tarifaMenor: number | null;
+  preciosHabitacion: PreciosHabitacion | null;
   fechaInicio: string | null;
   fechaFin: string | null;
   fechaLiquidacion: string | null;
@@ -70,12 +82,15 @@ export interface iGrupoPax {
   passport: string | null;
   passportVto: string | null;
   dob: string | null;
+  visaUsa: string | null;
+  visaUsaVto: string | null;
 }
 
 export interface iReserva {
   id: string;
   nombre: string | null;
   planId: string | null;
+  habitacionTipo: HabitacionTipo | null;
   pasajeros: iGrupoPax[];
   servicios: number;
   estado: PaymentsStatus;
@@ -101,6 +116,8 @@ export interface iGrupo {
   fechaSalida: string;
   fechaRegreso: string | null;
   cupo: number | null;
+  // Viaje a EE.UU.: se pide visa a cada pasajero
+  visaUsa: boolean;
   obs: string | null;
   servicios: iGrupoServicio[];
   planes: iGrupoPlan[];
@@ -108,5 +125,7 @@ export interface iGrupo {
   habitaciones: iHabitacion[];
   pasajeros: iGrupoPasajero[];
   sinHabitacion: iGrupoPasajero[];
+  // Viaje a EE.UU.: quién no tiene visa o le vence antes de volver
+  visaProblemas: { paxId: string; nombre: string; reserva: string | null; problema: string }[];
   resumen: { reservas: number; pasajeros: number; lugaresLibres: number | null; dinero: iGrupoDinero[] };
 }

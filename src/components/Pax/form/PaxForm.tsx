@@ -14,7 +14,7 @@ import { FormSection } from "../../common/FormSection";
 import { FormActions, FormHeader, FormPage } from "../../common/FormLayout";
 import { iPax } from "../model";
 
-type DateField = "dob" | "dniVto" | "passportVto";
+type DateField = "dob" | "dniVto" | "passportVto" | "visaUsaVto";
 
 export const PaxForm = () => {
   const { id, loading, saving, saved, setSaved, formData, setField, errors, saveError, setSaveError, handleSubmit, goBack } =
@@ -97,6 +97,15 @@ export const PaxForm = () => {
               </Grid>
               <Grid item xs={12} md={6}>
                 {date("passportVto", "Vencimiento del pasaporte", "Tiene que seguir vigente 6 meses después del viaje")}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {text("visaUsa", "Visa de EE.UU. (número)", 20, {
+                  helperText: "Solo si tiene; se pide en los viajes a Estados Unidos",
+                  onChange: (e: React.ChangeEvent<HTMLInputElement>) => setField("visaUsa", e.target.value.toUpperCase()),
+                })}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {date("visaUsaVto", "Vencimiento de la visa de EE.UU.")}
               </Grid>
             </Grid>
           </FormSection>

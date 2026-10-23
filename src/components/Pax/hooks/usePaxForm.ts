@@ -13,6 +13,8 @@ const initialState: iPax = {
   dniVto: null,
   passport: "",
   passportVto: null,
+  visaUsa: "",
+  visaUsaVto: null,
   dob: null,
   adress: "",
   email: "",
@@ -52,6 +54,7 @@ export const usePaxForm = () => {
             dob: parseDate(pax.dob),
             dniVto: parseDate(pax.dniVto),
             passportVto: parseDate(pax.passportVto),
+            visaUsaVto: parseDate(pax.visaUsaVto),
           });
         }
       })

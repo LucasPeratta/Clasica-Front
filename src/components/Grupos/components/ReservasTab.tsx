@@ -5,7 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { formatMoney } from "../../File/utils/totals";
 import { PAYMENT_STATUS } from "../../File/paymentsHandler";
-import { iGrupo } from "../model";
+import { iGrupo, ROOM_TYPES } from "../model";
 import { NewReservaDialog } from "./NewReservaDialog";
 
 const headSx = { fontWeight: 700, color: "#0D5B75" };
@@ -56,6 +56,7 @@ export const ReservasTab = ({ grupo, onChange }: { grupo: iGrupo; onChange: () =
                     <Typography sx={{ fontWeight: 700 }}>{r.nombre}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {planName(r.planId) ? `Plan ${planName(r.planId)}` : "Plan automático"}
+                      {r.habitacionTipo ? ` · ${ROOM_TYPES.find((t) => t.value === r.habitacionTipo)?.label}` : ""}
                     </Typography>
                   </TableCell>
                   <TableCell>{r.pasajeros.map((p) => `${p.firstname} ${p.lastname}`).join(", ")}</TableCell>

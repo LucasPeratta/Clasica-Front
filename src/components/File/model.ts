@@ -28,6 +28,7 @@ export interface iFile {
   grupoId?: string | null;
   reservaNombre?: string | null;
   grupoPlanId?: string | null;
+  habitacionTipo?: string | null;
   grupo?: { id: string; titulo: string; planes: { id: string; nombre: string }[] } | null;
   // En el detalle: cuántos pagos del pasajero tiene
   _count?: { pagos: number };

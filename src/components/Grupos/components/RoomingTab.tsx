@@ -116,6 +116,7 @@ export const RoomingTab = ({ grupo, onChange }: { grupo: iGrupo; onChange: () =>
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Nac. {date(p.dob)} · DNI {p.dni || "—"} (vto. {date(p.dniVto)}) · Pasaporte {p.passport || "—"} (vto. {date(p.passportVto)})
+                    {grupo.visaUsa ? ` · Visa EE.UU. ${p.visaUsa || "—"} (vto. ${date(p.visaUsaVto)})` : ""}
                   </Typography>
                 </Box>
               ))}

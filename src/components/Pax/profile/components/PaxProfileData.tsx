@@ -70,6 +70,13 @@ export const PaxProfileData = ({ pax }: PaxProfileDataProps) => {
             value={formatDate(pax.passportVto)}
             extra={<ExpiryStatus expiry={pax.passportVto} />}
           />
+          {(pax.visaUsa || pax.visaUsaVto) && (
+            <Field
+              label="Visa de EE.UU."
+              value={[pax.visaUsa, pax.visaUsaVto && `vence el ${formatDate(pax.visaUsaVto)}`].filter(Boolean).join(" · ")}
+              extra={<ExpiryStatus expiry={pax.visaUsaVto ?? null} />}
+            />
+          )}
         </InfoCard>
       </Grid>
 

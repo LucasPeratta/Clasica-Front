@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, TextField } from "@mui/material";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, TextField } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -9,7 +9,16 @@ import { createGrupo, iGrupoInput, updateGrupo } from "../handler";
 
 interface GrupoDialogProps {
   // Al editar, la salida; al crear, nada
-  grupo?: { id: string; titulo: string; destino: string; fechaSalida: string; fechaRegreso: string | null; cupo: number | null; obs: string | null };
+  grupo?: {
+    id: string;
+    titulo: string;
+    destino: string;
+    fechaSalida: string;
+    fechaRegreso: string | null;
+    cupo: number | null;
+    visaUsa: boolean;
+    obs: string | null;
+  };
   onClose: () => void;
   // Devuelve el id (al crear)
   onSaved: (id: string) => void;
@@ -25,6 +34,7 @@ export const GrupoDialog = ({ grupo, onClose, onSaved }: GrupoDialogProps) => {
   const [regreso, setRegreso] = useState<dayjs.Dayjs | null>(grupo?.fechaRegreso ? dayjs(grupo.fechaRegreso) : null);
   const [cupo, setCupo] = useState(grupo?.cupo ? String(grupo.cupo) : "");
   const [obs, setObs] = useState(grupo?.obs ?? "");
+  const [visaUsa, setVisaUsa] = useState(grupo?.visaUsa ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +47,7 @@ export const GrupoDialog = ({ grupo, onClose, onSaved }: GrupoDialogProps) => {
       fechaSalida: salida ? salida.hour(12).toISOString() : "",
       fechaRegreso: regreso ? regreso.hour(12).toISOString() : null,
       cupo: cupo ? Number(cupo) : null,
+      visaUsa,
       obs,
     };
     const result = grupo ? await updateGrupo(grupo.id, input) : await createGrupo(input);
@@ -85,6 +96,12 @@ export const GrupoDialog = ({ grupo, onClose, onSaved }: GrupoDialogProps) => {
                 value={cupo}
                 onChange={(e) => setCupo(e.target.value)}
                 helperText="Cuántos pasajeros entran. Vacío = sin límite"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} sx={{ display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                control={<Checkbox checked={visaUsa} onChange={(e) => setVisaUsa(e.target.checked)} />}
+                label="Viaja a EE.UU. (pedir visa)"
               />
             </Grid>
             <Grid item xs={12}>

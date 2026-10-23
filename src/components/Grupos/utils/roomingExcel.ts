@@ -14,11 +14,23 @@ const COLUMNS = [
   { header: "Vto. DNI", width: 12 },
   { header: "Pasaporte", width: 14 },
   { header: "Vto. pasaporte", width: 14 },
+  { header: "Visa EE.UU.", width: 14 },
+  { header: "Vto. visa", width: 12 },
   { header: "Reserva", width: 22 },
   { header: "Observaciones", width: 24 },
 ];
 
-const paxCells = (p: iGrupoPax) => [p.lastname, p.firstname, date(p.dob), p.dni ?? "", date(p.dniVto), p.passport ?? "", date(p.passportVto)];
+const paxCells = (p: iGrupoPax) => [
+  p.lastname,
+  p.firstname,
+  date(p.dob),
+  p.dni ?? "",
+  date(p.dniVto),
+  p.passport ?? "",
+  date(p.passportVto),
+  p.visaUsa ?? "",
+  date(p.visaUsaVto),
+];
 
 /**
  * Arma el rooming del grupo en Excel (habitación por habitación) y lo descarga
@@ -67,7 +79,7 @@ export const downloadRooming = async (grupo: iGrupo) => {
     if (last > first) {
       sheet.mergeCells(first, 1, last, 1);
       sheet.mergeCells(first, 2, last, 2);
-      sheet.mergeCells(first, 11, last, 11);
+      sheet.mergeCells(first, COLUMNS.length, last, COLUMNS.length);
     }
     sheet.getCell(first, 1).alignment = { vertical: "middle", horizontal: "center" };
     sheet.getCell(first, 1).font = { bold: true };

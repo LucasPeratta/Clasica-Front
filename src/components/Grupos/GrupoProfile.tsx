@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  AlertTitle,
   Box,
   Button,
   Dialog,
@@ -104,7 +105,10 @@ export const GrupoProfile = (): JSX.Element => {
           sx={{ ...cardSx, display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}
         >
           <Box>
-            <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>Salida grupal · {grupo.destino}</Typography>
+            <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>
+              Salida grupal · {grupo.destino}
+              {grupo.visaUsa ? " · requiere visa de EE.UU." : ""}
+            </Typography>
             <Typography component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1.6rem", md: "2rem" }, lineHeight: 1.2 }}>
               {grupo.titulo}
             </Typography>
@@ -207,6 +211,20 @@ export const GrupoProfile = (): JSX.Element => {
             )}
           </Box>
         </Paper>
+
+        {/* Viaje a EE.UU.: visas que faltan o vencen */}
+        {grupo.visaUsa && grupo.visaProblemas.length > 0 && (
+          <Alert severity="warning" sx={{ borderRadius: 3, fontSize: "1rem" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>
+              Visas de EE.UU.: {grupo.visaProblemas.length === 1 ? "1 pasajero para revisar" : `${grupo.visaProblemas.length} pasajeros para revisar`}
+            </AlertTitle>
+            {grupo.visaProblemas.map((v) => (
+              <div key={v.paxId}>
+                • {v.nombre} ({v.reserva}): {v.problema}
+              </div>
+            ))}
+          </Alert>
+        )}
 
         {/* Pestañas */}
         <Box>

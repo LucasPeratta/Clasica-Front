@@ -23,7 +23,8 @@ import { iPax } from "../../Pax/model";
 import { AddPaxDialog } from "../../File/components/AddPaxDialog";
 import { CURRENCIES, formatMoney } from "../../File/utils/totals";
 import { addReserva } from "../handler";
-import { iGrupo } from "../model";
+import { HabitacionTipo, iGrupo, ROOM_TYPES } from "../model";
+import { linePrice, roomTypeFor } from "../utils/pricing";
 
 const symbol = (currency: string) => CURRENCIES.find((c) => c.value === currency)?.symbol ?? currency;
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -54,26 +55,38 @@ export const NewReservaDialog = ({ grupo, onClose, onSaved }: NewReservaDialogPr
   const [lines, setLines] = useState<Record<string, Line>>(() =>
     Object.fromEntries(grupo.servicios.map((s) => [s.id, { neto: "0", tarifa: "0", edited: false }]))
   );
+  // Habitación de la reserva: sale de la cantidad de pasajeros hasta que se elige a mano
+  const [habitacion, setHabitacion] = useState<HabitacionTipo>("SINGLE");
+  const [habitacionEdited, setHabitacionEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Con cada cambio de pasajeros: el nombre ("Montero x2") y los precios que no se tocaron
-  const updatePax = (next: iPax[]) => {
-    setPax(next);
-    if (!nombreEdited) setNombre(next.length > 0 ? `${next[0].lastname} x${next.length}` : "");
+  // Los precios que no se tocaron siguen a los pasajeros (menores) y a la habitación
+  const reprice = (nextPax: iPax[], room: HabitacionTipo) =>
     setLines((prev) =>
       Object.fromEntries(
         grupo.servicios.map((s) => {
           const line = prev[s.id];
-          return [
-            s.id,
-            line?.edited
-              ? line
-              : { neto: String(round2(s.netoPorPax * next.length)), tarifa: String(round2(s.tarifaPorPax * next.length)), edited: false },
-          ];
+          if (line?.edited) return [s.id, line];
+          const price = linePrice(s, nextPax, room, grupo.fechaSalida);
+          return [s.id, { neto: String(round2(price.neto)), tarifa: String(round2(price.tarifa)), edited: false }];
         })
       )
     );
+
+  // Con cada cambio de pasajeros: el nombre ("Montero x2"), la habitación y los precios
+  const updatePax = (next: iPax[]) => {
+    setPax(next);
+    if (!nombreEdited) setNombre(next.length > 0 ? `${next[0].lastname} x${next.length}` : "");
+    const room = habitacionEdited ? habitacion : roomTypeFor(next.length);
+    if (!habitacionEdited) setHabitacion(room);
+    reprice(next, room);
+  };
+
+  const changeRoom = (room: HabitacionTipo) => {
+    setHabitacion(room);
+    setHabitacionEdited(true);
+    reprice(pax, room);
   };
 
   const setLine = (id: string, field: "neto" | "tarifa", value: string) =>
@@ -98,6 +111,7 @@ export const NewReservaDialog = ({ grupo, onClose, onSaved }: NewReservaDialogPr
       nombre: nombre.trim(),
       paxIds: pax.map((p) => p.id),
       planId: planId || null,
+      habitacionTipo: habitacion,
       lineas: grupo.servicios.map((s) => ({
         grupoServicioId: s.id,
         neto: Number(lines[s.id]?.neto) || 0,
@@ -165,13 +179,27 @@ export const NewReservaDialog = ({ grupo, onClose, onSaved }: NewReservaDialogPr
               </MenuItem>
             ))}
           </TextField>
+          <TextField
+            select
+            label="Habitación"
+            value={habitacion}
+            onChange={(e) => changeRoom(e.target.value as HabitacionTipo)}
+            helperText="Ej. una persona sola que comparte una doble"
+            sx={{ flex: 1, minWidth: 180 }}
+          >
+            {ROOM_TYPES.map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
         </Box>
 
         {/* 3. Precios */}
         <Box>
           <Typography sx={{ fontWeight: 700 }}>2. Precio de cada servicio para esta reserva</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Viene con el precio de lista por la cantidad de pasajeros. Cambialo si reservaron en preventa o con otro precio.
+            Viene calculado con el precio de lista (menores, habitación o por reserva, según cada servicio). Cambialo si reservaron en preventa o con otro precio.
           </Typography>
           {grupo.servicios.length === 0 ? (
             <Alert severity="info">El grupo todavía no tiene servicios: agregalos en la pestaña "Servicios y precios".</Alert>
@@ -189,9 +217,18 @@ export const NewReservaDialog = ({ grupo, onClose, onSaved }: NewReservaDialogPr
                   <TableRow key={s.id}>
                     <TableCell>
                       <Typography sx={{ fontWeight: 600 }}>{s.nombre}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Lista por pasajero: {formatMoney(s.tarifaPorPax, s.currency)}
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {s.modoPrecio === "POR_RESERVA"
+                          ? `Por reserva: ${formatMoney(s.tarifaPorPax, s.currency)}`
+                          : s.modoPrecio === "POR_HABITACION"
+                            ? "Según la habitación"
+                            : `Por pasajero: ${formatMoney(s.tarifaPorPax, s.currency)}${s.edadMenor !== null ? ` · menores de ${s.edadMenor}: ${formatMoney(s.tarifaMenor ?? 0, s.currency)}` : ""}`}
                       </Typography>
+                      {pax.length > 0 && !lines[s.id]?.edited && (
+                        <Typography variant="caption" color="#0D5B75" display="block">
+                          {linePrice(s, pax, habitacion, grupo.fechaSalida).detalle}
+                        </Typography>
+                      )}
                     </TableCell>
                     {(["neto", "tarifa"] as const).map((field) => (
                       <TableCell key={field} sx={{ width: 200 }}>

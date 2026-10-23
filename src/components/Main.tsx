@@ -555,7 +555,7 @@ export const Inicio = () => {
                     key={`${d.paxId}-${d.documento}`}
                     to={`/paxs/profile/${d.paxId}`}
                     level={d.problema ? "red" : "orange"}
-                    main={`${d.documento === "DNI" ? "El DNI" : "El pasaporte"} de ${d.pasajero}`}
+                    main={`${d.documento === "DNI" ? "El DNI" : d.documento === "Pasaporte" ? "El pasaporte" : "La visa de EE.UU."} de ${d.pasajero}`}
                     sub={d.problema ?? `Vence el ${dayjs(d.vencimiento).format("DD/MM/YYYY")}`}
                     right={
                       <Right

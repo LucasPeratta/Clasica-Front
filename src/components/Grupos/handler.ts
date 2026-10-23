@@ -44,6 +44,7 @@ export interface iGrupoInput {
   fechaSalida: string;
   fechaRegreso: string | null;
   cupo: number | null;
+  visaUsa: boolean;
   obs: string;
 }
 
@@ -58,6 +59,11 @@ export interface iGrupoServicioInput {
   currency: string;
   netoPorPax: number;
   tarifaPorPax: number;
+  modoPrecio: string;
+  edadMenor: number | null;
+  netoMenor: number | null;
+  tarifaMenor: number | null;
+  preciosHabitacion: Record<string, { neto: number; tarifa: number }> | null;
   fechaInicio: string | null;
   fechaFin: string | null;
   fechaLiquidacion: string | null;
@@ -73,11 +79,12 @@ export interface iReservaInput {
   nombre: string;
   paxIds: string[];
   planId: string | null;
+  habitacionTipo: string;
   lineas: { grupoServicioId: string; neto: number; tarifa: number }[];
 }
 
 export const addReserva = (grupoId: string, input: iReservaInput) => send(`/${grupoId}/reservas`, "POST", input);
-export const updateReserva = (grupoId: string, fileId: string, input: { nombre?: string; planId?: string | null }) =>
+export const updateReserva = (grupoId: string, fileId: string, input: { nombre?: string; planId?: string | null; habitacionTipo?: string | null }) =>
   send(`/${grupoId}/reservas/${fileId}`, "PUT", input);
 
 export interface iPlanInput {

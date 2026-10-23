@@ -29,7 +29,7 @@ interface FileProfileHeaderProps {
   // Abre la confirmación para eliminar el file
   onDelete?: () => void;
   // Reservas de grupos: se cambió el nombre o el plan
-  onReservaSaved?: (changes: { nombre: string; planId: string | null }) => void;
+  onReservaSaved?: (changes: { nombre: string; planId: string | null; habitacionTipo: string | null }) => void;
 }
 
 const buttonSx = { textTransform: "none", fontSize: "1rem", fontWeight: 600, borderRadius: 2, px: 2.5 };
@@ -125,6 +125,7 @@ export const FileProfileHeader = ({ file, onSave, onDelete, onReservaSaved }: Fi
           fileId={file.id}
           nombre={file.reservaNombre ?? ""}
           planId={file.grupoPlanId ?? null}
+          habitacionTipo={file.habitacionTipo ?? null}
           onClose={() => setEditingReserva(false)}
           onSaved={(changes) => {
             setEditingReserva(false);

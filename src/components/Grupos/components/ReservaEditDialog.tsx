@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material";
 import { updateReserva } from "../handler";
+import { ROOM_TYPES } from "../model";
 
 interface ReservaEditDialogProps {
   grupo: { id: string; titulo: string; planes: { id: string; nombre: string }[] };
   fileId: string;
   nombre: string;
   planId: string | null;
+  habitacionTipo: string | null;
   onClose: () => void;
-  onSaved: (changes: { nombre: string; planId: string | null }) => void;
+  onSaved: (changes: { nombre: string; planId: string | null; habitacionTipo: string | null }) => void;
 }
 
 /**
  * Cambiar el nombre de una reserva de grupo y su plan de pagos
  */
-export const ReservaEditDialog = ({ grupo, fileId, nombre: initialName, planId: initialPlan, onClose, onSaved }: ReservaEditDialogProps) => {
+export const ReservaEditDialog = ({ grupo, fileId, nombre: initialName, planId: initialPlan, habitacionTipo: initialRoom, onClose, onSaved }: ReservaEditDialogProps) => {
+  const [habitacion, setHabitacion] = useState(initialRoom ?? "");
   const [nombre, setNombre] = useState(initialName);
   const [planId, setPlanId] = useState(initialPlan ?? "");
   const [saving, setSaving] = useState(false);
@@ -22,9 +25,10 @@ export const ReservaEditDialog = ({ grupo, fileId, nombre: initialName, planId: 
 
   const handleSave = async () => {
     setSaving(true);
-    const result = await updateReserva(grupo.id, fileId, { nombre: nombre.trim(), planId: planId || null });
+    const changes = { nombre: nombre.trim(), planId: planId || null, habitacionTipo: habitacion || null };
+    const result = await updateReserva(grupo.id, fileId, changes);
     setSaving(false);
-    if (result.ok) onSaved({ nombre: nombre.trim(), planId: planId || null });
+    if (result.ok) onSaved(changes);
     else setError(result.msg);
   };
 
@@ -44,6 +48,20 @@ export const ReservaEditDialog = ({ grupo, fileId, nombre: initialName, planId: 
           {grupo.planes.map((p) => (
             <MenuItem key={p.id} value={p.id}>
               {p.nombre}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          select
+          label="Habitación"
+          value={habitacion}
+          onChange={(e) => setHabitacion(e.target.value)}
+          helperText="Si cambia y el hotel se cobra según la habitación, corregí su precio en Servicios"
+        >
+          <MenuItem value="">Sin definir</MenuItem>
+          {ROOM_TYPES.map((r) => (
+            <MenuItem key={r.value} value={r.value}>
+              {r.label}
             </MenuItem>
           ))}
         </TextField>

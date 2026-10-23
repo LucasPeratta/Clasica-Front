@@ -77,6 +77,7 @@ export const updatePax = async (id: string, formData: iPax) => {
       dob: dataToSend.dob ? (dataToSend.dob as any).toDate().toISOString() : null,
       dniVto: dataToSend.dniVto ? (dataToSend.dniVto as any).toDate().toISOString() : null,
       passportVto: dataToSend.passportVto ? (dataToSend.passportVto as any).toDate().toISOString() : null,
+      visaUsaVto: dataToSend.visaUsaVto ? dataToSend.visaUsaVto.toDate().toISOString() : null,
     };
 
 
@@ -108,6 +109,7 @@ export const createPax = async (formData: iPax): Promise<Response> => {
       dob: dataToSend.dob ? (dataToSend.dob as any).toDate().toISOString() : null,
       dniVto: dataToSend.dniVto ? (dataToSend.dniVto as any).toDate().toISOString() : null,
       passportVto: dataToSend.passportVto ? (dataToSend.passportVto as any).toDate().toISOString() : null,
+      visaUsaVto: dataToSend.visaUsaVto ? dataToSend.visaUsaVto.toDate().toISOString() : null,
     };
 
 
