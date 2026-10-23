@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -23,9 +24,14 @@ import FlightIcon from "@mui/icons-material/Flight";
 import HotelIcon from "@mui/icons-material/Hotel";
 import HikingIcon from "@mui/icons-material/Hiking";
 import AirportShuttleIcon from "@mui/icons-material/AirportShuttle";
-import { iService, ServiceType } from "../../Service/model";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import { iService, iServiceAdjunto, ServiceType } from "../../Service/model";
 import { MayoristaField } from "../../Service/MayoristaField";
+import { deleteServiceAdjunto, uploadServiceAdjuntos } from "../../Service/handler";
 import { CURRENCIES, formatMoney } from "../utils/totals";
+import { defaultLiquidationDate } from "../utils/liquidation";
+import { iFile } from "../model";
+import { ServiceAttachments } from "./ServiceAttachments";
 
 const TYPES: { value: ServiceType; label: string; icon: JSX.Element; example: string; from: string; to: string }[] = [
   { value: "AEREO", label: "Aéreo", icon: <FlightIcon />, example: "Ej. Aerolíneas Argentinas Buenos Aires – Madrid", from: "Fecha de ida", to: "Fecha de vuelta" },
@@ -47,24 +53,32 @@ const toggleSx = {
 interface ServiceDialogProps {
   // Servicio a editar (o uno nuevo); null = cerrado
   service: iService | null;
+  // Salida del file: la fecha para liquidar es, por defecto, 1 mes antes
+  fechaSalida?: iFile["fechaSalida"] | string;
   onClose: () => void;
-  // Devuelve true si se guardó
-  onSave: (service: iService) => Promise<boolean>;
+  // Guarda el servicio; devuelve el servicio guardado (con su id) o null si falló
+  onSave: (service: iService) => Promise<iService | null>;
+  // Ya guardado, con sus fotos o documentos: actualizar la pantalla y cerrar
+  // (close = false si las fotos no se pudieron subir y la ventana sigue abierta)
+  onSaved: (service: iService, close?: boolean) => void;
 }
 
 /**
  * Ventana para agregar o editar un servicio del file
  */
-export const ServiceDialog = ({ service, onClose, onSave }: ServiceDialogProps) => {
+export const ServiceDialog = ({ service, fechaSalida, onClose, onSave, onSaved }: ServiceDialogProps) => {
   const [draft, setDraft] = useState<iService | null>(service);
   const [triedSave, setTriedSave] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  // Fotos o documentos elegidos que se suben al guardar
+  const [newFiles, setNewFiles] = useState<File[]>([]);
 
   useEffect(() => {
     setDraft(service);
     setTriedSave(false);
-    setSaveError(false);
+    setSaveError("");
+    setNewFiles([]);
   }, [service]);
 
   if (!draft) return null;
@@ -80,14 +94,45 @@ export const ServiceDialog = ({ service, onClose, onSave }: ServiceDialogProps) 
   const missingProvider = !draft.provider?.trim();
   const badDates = !!draft.fechaInicio && !!draft.fechaFin && dayjs(draft.fechaFin).isBefore(dayjs(draft.fechaInicio), "day");
 
+  // Fecha para liquidar: la elegida, o 1 mes antes de la salida
+  const defaultDeadline = defaultLiquidationDate(fechaSalida);
+  const customDeadline = !!draft.fechaLiquidacion;
+
+  const handleDeleteAdjunto = async (adjunto: iServiceAdjunto) => {
+    if (!(await deleteServiceAdjunto(draft.id, adjunto.id))) {
+      setSaveError("No se pudo eliminar el archivo. Intentá de nuevo.");
+      return;
+    }
+    setDraft({ ...draft, adjuntos: (draft.adjuntos ?? []).filter((a) => a.id !== adjunto.id) });
+  };
+
   const handleSave = async () => {
     setTriedSave(true);
     if (missingProvider || badDates) return;
     setSaving(true);
-    setSaveError(false);
-    const ok = await onSave({ ...draft, provider: draft.provider.trim() });
+    setSaveError("");
+    const saved = await onSave({ ...draft, provider: draft.provider.trim() });
+    if (!saved) {
+      setSaving(false);
+      setSaveError("No se pudo guardar el servicio. Intentá de nuevo.");
+      return;
+    }
+    let adjuntos = draft.adjuntos ?? [];
+    if (newFiles.length > 0) {
+      const upload = await uploadServiceAdjuntos(saved.id, newFiles);
+      if (!upload.ok) {
+        // El servicio ya quedó guardado: se puede reintentar subir desde "Editar"
+        setSaving(false);
+        setDraft({ ...saved, adjuntos });
+        setNewFiles([]);
+        setSaveError(`El servicio se guardó, pero las fotos no: ${upload.msg}`);
+        onSaved({ ...saved, adjuntos }, false);
+        return;
+      }
+      adjuntos = [...adjuntos, ...upload.data];
+    }
     setSaving(false);
-    if (!ok) setSaveError(true);
+    onSaved({ ...saved, adjuntos });
   };
 
   return (
@@ -95,7 +140,7 @@ export const ServiceDialog = ({ service, onClose, onSave }: ServiceDialogProps) 
       <DialogTitle sx={{ fontWeight: 700, fontSize: "1.35rem" }}>{isNew ? "Agregar un servicio" : "Editar servicio"}</DialogTitle>
       <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: "8px !important" }}>
-          {saveError && <Alert severity="error">No se pudo guardar el servicio. Intentá de nuevo.</Alert>}
+          {saveError && <Alert severity="error">{saveError}</Alert>}
 
           <Box>
             <Typography sx={{ fontWeight: 600, mb: 1 }}>¿Qué es?</Typography>
@@ -195,6 +240,67 @@ export const ServiceDialog = ({ service, onClose, onSave }: ServiceDialogProps) 
               />
             </Grid>
           </Grid>
+
+          <Box>
+            <DatePicker
+              label="Fecha para liquidar"
+              format="DD/MM/YYYY"
+              value={customDeadline ? dayjs(draft.fechaLiquidacion) : defaultDeadline}
+              onChange={(value) => set("fechaLiquidacion", value ?? null)}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  helperText: customDeadline
+                    ? "Elegida a mano para este servicio"
+                    : fechaSalida
+                      ? "Por defecto, 1 mes antes de la salida. Si este servicio se liquida en otra fecha, cambiala."
+                      : "Por defecto, 1 mes antes de la salida del file",
+                },
+              }}
+            />
+            {customDeadline && (
+              <Button size="small" onClick={() => set("fechaLiquidacion", null)} sx={{ textTransform: "none", mt: 0.5 }}>
+                Volver a la de por defecto (1 mes antes de la salida)
+              </Button>
+            )}
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontWeight: 600 }}>Fotos o documentos</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Opcional. Por ejemplo, el itinerario o el ticket del vuelo.
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, alignItems: "flex-start" }}>
+              <ServiceAttachments serviceId={draft.id} adjuntos={draft.adjuntos ?? []} onDelete={handleDeleteAdjunto} />
+              {newFiles.length > 0 && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+                  {newFiles.map((file, i) => (
+                    <Chip
+                      key={`${file.name}-${i}`}
+                      size="small"
+                      label={`${file.name} (se sube al guardar)`}
+                      onDelete={() => setNewFiles((prev) => prev.filter((_, j) => j !== i))}
+                      sx={{ maxWidth: 320 }}
+                    />
+                  ))}
+                </Box>
+              )}
+              <Button component="label" size="small" variant="outlined" startIcon={<AttachFileIcon />} sx={{ textTransform: "none", fontWeight: 600 }}>
+                Agregar foto o PDF
+                <input
+                  hidden
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    setNewFiles((prev) => [...prev, ...files]);
+                    e.target.value = "";
+                  }}
+                />
+              </Button>
+            </Box>
+          </Box>
 
           <TextField
             label="Observaciones"

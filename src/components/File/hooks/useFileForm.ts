@@ -49,17 +49,20 @@ export const useFileForm = () => {
   const removePax = (paxId: string) =>
     setFormData((prev) => ({ ...prev, clients: prev.clients.filter((c) => c.id !== paxId) }));
 
+  // Agrega o reemplaza un servicio en la lista
+  const updateFileService = (service: iService) =>
+    setFormData((prev) => ({
+      ...prev,
+      services: prev.services.some((s) => s.id === service.id)
+        ? prev.services.map((s) => (s.id === service.id ? service : s))
+        : [...prev.services, service],
+    }));
+
   // El servicio se guarda enseguida; queda asociado al file cuando se crea el file
   const saveFileService = async (service: iService) => {
     const saved = await saveService(service);
-    if (!saved) return false;
-    setFormData((prev) => ({
-      ...prev,
-      services: prev.services.some((s) => s.id === saved.id)
-        ? prev.services.map((s) => (s.id === saved.id ? saved : s))
-        : [...prev.services, saved],
-    }));
-    return true;
+    if (saved) updateFileService(saved);
+    return saved;
   };
 
   const removeService = (serviceId: string) => {
@@ -113,6 +116,7 @@ export const useFileForm = () => {
     addPaxs,
     removePax,
     saveFileService,
+    updateFileService,
     removeService,
     handleSubmit,
     goBack,

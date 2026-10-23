@@ -101,7 +101,7 @@ export const FileSummary = ({ file, payments, onSelect }: FileSummaryProps) => {
       ? [
           {
             level: liquidationAlerts.some((a) => a.level === "error") ? "error" : "warning",
-            text: `${liquidationAlerts.length} servicio${liquidationAlerts.length === 1 ? "" : "s"} sin liquidar y el viaje sale ${departureDetail(file.fechaSalida).replace("Sale ", "")}.`,
+            text: `${liquidationAlerts.length === 1 ? "Hay 1 servicio" : `Hay ${liquidationAlerts.length} servicios`} para liquidar ya (fecha vencida o dentro de esta semana): mirá la pestaña Servicios.`,
           },
         ]
       : []),

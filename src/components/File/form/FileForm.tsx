@@ -65,6 +65,7 @@ export const FileForm = () => {
     addPaxs,
     removePax,
     saveFileService,
+    updateFileService,
     removeService,
     handleSubmit,
     goBack,
@@ -72,10 +73,10 @@ export const FileForm = () => {
   const [openAddPax, setOpenAddPax] = useState(false);
   const [editingService, setEditingService] = useState<iService | null>(null);
 
-  const handleSaveService = async (service: iService) => {
-    const ok = await saveFileService(service);
-    if (ok) setEditingService(null);
-    return ok;
+  // Ya guardado (con sus fotos): se actualiza en la lista
+  const handleServiceSaved = (service: iService, close = true) => {
+    updateFileService(service);
+    if (close) setEditingService(null);
   };
 
   return (
@@ -249,7 +250,13 @@ export const FileForm = () => {
         onClose={() => setOpenAddPax(false)}
         onAdd={addPaxs}
       />
-      <ServiceDialog service={editingService} onClose={() => setEditingService(null)} onSave={handleSaveService} />
+      <ServiceDialog
+        service={editingService}
+        fechaSalida={formData.fechaSalida}
+        onClose={() => setEditingService(null)}
+        onSave={saveFileService}
+        onSaved={handleServiceSaved}
+      />
     </FormPage>
   );
 };

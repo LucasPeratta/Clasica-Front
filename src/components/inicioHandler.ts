@@ -41,7 +41,17 @@ export interface iHome {
   };
   sinLiquidar: {
     total: number;
-    items: { id: string; nombre: string; type: ServiceType; provider: string; file: iFileRef; diasParaSalida: number }[];
+    items: {
+      id: string;
+      nombre: string;
+      type: ServiceType;
+      provider: string;
+      file: iFileRef;
+      diasParaSalida: number;
+      // Fecha para liquidarlo (la elegida o 1 mes antes de la salida)
+      fechaLiquidacion: string;
+      diasParaLiquidar: number;
+    }[];
   };
   documentos: {
     total: number;

@@ -132,11 +132,11 @@ export const FilesProfile = (): JSX.Element => {
     if (service) setEditingService(service);
   };
 
-  // Guarda el servicio y lo deja asociado al file; devuelve true si salió bien
+  // Guarda el servicio y lo deja asociado al file; devuelve el servicio guardado o null
   const handleSaveService = async (service: iService) => {
-    if (!file || !id) return false;
+    if (!file || !id) return null;
     const saved = await saveService(service);
-    if (!saved) return false;
+    if (!saved) return null;
     const isNew = !file.services.some((s) => s.id === saved.id);
     const updatedFile = {
       ...file,
@@ -149,14 +149,19 @@ export const FilesProfile = (): JSX.Element => {
         file.clients.map((c) => c.id),
         updatedFile.services.map((s) => s.id)
       );
-      if (!resp.ok) return false;
+      if (!resp.ok) return null;
       setFile(updatedFile);
-      setEditingService(null);
-      return true;
+      return saved;
     } catch (error) {
       console.error("Error guardando servicio:", error);
-      return false;
+      return null;
     }
+  };
+
+  // Ya guardado (con sus fotos): se actualiza en la pantalla
+  const handleServiceSaved = (service: iService, close = true) => {
+    setFile((prev) => prev && { ...prev, services: prev.services.map((s) => (s.id === service.id ? service : s)) });
+    if (close) setEditingService(null);
   };
 
   // Devuelve true si se guardó
@@ -304,7 +309,12 @@ export const FilesProfile = (): JSX.Element => {
             />
           )}
           {seccion === "pagos" && (
-            <FilePayments fileId={file.id} refreshKey={paymentsRefreshKey} onSummaryChange={setPayments} />
+            <FilePayments
+              fileId={file.id}
+              refreshKey={paymentsRefreshKey}
+              onSummaryChange={setPayments}
+              pasajeros={file.clients}
+            />
           )}
           {seccion === "documentos" && (
             <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0D5B75" />
@@ -319,7 +329,13 @@ export const FilesProfile = (): JSX.Element => {
         onClose={() => setOpenAddPax(false)}
         onAdd={handleAddPax}
       />
-      <ServiceDialog service={editingService} onClose={() => setEditingService(null)} onSave={handleSaveService} />
+      <ServiceDialog
+        service={editingService}
+        fechaSalida={file.fechaSalida}
+        onClose={() => setEditingService(null)}
+        onSave={handleSaveService}
+        onSaved={handleServiceSaved}
+      />
     </Box>
   );
 };

@@ -36,6 +36,15 @@ export interface iPago {
   importeAplicado: number;
   medio: PaymentMethod;
   nota: string | null;
+  // Quién pagó (uno de los pasajeros del file)
+  pagador: iPayer | null;
+  reciboNumero: number | null;
+}
+
+export interface iPayer {
+  id: string;
+  firstname: string;
+  lastname: string;
 }
 
 export interface iPaymentsSummary {
@@ -66,6 +75,7 @@ export interface iPagoInput {
   tipoCambio: number | null;
   medio: PaymentMethod;
   nota: string;
+  pagadorId: string | null;
 }
 
 export interface iCuotaInput {
@@ -121,6 +131,8 @@ interface iFileRef {
 export interface iCobranza extends iFileRef {
   fechaSalida: string;
   pasajero: { firstname: string; lastname: string } | null;
+  // Todos los pasajeros del file (para elegir quién pagó)
+  pasajeros: iPayer[];
   moneda: string;
   total: number;
   cobrado: number;

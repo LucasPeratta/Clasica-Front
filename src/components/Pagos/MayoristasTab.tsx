@@ -46,6 +46,8 @@ import {
 import { NewSupplierPaymentDialog } from "./NewSupplierPaymentDialog";
 import { HistoryFilters, iHistoryFilter } from "./HistoryFilters";
 import { ViewSwitch } from "./ViewSwitch";
+import { PeriodPicker } from "./PeriodPicker";
+import { periodRange } from "./periods";
 import { useDebouncedValue } from "../common/useDebouncedValue";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -68,6 +70,9 @@ const fileLink = (file: { id: string; numero?: number | null; anio?: number | nu
   </MuiLink>
 );
 
+// Período a mirar (en la URL): todo, vencidos, esta semana, la que viene, este mes o fechas elegidas
+const PERIOD_FILTER = { key: "periodo", defaultValue: "todo" };
+
 const DueChip = ({ days }: { days: number | null }) => {
   if (days === null) return null;
   const label =
@@ -81,8 +86,8 @@ const DueChip = ({ days }: { days: number | null }) => {
  * Un pago se reparte entre servicios de uno o varios files.
  */
 export const MayoristasTab = () => {
-  const { items, total, totalPages, pageSize, page, setPage, search, searchInput, setSearchInput, initialLoading, loading, reload, response } =
-    usePaginatedList(getPendingSupplierPage);
+  const { items, total, totalPages, pageSize, page, setPage, search, searchInput, setSearchInput, filter: periodo, setFilter: setPeriodo, initialLoading, loading, reload, response } =
+    usePaginatedList(getPendingSupplierPage, PERIOD_FILTER);
   // Total pendiente por moneda (de todo lo encontrado, no solo esta página)
   const totals = (response as { totals?: Record<string, number> } | null)?.totals ?? {};
 
@@ -182,13 +187,18 @@ export const MayoristasTab = () => {
             </Button>
           </Paper>
 
+          {/* Calendario: cuánto hay que pagar en un período */}
+          <PeriodPicker value={periodo} onChange={setPeriodo} />
+
           {/* Pendiente de pagar */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 1, mb: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, color: "#fff" }}>
-              Total pendiente
+              {periodRange(periodo).text ? `Hay que pagar ${periodRange(periodo).text}` : "Total pendiente"}
             </Typography>
             <Typography sx={{ color: "#fff", fontWeight: 600 }}>
-              {Object.entries(totals).map(([currency, amount]) => formatMoney(amount, currency)).join("  ·  ")}
+              {Object.keys(totals).length > 0
+                ? Object.entries(totals).map(([currency, amount]) => formatMoney(amount, currency)).join("  ·  ")
+                : "Nada"}
             </Typography>
           </Box>
           <TableContainer component={Paper} elevation={3} sx={{ ...paperSx, opacity: loading ? 0.6 : 1, transition: "opacity 0.2s" }}>
@@ -206,7 +216,11 @@ export const MayoristasTab = () => {
                   <TableRow>
                     <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
-                        {search ? `No hay pagos pendientes para "${search}".` : "No hay pagos pendientes a mayoristas. 🎉"}
+                        {search
+                          ? `No hay pagos pendientes para "${search}"${periodRange(periodo).text ? ` ${periodRange(periodo).text}` : ""}.`
+                          : periodRange(periodo).text
+                            ? `No hay nada para pagar ${periodRange(periodo).text}. 🎉`
+                            : "No hay pagos pendientes a mayoristas. 🎉"}
                       </Typography>
                     </TableCell>
                   </TableRow>

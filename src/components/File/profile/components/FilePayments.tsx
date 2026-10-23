@@ -16,6 +16,7 @@ import {
   IconButton,
   InputAdornment,
   LinearProgress,
+  MenuItem,
   Radio,
   RadioGroup,
   Table,
@@ -33,11 +34,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import dayjs from "dayjs";
 import { CURRENCIES, formatMoney } from "../../utils/totals";
+import { ReceiptButton } from "../../components/ReceiptButton";
 import {
   appliedAmount,
   deletePago,
   getFilePayments,
   PAYMENT_STATUS,
+  iPayer,
   iCuota,
   iCuotaInput,
   iPago,
@@ -56,6 +59,8 @@ interface FilePaymentsProps {
   refreshKey: string;
   // Avisa cada vez que cambia el estado de los pagos (para el resumen de arriba)
   onSummaryChange?: (summary: iPaymentsSummary) => void;
+  // Pasajeros del file, para elegir quién pagó
+  pasajeros: iPayer[];
 }
 
 
@@ -101,7 +106,7 @@ const CuotaStatus = ({ cuota, money }: { cuota: iCuota; money: (n: number) => st
  * Sección "Pagos" del file: plan de pagos (automático o propio del administrador),
  * pagos recibidos y cuánto falta.
  */
-export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymentsProps) => {
+export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }: FilePaymentsProps) => {
   const [summary, setSummary] = useState<iPaymentsSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -316,6 +321,7 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymen
                   <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Medio</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Pagó</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Nota</TableCell>
                   <TableCell />
                 </TableRow>
@@ -335,8 +341,10 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymen
                       )}
                     </TableCell>
                     <TableCell>{pago.medio === "EFECTIVO" ? "Efectivo" : "Transferencia"}</TableCell>
+                    <TableCell>{pago.pagador ? `${pago.pagador.firstname} ${pago.pagador.lastname}` : "—"}</TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>{pago.nota || "—"}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                      <ReceiptButton fileId={fileId} pagoId={pago.id} />
                       <Tooltip title="Corregir pago">
                         <IconButton size="small" color="primary" onClick={() => setPaymentDialog({ pago })}>
                           <EditIcon fontSize="small" />
@@ -362,6 +370,7 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymen
           chargeCurrency={currency}
           pago={paymentDialog.pago}
           suggestedAmount={summary.proximoVencimiento?.falta ?? summary.falta}
+          pasajeros={pasajeros}
           onClose={() => setPaymentDialog(null)}
           onSaved={(data) => {
             setSummary(data);
@@ -421,16 +430,34 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange }: FilePaymen
 
 /* ---------- Registrar / corregir un pago ---------- */
 
-interface PaymentDialogProps {
+interface PaymentFormProps {
   fileId: string;
   chargeCurrency: string;
   pago: iPago | null;
   suggestedAmount: number;
-  onClose: () => void;
+  // Pasajeros del file para elegir quién pagó; defaultPagadorId: el que se busca (ej. desde Pagos)
+  pasajeros: iPayer[];
+  defaultPagadorId?: string;
+  onCancel: () => void;
   onSaved: (data: iPaymentsSummary) => void;
 }
 
-export const PaymentDialog = ({ fileId, chargeCurrency, pago, suggestedAmount, onClose, onSaved }: PaymentDialogProps) => {
+/**
+ * Campos de un pago recibido (fecha, quién pagó, moneda, importe, medio, nota) con sus botones
+ */
+export const PaymentForm = ({
+  fileId,
+  chargeCurrency,
+  pago,
+  suggestedAmount,
+  pasajeros,
+  defaultPagadorId,
+  onCancel,
+  onSaved,
+}: PaymentFormProps) => {
+  const [pagadorId, setPagadorId] = useState(
+    (pago ? pago.pagador?.id : defaultPagadorId ?? pasajeros[0]?.id) ?? ""
+  );
   const [fecha, setFecha] = useState(toDateInput(pago?.fecha ?? new Date()));
   const [moneda, setMoneda] = useState(pago?.moneda ?? chargeCurrency);
   const [importe, setImporte] = useState(pago ? String(pago.importe) : suggestedAmount > 0 ? String(suggestedAmount) : "");
@@ -459,6 +486,7 @@ export const PaymentDialog = ({ fileId, chargeCurrency, pago, suggestedAmount, o
       tipoCambio: otherCurrency ? Number(tipoCambio) : null,
       medio,
       nota,
+      pagadorId: pagadorId || null,
     };
     const result = pago ? await updatePago(fileId, pago.id, input) : await addPago(fileId, input);
     setSaving(false);
@@ -467,76 +495,101 @@ export const PaymentDialog = ({ fileId, chargeCurrency, pago, suggestedAmount, o
   };
 
   return (
-    <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{pago ? "Corregir pago" : "Registrar pago"}</DialogTitle>
-      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}>
-        <TextField label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} InputLabelProps={{ shrink: true }} />
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <TextField label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} InputLabelProps={{ shrink: true }} />
 
-        <Box>
-          <Typography variant="body2" color="text.secondary">
-            Pagó en
-          </Typography>
-          <RadioGroup row value={moneda} onChange={(e) => setMoneda(e.target.value)}>
-            {CURRENCIES.map((c) => (
-              <FormControlLabel key={c.value} value={c.value} control={<Radio size="small" />} label={c.label} />
-            ))}
-          </RadioGroup>
-        </Box>
-
+      {pasajeros.length > 0 && (
         <TextField
-          label="Importe"
-          type="number"
-          value={importe}
-          onChange={(e) => setImporte(e.target.value)}
-          autoFocus
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">{CURRENCIES.find((c) => c.value === moneda)?.symbol}</InputAdornment>
-            ),
-          }}
-        />
+          select
+          label="¿Quién pagó?"
+          value={pagadorId}
+          onChange={(e) => setPagadorId(e.target.value)}
+          helperText="Sale a su nombre en el recibo"
+        >
+          {pasajeros.map((p) => (
+            <MenuItem key={p.id} value={p.id}>
+              {p.firstname} {p.lastname}
+            </MenuItem>
+          ))}
+          <MenuItem value="">Sin especificar</MenuItem>
+        </TextField>
+      )}
 
-        {otherCurrency && (
-          <>
-            <TextField label={rateLabel} type="number" value={tipoCambio} onChange={(e) => setTipoCambio(e.target.value)} />
-            <Alert severity="info" icon={false}>
-              {equivalent !== null
-                ? `Equivale a ${formatMoney(equivalent, chargeCurrency)} (el file se cobra en ${currencyLabel(chargeCurrency)})`
-                : `Cargá el tipo de cambio para calcular cuánto descuenta en ${currencyLabel(chargeCurrency)}`}
-            </Alert>
-          </>
-        )}
+      <Box>
+        <Typography variant="body2" color="text.secondary">
+          Pagó en
+        </Typography>
+        <RadioGroup row value={moneda} onChange={(e) => setMoneda(e.target.value)}>
+          {CURRENCIES.map((c) => (
+            <FormControlLabel key={c.value} value={c.value} control={<Radio size="small" />} label={c.label} />
+          ))}
+        </RadioGroup>
+      </Box>
 
-        <Box>
-          <Typography variant="body2" color="text.secondary">
-            Medio
-          </Typography>
-          <RadioGroup row value={medio} onChange={(e) => setMedio(e.target.value as PaymentMethod)}>
-            {METHODS.map((m) => (
-              <FormControlLabel key={m.value} value={m.value} control={<Radio size="small" />} label={m.label} />
-            ))}
-          </RadioGroup>
-        </Box>
+      <TextField
+        label="Importe"
+        type="number"
+        value={importe}
+        onChange={(e) => setImporte(e.target.value)}
+        autoFocus
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">{CURRENCIES.find((c) => c.value === moneda)?.symbol}</InputAdornment>
+          ),
+        }}
+      />
 
-        <TextField
-          label="Nota (opcional)"
-          placeholder="Ej: transferencia Banco Nación"
-          value={nota}
-          onChange={(e) => setNota(e.target.value)}
-          inputProps={{ maxLength: 300 }}
-        />
+      {otherCurrency && (
+        <>
+          <TextField label={rateLabel} type="number" value={tipoCambio} onChange={(e) => setTipoCambio(e.target.value)} />
+          <Alert severity="info" icon={false}>
+            {equivalent !== null
+              ? `Equivale a ${formatMoney(equivalent, chargeCurrency)} (el file se cobra en ${currencyLabel(chargeCurrency)})`
+              : `Cargá el tipo de cambio para calcular cuánto descuenta en ${currencyLabel(chargeCurrency)}`}
+          </Alert>
+        </>
+      )}
 
-        {error && <Alert severity="error">{error}</Alert>}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
+      <Box>
+        <Typography variant="body2" color="text.secondary">
+          Medio
+        </Typography>
+        <RadioGroup row value={medio} onChange={(e) => setMedio(e.target.value as PaymentMethod)}>
+          {METHODS.map((m) => (
+            <FormControlLabel key={m.value} value={m.value} control={<Radio size="small" />} label={m.label} />
+          ))}
+        </RadioGroup>
+      </Box>
+
+      <TextField
+        label="Nota (opcional)"
+        placeholder="Ej: transferencia Banco Nación"
+        value={nota}
+        onChange={(e) => setNota(e.target.value)}
+        inputProps={{ maxLength: 300 }}
+      />
+
+      {error && <Alert severity="error">{error}</Alert>}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+        <Button onClick={onCancel}>Cancelar</Button>
         <Button variant="contained" onClick={handleSave} disabled={!canSave || saving}>
-          {saving ? "Guardando..." : pago ? "Guardar cambios" : "Registrar"}
+          {saving ? "Guardando..." : pago ? "Guardar cambios" : "Registrar pago"}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </Box>
   );
 };
+
+type PaymentDialogProps = Omit<PaymentFormProps, "onCancel"> & { onClose: () => void };
+
+export const PaymentDialog = ({ onClose, ...props }: PaymentDialogProps) => (
+  <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+    <DialogTitle>{props.pago ? "Corregir pago" : "Registrar pago"}</DialogTitle>
+    <DialogContent sx={{ pt: "8px !important" }}>
+      <PaymentForm {...props} onCancel={onClose} />
+    </DialogContent>
+  </Dialog>
+);
 
 /* ---------- Plan de pagos propio ---------- */
 

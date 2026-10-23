@@ -14,7 +14,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import { LIQUIDATION_URGENT_DAYS, LIQUIDATION_WARNING_DAYS } from "./File/utils/liquidation";
+import { LIQUIDATION_WARNING_DAYS } from "./File/utils/liquidation";
 import { getHome, iHome } from "./inicioHandler";
 import { formatFileNumber } from "./File/utils/fileNumber";
 import { formatMoney } from "./File/utils/totals";
@@ -159,9 +159,9 @@ const buildSummaries = (home: iHome): Summary[] => {
   const maySemana = home.mayoristas.semana;
   const nextSupplier = home.mayoristas.items[0];
   const liquidar = home.sinLiquidar.total;
-  // Urgencia: el viaje sale en 21 días o menos (rojo) o en 30 o menos (naranja)
-  const liquidarUrgente = home.sinLiquidar.items.filter((s) => s.diasParaSalida <= LIQUIDATION_URGENT_DAYS).length;
-  const liquidarPronto = home.sinLiquidar.items.filter((s) => s.diasParaSalida <= LIQUIDATION_WARNING_DAYS).length;
+  // Urgencia por su fecha de liquidación: vencida o es hoy (rojo), dentro de una semana (naranja)
+  const liquidarUrgente = home.sinLiquidar.items.filter((s) => s.diasParaLiquidar <= 0).length;
+  const liquidarPronto = home.sinLiquidar.items.filter((s) => s.diasParaLiquidar <= LIQUIDATION_WARNING_DAYS).length;
   const docProblems = home.documentos.items.filter((d) => d.problema).length;
   const docs = home.documentos.total;
 
@@ -214,11 +214,13 @@ const buildSummaries = (home: iHome): Summary[] => {
             ? `${plural(liquidar, "servicio sin liquidar", "servicios sin liquidar")}`
             : "Todo liquidado",
       detail:
-        liquidarPronto > 0
-          ? "Sus viajes salen en menos de 30 días"
-          : liquidar > 0
-            ? `El más próximo sale ${whenText(home.sinLiquidar.items[0].diasParaSalida)}`
-            : "Todos los servicios están liquidados",
+        liquidarUrgente > 0
+          ? "Su fecha para liquidar ya llegó"
+          : liquidarPronto > 0
+            ? "Hay que liquidarlos esta semana"
+            : liquidar > 0
+              ? `El próximo se liquida ${whenText(home.sinLiquidar.items[0].diasParaLiquidar)}`
+              : "Todos los servicios están liquidados",
     },
     {
       key: "documentos",
@@ -440,9 +442,9 @@ export const Inicio = () => {
                 }
               >
                 {(showAllUnsettled ? home.sinLiquidar.items : home.sinLiquidar.items.slice(0, HOME_LIST_ITEMS)).map((s) => {
-                  // Rojo: sale en 21 días o menos; naranja: 30 o menos; azul: más adelante
+                  // Rojo: la fecha para liquidar ya llegó; naranja: dentro de una semana; azul: más adelante
                   const level: Level =
-                    s.diasParaSalida <= LIQUIDATION_URGENT_DAYS ? "red" : s.diasParaSalida <= LIQUIDATION_WARNING_DAYS ? "orange" : "blue";
+                    s.diasParaLiquidar <= 0 ? "red" : s.diasParaLiquidar <= LIQUIDATION_WARNING_DAYS ? "orange" : "blue";
                   return (
                     <Line
                       key={s.id}
@@ -450,7 +452,13 @@ export const Inicio = () => {
                       level={level}
                       main={s.nombre || "Servicio sin nombre"}
                       sub={`${s.provider ? `${s.provider} · ` : ""}${fileText(s.file)}`}
-                      right={<Right level={level} strong={`El viaje sale ${whenText(s.diasParaSalida)}`} small={dayjs(s.file.fechaSalida).format("DD/MM/YYYY")} />}
+                      right={
+                        <Right
+                          level={level}
+                          strong={s.diasParaLiquidar < 0 ? `Liquidar: venció ${whenText(s.diasParaLiquidar)}` : `Liquidar ${whenText(s.diasParaLiquidar)}`}
+                          small={`antes del ${dayjs(s.fechaLiquidacion).format("DD/MM/YYYY")} · sale ${dayjs(s.file.fechaSalida).format("DD/MM")}`}
+                        />
+                      }
                     />
                   );
                 })}

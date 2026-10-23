@@ -19,10 +19,20 @@ export interface iService {
   // Enviado al mayorista para liquidar
   liquidado?: boolean;
   liquidadoAt?: string | null;
+  // Fecha para liquidarlo; null = la de por defecto (1 mes antes de la salida)
+  fechaLiquidacion?: string | dayjs.Dayjs | null;
+  // Fotos o documentos (ej. el itinerario del vuelo); vienen en el detalle del file
+  adjuntos?: iServiceAdjunto[];
   // Partes de pagos al mayorista que cubren este servicio (viene en el detalle del file)
   pagosMayorista?: { importe: string | number }[];
   // File al que pertenece (viene en el listado y en el detalle)
   File?: iServiceFile[];
+}
+
+export interface iServiceAdjunto {
+  id: string;
+  originalName: string | null;
+  mimetype: string | null;
 }
 
 export interface iServiceFile {

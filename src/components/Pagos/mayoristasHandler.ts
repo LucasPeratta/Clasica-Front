@@ -2,6 +2,7 @@ import { apiFetch } from "../common/apiFetch";
 import { fetchPage, iPaginated } from "../common/Pagination/types";
 import { PaymentMethod } from "../File/paymentsHandler";
 import { ServiceType } from "../Service/model";
+import { periodRange } from "./periods";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
 
@@ -82,11 +83,15 @@ export interface iPendingFile {
 }
 
 // Pendiente de pago, una fila por file, por vencimiento; totals: total pendiente por moneda
+// periodo: ver periods.ts (todo, vencidos, esta semana, ... o fechas elegidas)
 export const getPendingSupplierPage = (
   page: number,
-  search: string
-): Promise<iPaginated<iPendingFile> & { totals?: Record<string, number> }> =>
-  fetchPage<iPendingFile>(`${apiUrl}/mayoristas/pendientes`, page, search);
+  search: string,
+  periodo = "todo"
+): Promise<iPaginated<iPendingFile> & { totals?: Record<string, number> }> => {
+  const { desde, hasta } = periodRange(periodo);
+  return fetchPage<iPendingFile>(`${apiUrl}/mayoristas/pendientes`, page, search, { desde, hasta });
+};
 
 // desde / hasta: "YYYY-MM-DD" (ambos días incluidos) o vacío; totals: pagado por moneda
 export const getSupplierPaymentsPage = (

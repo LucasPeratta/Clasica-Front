@@ -1,5 +1,5 @@
 import { apiFetch } from "../common/apiFetch";
-import { iService } from "./model";
+import { iService, iServiceAdjunto } from "./model";
 import { fetchPage, iPaginated } from "../common/Pagination/types";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
@@ -101,5 +101,44 @@ export const saveService = async (service: iService): Promise<iService | null> =
     return newId ? { ...service, id: newId } : null;
   } catch {
     return null;
+  }
+};
+
+/* ---------- Fotos o documentos de un servicio ---------- */
+
+// Sube archivos al servicio; devuelve los adjuntos creados o un mensaje de error
+export const uploadServiceAdjuntos = async (
+  serviceId: string,
+  files: File[]
+): Promise<{ ok: true; data: iServiceAdjunto[] } | { ok: false; msg: string }> => {
+  try {
+    const body = new FormData();
+    files.forEach((file) => body.append("adjuntos", file));
+    const response = await apiFetch(`${apiUrl}/service/${serviceId}/adjuntos`, { method: "POST", body });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) return { ok: false, msg: data?.msg || "No se pudieron subir los archivos." };
+    return { ok: true, data: data.data };
+  } catch {
+    return { ok: false, msg: "No se pudieron subir los archivos." };
+  }
+};
+
+// Link temporal para abrir un adjunto (o null si falló)
+export const getServiceAdjuntoUrl = async (serviceId: string, adjuntoId: string): Promise<string | null> => {
+  try {
+    const response = await apiFetch(`${apiUrl}/service/${serviceId}/adjuntos/${adjuntoId}/url`);
+    if (!response.ok) return null;
+    return (await response.json()).url;
+  } catch {
+    return null;
+  }
+};
+
+export const deleteServiceAdjunto = async (serviceId: string, adjuntoId: string): Promise<boolean> => {
+  try {
+    const response = await apiFetch(`${apiUrl}/service/${serviceId}/adjuntos/${adjuntoId}`, { method: "DELETE" });
+    return response.ok;
+  } catch {
+    return false;
   }
 };

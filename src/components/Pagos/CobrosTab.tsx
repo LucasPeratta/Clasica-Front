@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   InputAdornment,
@@ -17,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import EventIcon from "@mui/icons-material/Event";
@@ -38,6 +40,9 @@ import {
   iPagoHistorial,
 } from "../File/paymentsHandler";
 import { PaymentDialog } from "../File/profile/components/FilePayments";
+import { NewClientPaymentDialog } from "./NewClientPaymentDialog";
+import { ReceiptButton } from "../File/components/ReceiptButton";
+import { downloadReceipt } from "../File/utils/receipt";
 import { HistoryFilters, iHistoryFilter } from "./HistoryFilters";
 import { ViewSwitch } from "./ViewSwitch";
 import { useDebouncedValue } from "../common/useDebouncedValue";
@@ -110,6 +115,9 @@ export const CobrosTab = () => {
     );
   const [payingFile, setPayingFile] = useState<iCobranza | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [newPaymentOpen, setNewPaymentOpen] = useState(false);
+  // Último pago registrado desde "Registrar pago recibido", para ofrecer su recibo
+  const [lastPayment, setLastPayment] = useState<{ fileId: string; pagoId: string } | null>(null);
 
   // Historial de pagos recibidos: filtro propio (pasajero y rango de fechas) y paginación propia
   const [history, setHistory] = useState<(iPaginated<iPagoHistorial> & { totals?: Record<string, number> }) | null>(null);
@@ -156,10 +164,10 @@ export const CobrosTab = () => {
       {vista === "debe" && (
         <>
           {/* Buscador */}
-          <Paper elevation={3} sx={{ ...paperSx, p: 2, mb: 2 }}>
+          <Paper elevation={3} sx={{ ...paperSx, p: 2, mb: 2, display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
             <TextField
-              fullWidth
               size="small"
+              sx={{ flex: 1, minWidth: 240 }}
               placeholder="Buscar en pendientes por pasajero, destino o número de file (ej. 55)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -171,6 +179,14 @@ export const CobrosTab = () => {
                 ),
               }}
             />
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setNewPaymentOpen(true)}
+              sx={{ background: "linear-gradient(135deg, #0D5B75 0%, #1a7a99 100%)", fontWeight: 600 }}
+            >
+              Registrar pago recibido
+            </Button>
           </Paper>
 
           <CountTabs
@@ -258,6 +274,16 @@ export const CobrosTab = () => {
 
       {vista === "cobrado" && (
         <>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setNewPaymentOpen(true)}
+              sx={{ background: "linear-gradient(135deg, #0D5B75 0%, #1a7a99 100%)", fontWeight: 600 }}
+            >
+              Registrar pago recibido
+            </Button>
+          </Box>
           {/* Historial */}
           <HistoryFilters
             value={historyFilter}
@@ -276,12 +302,13 @@ export const CobrosTab = () => {
                   <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Medio</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Nota</TableCell>
+                  <TableCell />
                 </TableRow>
               </TableHead>
               <TableBody>
                 {!history || history.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                       <Typography color="text.secondary">
                         {historyFilter.search || historyFilter.desde || historyFilter.hasta
                           ? "No hay pagos con ese filtro."
@@ -307,6 +334,9 @@ export const CobrosTab = () => {
                       </TableCell>
                       <TableCell>{pago.medio === "EFECTIVO" ? "Efectivo" : "Transferencia"}</TableCell>
                       <TableCell sx={{ color: "text.secondary" }}>{pago.nota || "—"}</TableCell>
+                      <TableCell align="right">
+                        <ReceiptButton fileId={pago.file.id} pagoId={pago.id} />
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -332,9 +362,26 @@ export const CobrosTab = () => {
           chargeCurrency={payingFile.moneda}
           pago={null}
           suggestedAmount={payingFile.proximoVencimiento?.falta ?? payingFile.falta}
+          pasajeros={payingFile.pasajeros}
           onClose={() => setPayingFile(null)}
-          onSaved={() => {
+          onSaved={(data) => {
+            // El pago nuevo es el de número de recibo más alto
+            const newest = [...data.pagos].sort((x, y) => (y.reciboNumero ?? 0) - (x.reciboNumero ?? 0))[0];
+            setLastPayment(newest ? { fileId: payingFile.id, pagoId: newest.id } : null);
             setPayingFile(null);
+            setSavedOpen(true);
+            reload();
+            setHistoryKey((k) => k + 1);
+          }}
+        />
+      )}
+
+      {newPaymentOpen && (
+        <NewClientPaymentDialog
+          onClose={() => setNewPaymentOpen(false)}
+          onSaved={(fileId, pagoId) => {
+            setNewPaymentOpen(false);
+            setLastPayment(pagoId ? { fileId, pagoId } : null);
             setSavedOpen(true);
             reload();
             setHistoryKey((k) => k + 1);
@@ -344,11 +391,21 @@ export const CobrosTab = () => {
 
       <Snackbar
         open={savedOpen}
-        autoHideDuration={3000}
+        autoHideDuration={lastPayment ? 10000 : 3000}
         onClose={() => setSavedOpen(false)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert severity="success" onClose={() => setSavedOpen(false)}>
+        <Alert
+          severity="success"
+          onClose={() => setSavedOpen(false)}
+          action={
+            lastPayment && (
+              <Button color="inherit" size="small" onClick={() => downloadReceipt(lastPayment.fileId, lastPayment.pagoId)}>
+                Descargar recibo
+              </Button>
+            )
+          }
+        >
           Pago registrado
         </Alert>
       </Snackbar>

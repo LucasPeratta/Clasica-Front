@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { Box, Typography, Card, CardContent, Button, Tooltip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Switch, Chip } from "@mui/material";
-import { getLiquidationAlert } from "../../utils/liquidation";
+import { getLiquidationAlert, getLiquidationDate } from "../../utils/liquidation";
+import { ServiceAttachments } from "../../components/ServiceAttachments";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -77,6 +78,7 @@ const LiquidadoCell = ({
   onToggle?: (serviceId: string, liquidado: boolean) => void;
 }) => {
   const alert = getLiquidationAlert(service, fechaSalida);
+  const deadline = getLiquidationDate(service, fechaSalida);
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Tooltip
@@ -94,6 +96,11 @@ const LiquidadoCell = ({
           onChange={(e) => onToggle?.(service.id, e.target.checked)}
         />
       </Tooltip>
+      {!service.liquidado && !alert && deadline && (
+        <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+          antes del {deadline.format("DD/MM/YYYY")}
+        </Typography>
+      )}
       {alert && (
         <Tooltip title={alert.detail}>
           <Chip
@@ -212,6 +219,11 @@ export const FileProfileServices = ({
                       >
                         <TableCell sx={{ fontWeight: 600, pl: 4 }}>
                           {service.nombre || "—"}
+                          {(service.adjuntos?.length ?? 0) > 0 && (
+                            <Box sx={{ mt: 0.5 }}>
+                              <ServiceAttachments serviceId={service.id} adjuntos={service.adjuntos ?? []} />
+                            </Box>
+                          )}
                         </TableCell>
                         <TableCell sx={{ whiteSpace: "nowrap" }}>
                           {formatDates(service)}
@@ -294,7 +306,7 @@ export const FileProfileServices = ({
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
-                  Proveedor
+                  Mayorista
                 </Typography>
                 <Typography>{selectedService.provider || "—"}</Typography>
               </Box>
@@ -344,10 +356,27 @@ export const FileProfileServices = ({
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
+                  Fecha para liquidar
+                </Typography>
+                <Typography>
+                  {getLiquidationDate(selectedService, fechaSalida)?.format("DD/MM/YYYY") ?? "—"}
+                  {selectedService.liquidado ? " (ya liquidado)" : ""}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75" }}>
                   Observaciones
                 </Typography>
                 <Typography>{selectedService.obs || "—"}</Typography>
               </Box>
+              {(selectedService.adjuntos?.length ?? 0) > 0 && (
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: "#0D5B75", display: "block", mb: 0.5 }}>
+                    Fotos o documentos
+                  </Typography>
+                  <ServiceAttachments serviceId={selectedService.id} adjuntos={selectedService.adjuntos ?? []} />
+                </Box>
+              )}
             </Box>
           )}
         </DialogContent>
