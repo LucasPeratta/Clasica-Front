@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react";
 import { Box, Typography, Card, CardContent, Button, Tooltip, IconButton, Table, TableBody, TableCell, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Switch, Chip } from "@mui/material";
-import { getLiquidationAlert, getLiquidationDate } from "../../utils/liquidation";
+import { getLiquidationAlert, getLiquidationDate, hasLiquidation } from "../../utils/liquidation";
 import { ServiceAttachments } from "../../components/ServiceAttachments";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -79,6 +79,14 @@ const LiquidadoCell = ({
 }) => {
   const alert = getLiquidationAlert(service, fechaSalida);
   const deadline = getLiquidationDate(service, fechaSalida);
+  // Los aéreos no se liquidan: se pagan al emitirlos
+  if (!hasLiquidation(service)) {
+    return (
+      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+        Se paga al emitir
+      </Typography>
+    );
+  }
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Tooltip
@@ -359,8 +367,9 @@ export const FileProfileServices = ({
                   Fecha para liquidar
                 </Typography>
                 <Typography>
-                  {getLiquidationDate(selectedService, fechaSalida)?.format("DD/MM/YYYY") ?? "—"}
-                  {selectedService.liquidado ? " (ya liquidado)" : ""}
+                  {!hasLiquidation(selectedService)
+                    ? "No se liquida: se paga al emitir"
+                    : `${getLiquidationDate(selectedService, fechaSalida)?.format("DD/MM/YYYY") ?? "—"}${selectedService.liquidado ? " (ya liquidado)" : ""}`}
                 </Typography>
               </Box>
               <Box>

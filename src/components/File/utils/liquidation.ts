@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 
 // Cada servicio tiene su fecha para liquidar (mandarlo al mayorista). Si no se eligió una,
 // es 1 mes antes de la salida. Se avisa desde LIQUIDATION_WARNING_DAYS antes; vencida es urgente.
+// Los aéreos no se liquidan: se pagan al emitirlos.
 export const LIQUIDATION_WARNING_DAYS = 7;
 
 type DateValue = string | Date | dayjs.Dayjs | null | undefined;
@@ -16,18 +17,26 @@ export interface iLiquidationAlert {
 export const defaultLiquidationDate = (fechaSalida: DateValue) =>
   fechaSalida ? dayjs(fechaSalida).subtract(1, "month").startOf("day") : null;
 
-export const getLiquidationDate = (service: { fechaLiquidacion?: DateValue }, fechaSalida: DateValue) =>
-  service.fechaLiquidacion ? dayjs(service.fechaLiquidacion).startOf("day") : defaultLiquidationDate(fechaSalida);
+type LiquidationService = { type?: string; liquidado?: boolean; fechaLiquidacion?: DateValue };
+
+export const hasLiquidation = (service: { type?: string }) => service.type !== "AEREO";
+
+export const getLiquidationDate = (service: LiquidationService, fechaSalida: DateValue) =>
+  !hasLiquidation(service)
+    ? null
+    : service.fechaLiquidacion
+      ? dayjs(service.fechaLiquidacion).startOf("day")
+      : defaultLiquidationDate(fechaSalida);
 
 /**
  * Aviso para un servicio que todavía no se liquidó, según cuánto falta para su fecha de liquidación.
  * Una vez que el viaje salió ya no se avisa.
  */
 export function getLiquidationAlert(
-  service: { liquidado?: boolean; fechaLiquidacion?: DateValue },
+  service: LiquidationService,
   fechaSalida: DateValue
 ): iLiquidationAlert | null {
-  if (service.liquidado || !fechaSalida) return null;
+  if (service.liquidado || !fechaSalida || !hasLiquidation(service)) return null;
   const today = dayjs().startOf("day");
   if (dayjs(fechaSalida).startOf("day").isBefore(today)) return null;
 

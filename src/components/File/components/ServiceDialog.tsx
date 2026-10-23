@@ -111,7 +111,12 @@ export const ServiceDialog = ({ service, fechaSalida, onClose, onSave, onSaved }
     if (missingProvider || badDates) return;
     setSaving(true);
     setSaveError("");
-    const saved = await onSave({ ...draft, provider: draft.provider.trim() });
+    // Los aéreos no tienen fecha para liquidar
+    const saved = await onSave({
+      ...draft,
+      provider: draft.provider.trim(),
+      fechaLiquidacion: draft.type === "AEREO" ? null : draft.fechaLiquidacion,
+    });
     if (!saved) {
       setSaving(false);
       setSaveError("No se pudo guardar el servicio. Intentá de nuevo.");
@@ -241,29 +246,35 @@ export const ServiceDialog = ({ service, fechaSalida, onClose, onSave, onSaved }
             </Grid>
           </Grid>
 
-          <Box>
-            <DatePicker
-              label="Fecha para liquidar"
-              format="DD/MM/YYYY"
-              value={customDeadline ? dayjs(draft.fechaLiquidacion) : defaultDeadline}
-              onChange={(value) => set("fechaLiquidacion", value ?? null)}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  helperText: customDeadline
-                    ? "Elegida a mano para este servicio"
-                    : fechaSalida
-                      ? "Por defecto, 1 mes antes de la salida. Si este servicio se liquida en otra fecha, cambiala."
-                      : "Por defecto, 1 mes antes de la salida del file",
-                },
-              }}
-            />
-            {customDeadline && (
-              <Button size="small" onClick={() => set("fechaLiquidacion", null)} sx={{ textTransform: "none", mt: 0.5 }}>
-                Volver a la de por defecto (1 mes antes de la salida)
-              </Button>
-            )}
-          </Box>
+          {draft.type === "AEREO" ? (
+            <Alert severity="info" icon={false}>
+              Los aéreos no se liquidan: se le pagan al mayorista al momento de la emisión.
+            </Alert>
+          ) : (
+            <Box>
+              <DatePicker
+                label="Fecha para liquidar"
+                format="DD/MM/YYYY"
+                value={customDeadline ? dayjs(draft.fechaLiquidacion) : defaultDeadline}
+                onChange={(value) => set("fechaLiquidacion", value ?? null)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    helperText: customDeadline
+                      ? "Elegida a mano para este servicio"
+                      : fechaSalida
+                        ? "Por defecto, 1 mes antes de la salida. Si este servicio se liquida en otra fecha, cambiala."
+                        : "Por defecto, 1 mes antes de la salida del file",
+                  },
+                }}
+              />
+              {customDeadline && (
+                <Button size="small" onClick={() => set("fechaLiquidacion", null)} sx={{ textTransform: "none", mt: 0.5 }}>
+                  Volver a la de por defecto (1 mes antes de la salida)
+                </Button>
+              )}
+            </Box>
+          )}
 
           <Box>
             <Typography sx={{ fontWeight: 600 }}>Fotos o documentos</Typography>

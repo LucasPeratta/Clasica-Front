@@ -7,7 +7,7 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import { iFile } from "../../model";
 import { formatMoney } from "../../utils/totals";
-import { getLiquidationAlert } from "../../utils/liquidation";
+import { getLiquidationAlert, hasLiquidation } from "../../utils/liquidation";
 import { getDocumentAlerts } from "../../../Pax/utils/documentAlerts";
 import { iPaymentsSummary, PAYMENT_STATUS } from "../../paymentsHandler";
 
@@ -88,7 +88,8 @@ const PaymentsValue = ({ payments }: { payments: iPaymentsSummary | null }) => {
 export const FileSummary = ({ file, payments, onSelect }: FileSummaryProps) => {
   const clients = file.clients ?? [];
   const services = file.services ?? [];
-  const unsettled = services.filter((s) => !s.liquidado).length;
+  // Los aéreos no se liquidan (se pagan al emitirlos)
+  const unsettled = services.filter((s) => hasLiquidation(s) && !s.liquidado).length;
 
   // Avisos: documentos de los pasajeros y servicios por liquidar cerca de la salida
   const documentWarnings = clients.flatMap((c) =>
