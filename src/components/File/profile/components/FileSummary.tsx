@@ -75,9 +75,13 @@ const PaymentsValue = ({ payments }: { payments: iPaymentsSummary | null }) => {
   if (!payments) return <>…</>;
   if (!payments.moneda || payments.estado === "SIN_PLAN") return <>Sin importe</>;
   if (payments.estado === "PAGADO") return <Box sx={{ color: "success.dark" }}>Pagado ✓</Box>;
+  // Reservas de grupos: lo que falta en cada moneda
+  const owing = payments.porMoneda.filter((p) => p.falta > 0 && p.moneda);
   return (
     <Box sx={{ color: payments.estado === "VENCIDO" ? "error.main" : "text.primary" }}>
-      Falta {formatMoney(payments.falta, payments.moneda)}
+      {owing.length > 1
+        ? owing.map((p) => <div key={p.moneda}>Falta {formatMoney(p.falta, p.moneda ?? "")}</div>)
+        : `Falta ${formatMoney(owing[0]?.falta ?? payments.falta, owing[0]?.moneda ?? payments.moneda)}`}
     </Box>
   );
 };

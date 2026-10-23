@@ -6,6 +6,8 @@ import { Service } from "./Service";
 import { Files, FilesProfile, FileForm } from "./File/index";
 import { Login } from "./login/login";
 import { Pagos } from "./Pagos/Pagos";
+import { Grupos } from "./Grupos/Grupos";
+import { GrupoProfile } from "./Grupos/GrupoProfile";
 import { useAuth } from "./hooks/useAuth";
 
 function Router() {
@@ -27,6 +29,8 @@ function Router() {
               <Route path="/files/profile/:id" element={<FilesProfile />} />
               <Route path="/files/create" element={<FileForm />} />
               <Route path="/pagos" element={<Pagos />} />
+              <Route path="/grupos" element={<Grupos />} />
+              <Route path="/grupos/:id" element={<GrupoProfile />} />
               {/* Cualquier dirección que no existe vuelve al inicio */}
               <Route path="*" element={<Navigate to="/" />} />
             </>

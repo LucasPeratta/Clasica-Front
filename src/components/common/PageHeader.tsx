@@ -6,7 +6,8 @@ interface PageHeaderProps {
   // Una frase que explica para qué es la pantalla
   description: string;
   // Botón principal de la pantalla (ej. "Cargar un pasajero")
-  action?: { label: string; icon: JSX.Element; to: string };
+  // Lleva a "to" o, si no tiene, ejecuta onClick (ej. abrir una ventana)
+  action?: { label: string; icon: JSX.Element; to?: string; onClick?: () => void };
 }
 
 /**
@@ -31,8 +32,7 @@ export const PageHeader = ({ title, description, action }: PageHeaderProps) => (
     </Box>
     {action && (
       <Button
-        component={Link}
-        to={action.to}
+        {...(action.to ? { component: Link, to: action.to } : { onClick: action.onClick })}
         variant="contained"
         startIcon={action.icon}
         sx={{

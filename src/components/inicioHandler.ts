@@ -21,6 +21,8 @@ export interface iHome {
     pasajeros: number;
     primerPasajero: { firstname: string; lastname: string } | null;
     sinLiquidar: number;
+    // Salida grupal (una línea por grupo)
+    grupoId?: string | null;
   })[];
   cobros: { vencidos: number; semana: number; items: iCobranza[] };
   // Próximos pagos a mayoristas (vencidos primero), uno por file y mayorista

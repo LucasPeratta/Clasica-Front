@@ -46,6 +46,7 @@ import {
   iPago,
   iPagoInput,
   iPaymentsSummary,
+  iChargePart,
   PaymentMethod,
   resetPlan,
   savePlan,
@@ -61,6 +62,8 @@ interface FilePaymentsProps {
   onSummaryChange?: (summary: iPaymentsSummary) => void;
   // Pasajeros del file, para elegir quién pagó
   pasajeros: iPayer[];
+  // Reserva de una salida grupal (cobra cada moneda por separado)
+  groupReservation?: boolean;
 }
 
 
@@ -106,14 +109,15 @@ const CuotaStatus = ({ cuota, money }: { cuota: iCuota; money: (n: number) => st
  * Sección "Pagos" del file: plan de pagos (automático o propio del administrador),
  * pagos recibidos y cuánto falta.
  */
-export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }: FilePaymentsProps) => {
+export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros, groupReservation }: FilePaymentsProps) => {
   const [summary, setSummary] = useState<iPaymentsSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [paymentDialog, setPaymentDialog] = useState<{ pago: iPago | null } | null>(null);
-  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  // Plan que se está editando (la parte de una moneda) / moneda cuyo plan se vuelve al de antes
+  const [planDialog, setPlanDialog] = useState<iChargePart | null>(null);
   const [pagoToDelete, setPagoToDelete] = useState<iPago | null>(null);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetDialog, setResetDialog] = useState<{ moneda: string | null } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -145,9 +149,10 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
   }
 
   const currency = summary.moneda;
-  const money = (n: number) => (currency ? formatMoney(n, currency) : n.toLocaleString("es-AR"));
-  const progress = summary.planTotal > 0 ? Math.min((summary.cobrado / summary.planTotal) * 100, 100) : 0;
   const status = PAYMENT_STATUS[summary.estado];
+  // Reservas de grupos: cada moneda se cobra por separado
+  const parts = summary.porMoneda;
+  const multi = parts.length > 1;
 
   const handleDeletePago = async () => {
     if (!pagoToDelete) return;
@@ -158,8 +163,8 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
   };
 
   const handleResetPlan = async () => {
-    const result = await resetPlan(fileId);
-    setResetDialogOpen(false);
+    const result = await resetPlan(fileId, groupReservation ? resetDialog?.moneda : null);
+    setResetDialog(null);
     if (result.ok) setSummary(result.data);
     else setActionError(result.msg);
   };
@@ -204,109 +209,118 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
             </Alert>
           )}
 
-          {currency && (
-            <>
-              {/* Resumen */}
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 1 }}>
-                {[
-                  { label: "Total a cobrar", value: money(summary.planTotal), color: "text.primary" },
-                  { label: "Cobrado", value: money(summary.cobrado), color: "success.dark" },
-                  { label: "Falta", value: money(summary.falta), color: summary.falta > 0 ? "error.main" : "success.dark" },
-                ].map((item) => (
-                  <Box key={item.label}>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.label}
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: item.color }}>
-                      {item.value}
-                    </Typography>
-                  </Box>
-                ))}
-                {summary.proximoVencimiento && (
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Próximo vencimiento
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      {dayjs(summary.proximoVencimiento.vencimiento).format("DD/MM/YYYY")}
-                    </Typography>
-                  </Box>
+          {parts.map((part) => {
+            const partMoney = (n: number) => (part.moneda ? formatMoney(n, part.moneda) : n.toLocaleString("es-AR"));
+            const partProgress = part.planTotal > 0 ? Math.min((part.cobrado / part.planTotal) * 100, 100) : 0;
+            return (
+              <Box key={part.moneda ?? "sin-moneda"} sx={multi ? { mb: 3, p: 2, border: "1px solid #e0e7ea", borderRadius: 2 } : undefined}>
+                {multi && part.moneda && (
+                  <Typography sx={{ fontWeight: 700, color: "#0D5B75", mb: 1 }}>En {currencyLabel(part.moneda).toLowerCase()}</Typography>
                 )}
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                color={summary.estado === "VENCIDO" ? "error" : "success"}
-                sx={{ height: 8, borderRadius: 4, mb: 2 }}
-              />
-
-              {summary.aFavor > 0 && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Se cobró {money(summary.aFavor)} de más que el plan.
-                </Alert>
-              )}
-              {summary.planPersonalizado && Math.abs(summary.planTotal - summary.total) >= 0.01 && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  El plan suma {money(summary.planTotal)} pero el total a cobrar es {money(summary.total)}.
-                  Revisá las cuotas.
-                </Alert>
-              )}
-
-              {/* Plan de pagos */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Box>
-                  <Typography sx={{ fontWeight: 700 }}>Plan de pagos</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {summary.planPersonalizado
-                      ? "Plan propio (armado a mano)."
-                      : "Automático: seña = aéreos, saldo 25 días antes de la salida. Se recalcula solo."}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  {summary.planPersonalizado && (
-                    <Button size="small" onClick={() => setResetDialogOpen(true)}>
-                      Volver al automático
-                    </Button>
+                {/* Resumen */}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 1 }}>
+                  {[
+                    { label: "Total a cobrar", value: partMoney(part.planTotal), color: "text.primary" },
+                    { label: "Cobrado", value: partMoney(part.cobrado), color: "success.dark" },
+                    { label: "Falta", value: partMoney(part.falta), color: part.falta > 0 ? "error.main" : "success.dark" },
+                  ].map((item) => (
+                    <Box key={item.label}>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.label}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: item.color }}>
+                        {item.value}
+                      </Typography>
+                    </Box>
+                  ))}
+                  {part.proximoVencimiento && (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Próximo vencimiento
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {dayjs(part.proximoVencimiento.vencimiento).format("DD/MM/YYYY")}
+                      </Typography>
+                    </Box>
                   )}
-                  <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => setPlanDialogOpen(true)}>
-                    Editar plan
-                  </Button>
                 </Box>
-              </Box>
-              <Table size="small" sx={{ mb: 3 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Vence</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {summary.cuotas.length === 0 ? (
+                <LinearProgress
+                  variant="determinate"
+                  value={partProgress}
+                  color={part.estado === "VENCIDO" ? "error" : "success"}
+                  sx={{ height: 8, borderRadius: 4, mb: 2 }}
+                />
+
+                {part.aFavor > 0 && (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    Se cobró {partMoney(part.aFavor)} de más que el plan.
+                  </Alert>
+                )}
+                {part.planPersonalizado && Math.abs(part.planTotal - part.total) >= 0.01 && (
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    El plan suma {partMoney(part.planTotal)} pero el total a cobrar es {partMoney(part.total)}.
+                    Revisá las cuotas.
+                  </Alert>
+                )}
+
+                {/* Plan de pagos */}
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                  <Box>
+                    <Typography sx={{ fontWeight: 700 }}>Plan de pagos</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {part.planPersonalizado
+                        ? "Plan propio (armado a mano)."
+                        : groupReservation
+                          ? "El plan elegido para la reserva (o el automático si no tiene). Se recalcula solo."
+                          : "Automático: seña = aéreos, saldo 25 días antes de la salida. Se recalcula solo."}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    {part.planPersonalizado && (
+                      <Button size="small" onClick={() => setResetDialog({ moneda: part.moneda })}>
+                        {groupReservation ? "Volver al plan de la reserva" : "Volver al automático"}
+                      </Button>
+                    )}
+                    <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={() => setPlanDialog(part)}>
+                      Editar plan
+                    </Button>
+                  </Box>
+                </Box>
+                <Table size="small" sx={{ mb: multi ? 0 : 3 }}>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={4}>
-                        <Typography variant="body2" color="text.secondary">
-                          Sin cuotas.
-                        </Typography>
-                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Vence</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
                     </TableRow>
-                  ) : (
-                    summary.cuotas.map((cuota, i) => (
-                      <TableRow key={cuota.id ?? i}>
-                        <TableCell sx={{ fontWeight: 600 }}>{cuota.concepto}</TableCell>
-                        <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>{money(cuota.importe)}</TableCell>
-                        <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(cuota.vencimiento).format("DD/MM/YYYY")}</TableCell>
-                        <TableCell>
-                          <CuotaStatus cuota={cuota} money={money} />
+                  </TableHead>
+                  <TableBody>
+                    {part.cuotas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Typography variant="body2" color="text.secondary">
+                            Sin cuotas.
+                          </Typography>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </>
-          )}
+                    ) : (
+                      part.cuotas.map((cuota, i) => (
+                        <TableRow key={cuota.id ?? i}>
+                          <TableCell sx={{ fontWeight: 600 }}>{cuota.concepto}</TableCell>
+                          <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>{partMoney(cuota.importe)}</TableCell>
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>{dayjs(cuota.vencimiento).format("DD/MM/YYYY")}</TableCell>
+                          <TableCell>
+                            <CuotaStatus cuota={cuota} money={partMoney} />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
+            );
+          })}
 
           {/* Pagos recibidos */}
           <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Pagos recibidos</Typography>
@@ -321,6 +335,7 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
                   <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="right">Importe</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Medio</TableCell>
+                  {multi && <TableCell sx={{ fontWeight: 700 }}>Paga la parte en</TableCell>}
                   <TableCell sx={{ fontWeight: 700 }}>Pagó</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Nota</TableCell>
                   <TableCell />
@@ -336,11 +351,13 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
                       </Typography>
                       {pago.tipoCambio !== null && currency && (
                         <Typography variant="caption" color="text.secondary">
-                          TC {pago.tipoCambio.toLocaleString("es-AR")} = {money(pago.importeAplicado)}
+                          TC {pago.tipoCambio.toLocaleString("es-AR")} ={" "}
+                          {formatMoney(pago.importeAplicado, pago.monedaAplicada ?? currency)}
                         </Typography>
                       )}
                     </TableCell>
                     <TableCell>{pago.medio === "EFECTIVO" ? "Efectivo" : "Transferencia"}</TableCell>
+                    {multi && <TableCell>{currencyLabel(pago.monedaAplicada ?? parts[0].moneda ?? "")}</TableCell>}
                     <TableCell>{pago.pagador ? `${pago.pagador.firstname} ${pago.pagador.lastname}` : "—"}</TableCell>
                     <TableCell sx={{ color: "text.secondary" }}>{pago.nota || "—"}</TableCell>
                     <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
@@ -367,9 +384,10 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
       {paymentDialog && currency && (
         <PaymentDialog
           fileId={fileId}
-          chargeCurrency={currency}
+          chargeCurrency={paymentDialog.pago?.monedaAplicada ?? summary.proximoVencimiento?.moneda ?? currency}
           pago={paymentDialog.pago}
           suggestedAmount={summary.proximoVencimiento?.falta ?? summary.falta}
+          monedas={multi ? parts.flatMap((p) => (p.moneda ? [p.moneda] : [])) : undefined}
           pasajeros={pasajeros}
           onClose={() => setPaymentDialog(null)}
           onSaved={(data) => {
@@ -379,16 +397,17 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
         />
       )}
 
-      {planDialogOpen && currency && (
+      {planDialog && planDialog.moneda && (
         <PlanDialog
           fileId={fileId}
-          currency={currency}
-          total={summary.total}
-          cuotas={summary.cuotas}
-          onClose={() => setPlanDialogOpen(false)}
+          currency={planDialog.moneda}
+          total={planDialog.total}
+          cuotas={planDialog.cuotas}
+          planMoneda={groupReservation ? planDialog.moneda : null}
+          onClose={() => setPlanDialog(null)}
           onSaved={(data) => {
             setSummary(data);
-            setPlanDialogOpen(false);
+            setPlanDialog(null);
           }}
         />
       )}
@@ -409,18 +428,19 @@ export const FilePayments = ({ fileId, refreshKey, onSummaryChange, pasajeros }:
         </DialogActions>
       </Dialog>
 
-      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)}>
+      <Dialog open={resetDialog !== null} onClose={() => setResetDialog(null)}>
         <DialogTitle>Volver al plan automático</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Se borran las cuotas armadas a mano y vuelve el plan automático (seña = aéreos, saldo 25 días antes
-            de la salida). Los pagos registrados no se tocan.
+            {groupReservation
+              ? "Se borran las cuotas armadas a mano y vuelve el plan elegido para la reserva. Los pagos registrados no se tocan."
+              : "Se borran las cuotas armadas a mano y vuelve el plan automático (seña = aéreos, saldo 25 días antes de la salida). Los pagos registrados no se tocan."}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setResetDialogOpen(false)}>Cancelar</Button>
+          <Button onClick={() => setResetDialog(null)}>Cancelar</Button>
           <Button variant="contained" onClick={handleResetPlan}>
-            Volver al automático
+            {groupReservation ? "Volver al plan de la reserva" : "Volver al automático"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -437,6 +457,8 @@ interface PaymentFormProps {
   suggestedAmount: number;
   // Pasajeros del file para elegir quién pagó; defaultPagadorId: el que se busca (ej. desde Pagos)
   pasajeros: iPayer[];
+  // Reservas de grupos: las monedas que se cobran (se elige a cuál va el pago)
+  monedas?: string[];
   defaultPagadorId?: string;
   onCancel: () => void;
   onSaved: (data: iPaymentsSummary) => void;
@@ -451,6 +473,7 @@ export const PaymentForm = ({
   pago,
   suggestedAmount,
   pasajeros,
+  monedas,
   defaultPagadorId,
   onCancel,
   onSaved,
@@ -459,6 +482,9 @@ export const PaymentForm = ({
     (pago ? pago.pagador?.id : defaultPagadorId ?? pasajeros[0]?.id) ?? ""
   );
   const [fecha, setFecha] = useState(toDateInput(pago?.fecha ?? new Date()));
+  // A qué moneda se aplica (reservas de grupos); si no, la moneda del file
+  const [aplicada, setAplicada] = useState(pago?.monedaAplicada ?? chargeCurrency);
+  const targetCurrency = monedas ? aplicada : chargeCurrency;
   const [moneda, setMoneda] = useState(pago?.moneda ?? chargeCurrency);
   const [importe, setImporte] = useState(pago ? String(pago.importe) : suggestedAmount > 0 ? String(suggestedAmount) : "");
   const [tipoCambio, setTipoCambio] = useState(pago?.tipoCambio ? String(pago.tipoCambio) : "");
@@ -467,13 +493,13 @@ export const PaymentForm = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const otherCurrency = moneda !== chargeCurrency;
+  const otherCurrency = moneda !== targetCurrency;
   // "pesos por 1 dólar" cuando hay pesos de por medio; si no, "1 <pagada> = X <del file>"
   const rateLabel =
-    moneda === "PESOS" || chargeCurrency === "PESOS"
-      ? `Tipo de cambio (pesos por 1 ${currencyLabel(moneda === "PESOS" ? chargeCurrency : moneda).toLowerCase()})`
-      : `Tipo de cambio (1 ${currencyLabel(moneda)} = ? ${currencyLabel(chargeCurrency)})`;
-  const equivalent = appliedAmount(Number(importe) || 0, moneda, chargeCurrency, Number(tipoCambio) || null);
+    moneda === "PESOS" || targetCurrency === "PESOS"
+      ? `Tipo de cambio (pesos por 1 ${currencyLabel(moneda === "PESOS" ? targetCurrency : moneda).toLowerCase()})`
+      : `Tipo de cambio (1 ${currencyLabel(moneda)} = ? ${currencyLabel(targetCurrency)})`;
+  const equivalent = appliedAmount(Number(importe) || 0, moneda, targetCurrency, Number(tipoCambio) || null);
 
   const canSave = Number(importe) > 0 && fecha && (!otherCurrency || Number(tipoCambio) > 0);
 
@@ -487,6 +513,7 @@ export const PaymentForm = ({
       medio,
       nota,
       pagadorId: pagadorId || null,
+      monedaAplicada: monedas ? aplicada : null,
     };
     const result = pago ? await updatePago(fileId, pago.id, input) : await addPago(fileId, input);
     setSaving(false);
@@ -497,6 +524,26 @@ export const PaymentForm = ({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <TextField label="Fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} InputLabelProps={{ shrink: true }} />
+
+      {monedas && (
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            ¿Qué parte paga?
+          </Typography>
+          <RadioGroup
+            row
+            value={aplicada}
+            onChange={(e) => {
+              setAplicada(e.target.value);
+              setMoneda(e.target.value);
+            }}
+          >
+            {monedas.map((m) => (
+              <FormControlLabel key={m} value={m} control={<Radio size="small" />} label={`Lo que se cobra en ${currencyLabel(m).toLowerCase()}`} />
+            ))}
+          </RadioGroup>
+        </Box>
+      )}
 
       {pasajeros.length > 0 && (
         <TextField
@@ -544,8 +591,8 @@ export const PaymentForm = ({
           <TextField label={rateLabel} type="number" value={tipoCambio} onChange={(e) => setTipoCambio(e.target.value)} />
           <Alert severity="info" icon={false}>
             {equivalent !== null
-              ? `Equivale a ${formatMoney(equivalent, chargeCurrency)} (el file se cobra en ${currencyLabel(chargeCurrency)})`
-              : `Cargá el tipo de cambio para calcular cuánto descuenta en ${currencyLabel(chargeCurrency)}`}
+              ? `Equivale a ${formatMoney(equivalent, targetCurrency)} (el file se cobra en ${currencyLabel(targetCurrency)})`
+              : `Cargá el tipo de cambio para calcular cuánto descuenta en ${currencyLabel(targetCurrency)}`}
           </Alert>
         </>
       )}
@@ -598,6 +645,8 @@ interface PlanDialogProps {
   currency: string;
   total: number;
   cuotas: iCuota[];
+  // Reservas de grupos: se guarda el plan de esta moneda
+  planMoneda?: string | null;
   onClose: () => void;
   onSaved: (data: iPaymentsSummary) => void;
 }
@@ -608,7 +657,7 @@ interface PlanRow {
   vencimiento: string;
 }
 
-const PlanDialog = ({ fileId, currency, total, cuotas, onClose, onSaved }: PlanDialogProps) => {
+const PlanDialog = ({ fileId, currency, total, cuotas, planMoneda, onClose, onSaved }: PlanDialogProps) => {
   // Arranca desde el plan actual (automático o propio)
   const [rows, setRows] = useState<PlanRow[]>(
     cuotas.length > 0
@@ -632,7 +681,7 @@ const PlanDialog = ({ fileId, currency, total, cuotas, onClose, onSaved }: PlanD
       importe: Number(r.importe),
       vencimiento: fromDateInput(r.vencimiento),
     }));
-    const result = await savePlan(fileId, input);
+    const result = await savePlan(fileId, input, planMoneda);
     setSaving(false);
     if (result.ok) onSaved(result.data);
     else setError(result.msg);

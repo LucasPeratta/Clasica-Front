@@ -386,7 +386,7 @@ export const Inicio = () => {
                 {home.proximasSalidas.map((f) => (
                   <Line
                     key={f.id}
-                    to={`/files/profile/${f.id}`}
+                    to={f.grupoId ? `/grupos/${f.grupoId}` : `/files/profile/${f.id}`}
                     level={f.sinLiquidar > 0 ? "orange" : "blue"}
                     main={fileText(f)}
                     sub={

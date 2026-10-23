@@ -39,6 +39,8 @@ export interface iPago {
   // Quién pagó (uno de los pasajeros del file)
   pagador: iPayer | null;
   reciboNumero: number | null;
+  // Reservas de grupos: a qué moneda se aplicó
+  monedaAplicada?: string | null;
 }
 
 export interface iPayer {
@@ -47,11 +49,10 @@ export interface iPayer {
   lastname: string;
 }
 
-export interface iPaymentsSummary {
-  // Moneda en la que se cobra el file (null si no se puede definir)
+// Lo que se cobra en una moneda: su plan, lo cobrado y lo que falta
+export interface iChargePart {
   moneda: string | null;
   total: number;
-  problema: "MIXED_CURRENCIES" | "NOTHING_TO_CHARGE" | null;
   planPersonalizado: boolean;
   planTotal: number;
   cuotas: iCuota[];
@@ -63,8 +64,16 @@ export interface iPaymentsSummary {
     falta: number;
     vencimiento: string;
     diasParaVencer: number;
+    moneda?: string | null;
   } | null;
   estado: PaymentsStatus;
+}
+
+// Los campos de arriba son los de la moneda principal; porMoneda tiene una parte por moneda
+// (más de una solo en las reservas de grupos, que cobran cada moneda por separado)
+export interface iPaymentsSummary extends iChargePart {
+  problema: "MIXED_CURRENCIES" | "NOTHING_TO_CHARGE" | null;
+  porMoneda: iChargePart[];
   pagos: iPago[];
 }
 
@@ -76,6 +85,8 @@ export interface iPagoInput {
   medio: PaymentMethod;
   nota: string;
   pagadorId: string | null;
+  // Reservas de grupos: a qué moneda se aplica
+  monedaAplicada?: string | null;
 }
 
 export interface iCuotaInput {
@@ -113,10 +124,12 @@ export const updatePago = (fileId: string, pagoId: string, pago: iPagoInput) =>
 export const deletePago = (fileId: string, pagoId: string) =>
   send(`/${fileId}/pagos/${pagoId}`, { method: "DELETE" });
 
-export const savePlan = (fileId: string, cuotas: iCuotaInput[]) =>
-  send(`/${fileId}/plan`, { method: "PUT", body: JSON.stringify({ cuotas }) });
+// moneda: en las reservas de grupos, el plan de esa moneda (las otras no se tocan)
+export const savePlan = (fileId: string, cuotas: iCuotaInput[], moneda?: string | null) =>
+  send(`/${fileId}/plan`, { method: "PUT", body: JSON.stringify({ cuotas, moneda }) });
 
-export const resetPlan = (fileId: string) => send(`/${fileId}/plan`, { method: "DELETE" });
+export const resetPlan = (fileId: string, moneda?: string | null) =>
+  send(`/${fileId}/plan${moneda ? `?moneda=${moneda}` : ""}`, { method: "DELETE" });
 
 /* ---------- Sección "Pagos": cobros de todos los files ---------- */
 
@@ -133,6 +146,8 @@ export interface iCobranza extends iFileRef {
   pasajero: { firstname: string; lastname: string } | null;
   // Todos los pasajeros del file (para elegir quién pagó)
   pasajeros: iPayer[];
+  // Reservas de grupos: lo que se cobra en cada moneda
+  porMoneda: { moneda: string; total: number; cobrado: number; falta: number }[];
   moneda: string;
   total: number;
   cobrado: number;

@@ -17,6 +17,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import RoomServiceIcon from "@mui/icons-material/RoomService";
 import PaymentsIcon from "@mui/icons-material/Payments";
+import GroupsIcon from "@mui/icons-material/Groups";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 // Secciones del menú; `match` = rutas que cuentan como "estás acá"
@@ -24,6 +25,7 @@ const SECTIONS = [
   { label: "Inicio", to: "/", icon: <HomeIcon />, match: (path: string) => path === "/" },
   { label: "Pasajeros", to: "/paxs", icon: <PersonIcon />, match: (path: string) => path.startsWith("/paxs") },
   { label: "Files", to: "/files", icon: <AssignmentIcon />, match: (path: string) => path.startsWith("/files") },
+  { label: "Grupales", to: "/grupos", icon: <GroupsIcon />, match: (path: string) => path.startsWith("/grupos") },
   { label: "Servicios", to: "/services", icon: <RoomServiceIcon />, match: (path: string) => path.startsWith("/services") },
   { label: "Pagos", to: "/pagos", icon: <PaymentsIcon />, match: (path: string) => path.startsWith("/pagos") },
 ];

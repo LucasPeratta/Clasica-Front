@@ -7,6 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Link as MuiLink,
   Paper,
   TextField,
   Typography,
@@ -18,6 +19,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useGoBack } from "../../../common/useGoBack";
 import { iFile } from "../../model";
 import { formatFileNumber } from "../../utils/fileNumber";
+import { Link } from "react-router-dom";
+import { ReservaEditDialog } from "../../../Grupos/components/ReservaEditDialog";
 
 interface FileProfileHeaderProps {
   file: iFile;
@@ -25,6 +28,8 @@ interface FileProfileHeaderProps {
   onSave: (editedFile: iFile) => Promise<boolean>;
   // Abre la confirmación para eliminar el file
   onDelete?: () => void;
+  // Reservas de grupos: se cambió el nombre o el plan
+  onReservaSaved?: (changes: { nombre: string; planId: string | null }) => void;
 }
 
 const buttonSx = { textTransform: "none", fontSize: "1rem", fontWeight: 600, borderRadius: 2, px: 2.5 };
@@ -32,8 +37,10 @@ const buttonSx = { textTransform: "none", fontSize: "1rem", fontWeight: 600, bor
 /**
  * Encabezado del file: número grande, destino y referencia, y los botones Volver / Editar datos / Eliminar
  */
-export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderProps) => {
-  const goBack = useGoBack("/files");
+export const FileProfileHeader = ({ file, onSave, onDelete, onReservaSaved }: FileProfileHeaderProps) => {
+  // Una reserva de grupo vuelve a su grupo
+  const goBack = useGoBack(file.grupoId ? `/grupos/${file.grupoId}` : "/files");
+  const [editingReserva, setEditingReserva] = useState(false);
   const [editedFile, setEditedFile] = useState<iFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -41,6 +48,10 @@ export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderP
   const number = formatFileNumber(file);
 
   const openEdit = () => {
+    if (file.grupo) {
+      setEditingReserva(true);
+      return;
+    }
     setEditedFile(file);
     setSaveError(false);
   };
@@ -70,12 +81,21 @@ export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderP
       }}
     >
       <Box>
-        <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>
-          {number ? `File ${number}` : "File"}
-          {file.nro ? ` · Ref: ${file.nro}` : ""}
-        </Typography>
+        {file.grupo ? (
+          <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>
+            Reserva de la salida grupal{" "}
+            <MuiLink component={Link} to={`/grupos/${file.grupo.id}`} underline="hover" sx={{ fontWeight: 700, color: "#0D5B75" }}>
+              {file.grupo.titulo}
+            </MuiLink>
+          </Typography>
+        ) : (
+          <Typography sx={{ fontSize: "0.95rem", color: "#5b6d74", fontWeight: 600 }}>
+            {number ? `File ${number}` : "File"}
+            {file.nro ? ` · Ref: ${file.nro}` : ""}
+          </Typography>
+        )}
         <Typography component="h1" sx={{ fontWeight: 700, fontSize: { xs: "1.6rem", md: "2rem" }, lineHeight: 1.2 }}>
-          {file.destino || "Sin destino"}
+          {(file.grupo ? file.reservaNombre : file.destino) || "Sin destino"}
         </Typography>
       </Box>
 
@@ -97,6 +117,21 @@ export const FileProfileHeader = ({ file, onSave, onDelete }: FileProfileHeaderP
           </Button>
         )}
       </Box>
+
+      {/* Reserva de grupo: nombre y plan */}
+      {editingReserva && file.grupo && (
+        <ReservaEditDialog
+          grupo={file.grupo}
+          fileId={file.id}
+          nombre={file.reservaNombre ?? ""}
+          planId={file.grupoPlanId ?? null}
+          onClose={() => setEditingReserva(false)}
+          onSaved={(changes) => {
+            setEditingReserva(false);
+            onReservaSaved?.(changes);
+          }}
+        />
+      )}
 
       {/* Editar los datos generales del file */}
       <Dialog open={!!editedFile} onClose={() => !saving && setEditedFile(null)} maxWidth="sm" fullWidth>

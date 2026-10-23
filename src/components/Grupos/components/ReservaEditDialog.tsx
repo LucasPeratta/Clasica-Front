@@ -1,0 +1,62 @@
+import { useState } from "react";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from "@mui/material";
+import { updateReserva } from "../handler";
+
+interface ReservaEditDialogProps {
+  grupo: { id: string; titulo: string; planes: { id: string; nombre: string }[] };
+  fileId: string;
+  nombre: string;
+  planId: string | null;
+  onClose: () => void;
+  onSaved: (changes: { nombre: string; planId: string | null }) => void;
+}
+
+/**
+ * Cambiar el nombre de una reserva de grupo y su plan de pagos
+ */
+export const ReservaEditDialog = ({ grupo, fileId, nombre: initialName, planId: initialPlan, onClose, onSaved }: ReservaEditDialogProps) => {
+  const [nombre, setNombre] = useState(initialName);
+  const [planId, setPlanId] = useState(initialPlan ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const result = await updateReserva(grupo.id, fileId, { nombre: nombre.trim(), planId: planId || null });
+    setSaving(false);
+    if (result.ok) onSaved({ nombre: nombre.trim(), planId: planId || null });
+    else setError(result.msg);
+  };
+
+  return (
+    <Dialog open onClose={() => !saving && onClose()} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Editar reserva</DialogTitle>
+      <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "8px !important" }}>
+        <TextField label="Nombre de la reserva" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
+        <TextField
+          select
+          label="Plan de pagos"
+          value={planId}
+          onChange={(e) => setPlanId(e.target.value)}
+          helperText="Las fechas y salida las maneja el grupo"
+        >
+          <MenuItem value="">Automático (seña = aéreos, saldo 25 días antes)</MenuItem>
+          {grupo.planes.map((p) => (
+            <MenuItem key={p.id} value={p.id}>
+              {p.nombre}
+            </MenuItem>
+          ))}
+        </TextField>
+        {error && <Alert severity="error">{error}</Alert>}
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} disabled={saving}>
+          Cancelar
+        </Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving || !nombre.trim()}>
+          {saving ? "Guardando..." : "Guardar"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};

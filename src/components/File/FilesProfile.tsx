@@ -222,6 +222,7 @@ export const FilesProfile = (): JSX.Element => {
     file.tarifaAlternativa,
     file.tarifaAlternativaMoneda,
     file.fechaSalida,
+    file.grupoPlanId,
   ])
     : "";
 
@@ -246,7 +247,14 @@ export const FilesProfile = (): JSX.Element => {
       }}
     >
       <Box sx={{ maxWidth: 1300, mx: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-      <FileProfileHeader file={file} onSave={handleEditFileSave} onDelete={() => setDeleteFileOpen(true)} />
+      <FileProfileHeader
+        file={file}
+        onSave={handleEditFileSave}
+        onDelete={() => setDeleteFileOpen(true)}
+        onReservaSaved={({ nombre, planId }) =>
+          setFile((prev) => prev && { ...prev, reservaNombre: nombre, grupoPlanId: planId, destino: `${prev.grupo?.titulo} · ${nombre}` })
+        }
+      />
       <FileSummary file={file} payments={payments} onSelect={setSeccion} />
 
       {/* Confirmación: muestra qué contiene el file antes de eliminarlo */}
@@ -296,7 +304,8 @@ export const FilesProfile = (): JSX.Element => {
                 services={file.services}
                 tarifaAlternativa={file.tarifaAlternativa}
                 tarifaAlternativaMoneda={file.tarifaAlternativaMoneda}
-                onSaveAlternative={handleSaveAlternative}
+                // Las reservas de grupos cobran cada moneda por separado (sin tarifa alternativa)
+                onSaveAlternative={file.grupoId ? undefined : handleSaveAlternative}
               />
             </>
           )}
@@ -331,6 +340,7 @@ export const FilesProfile = (): JSX.Element => {
                 refreshKey={paymentsRefreshKey}
                 onSummaryChange={setPayments}
                 pasajeros={file.clients}
+                groupReservation={!!file.grupoId}
               />
             </>
           )}

@@ -245,10 +245,17 @@ export const CobrosTab = () => {
                         )}
                       </TableCell>
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                        <Typography sx={{ fontWeight: 700, color: "error.main" }}>{formatMoney(row.falta, row.moneda)}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          cobrado {formatMoney(row.cobrado, row.moneda)} de {formatMoney(row.total, row.moneda)}
-                        </Typography>
+                        {/* Reservas de grupos: una línea por moneda */}
+                        {(row.porMoneda.length > 1 ? row.porMoneda : [row]).map((p) => (
+                          <Box key={p.moneda}>
+                            <Typography sx={{ fontWeight: 700, color: p.falta > 0 ? "error.main" : "success.dark" }}>
+                              {p.falta > 0 ? formatMoney(p.falta, p.moneda) : `${formatMoney(0, p.moneda)} ✓`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              cobrado {formatMoney(p.cobrado, p.moneda)} de {formatMoney(p.total, p.moneda)}
+                            </Typography>
+                          </Box>
+                        ))}
                       </TableCell>
                       <TableCell align="right">
                         <Button size="small" variant="contained" startIcon={<PaymentsIcon />} onClick={(e) => {
@@ -359,10 +366,12 @@ export const CobrosTab = () => {
       {payingFile && (
         <PaymentDialog
           fileId={payingFile.id}
-          chargeCurrency={payingFile.moneda}
+          // Reservas de grupos: arranca en la moneda del próximo vencimiento (el importe sugerido es de esa)
+          chargeCurrency={payingFile.proximoVencimiento?.moneda ?? payingFile.moneda}
           pago={null}
           suggestedAmount={payingFile.proximoVencimiento?.falta ?? payingFile.falta}
           pasajeros={payingFile.pasajeros}
+          monedas={payingFile.porMoneda.length > 1 ? payingFile.porMoneda.map((p) => p.moneda) : undefined}
           onClose={() => setPayingFile(null)}
           onSaved={(data) => {
             // El pago nuevo es el de número de recibo más alto

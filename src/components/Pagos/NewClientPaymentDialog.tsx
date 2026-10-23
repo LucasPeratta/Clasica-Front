@@ -178,10 +178,11 @@ export const NewClientPaymentDialog = ({ onClose, onSaved }: NewClientPaymentDia
                   // Un formulario nuevo por cada file elegido
                   key={selected.id}
                   fileId={selected.id}
-                  chargeCurrency={selected.moneda}
+                  chargeCurrency={selected.proximoVencimiento?.moneda ?? selected.moneda}
                   pago={null}
                   suggestedAmount={selected.proximoVencimiento?.falta ?? selected.falta}
                   pasajeros={selected.pasajeros}
+                  monedas={selected.porMoneda.length > 1 ? selected.porMoneda.map((p) => p.moneda) : undefined}
                   defaultPagadorId={searchedPayer(selected)}
                   onCancel={onClose}
                   onSaved={(data) => handleSaved(selected, data)}
