@@ -13,26 +13,6 @@ export const getPaxPage = (
   search: string
 ): Promise<iPaginated<iPax>> => fetchPage<iPax>(`${apiUrl}/pax`, page, search);
 
-export const getPax = async (): Promise<iPax[]> => {
-  try {
-    const response = await apiFetch(`${apiUrl}/pax`);
-    
-    if (!response.ok) {
-      console.error("Error en la respuesta:", response.status);
-      return [];
-    }
-    
-    const data = await response.json();
-    console.log("Response data:", data);
-    
-    // Verifica si data.paxs existe, si no, intenta devolver data directamente o un array vacío
-    return Array.isArray(data.paxs) ? data.paxs : (Array.isArray(data) ? data : []);
-  } catch (error) {
-    console.error("Error en getPax:", error);
-    return [];
-  }
-};
-
 // Devuelve true si se eliminó
 export const deletePax = async (id: string): Promise<boolean> => {
   try {
@@ -53,6 +33,14 @@ export interface iPaxFile {
   nro?: string | null;
   destino: string;
   fechaSalida: string;
+  // Para el historial: con quién viajó, cuánto costó, si pagó y si está facturado
+  acompanantes?: { id: string; firstname: string; lastname: string }[];
+  servicios?: number;
+  moneda?: string | null;
+  total?: number;
+  falta?: number;
+  estado?: string;
+  facturado?: boolean;
 }
 
 // Files en los que está el pasajero (para avisar antes de eliminarlo)

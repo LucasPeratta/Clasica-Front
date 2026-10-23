@@ -10,6 +10,7 @@ import FlightTakeoffIcon from "@mui/icons-material/FlightTakeoff";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import AssignmentLateIcon from "@mui/icons-material/AssignmentLate";
 import BadgeIcon from "@mui/icons-material/Badge";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -223,6 +224,13 @@ const buildSummaries = (home: iHome): Summary[] => {
               : "Todos los servicios están liquidados",
     },
     {
+      key: "facturar",
+      icon: <ReceiptIcon />,
+      level: home.facturar.total > 0 ? "orange" : "green",
+      title: home.facturar.total > 0 ? plural(home.facturar.total, "file para facturar", "files para facturar") : "Facturación al día",
+      detail: home.facturar.total > 0 ? "Los pasajeros ya pagaron todo" : "No hay files pagados sin facturar",
+    },
+    {
       key: "documentos",
       icon: <BadgeIcon />,
       level: docProblems > 0 ? "red" : docs > 0 ? "orange" : "green",
@@ -366,7 +374,7 @@ export const Inicio = () => {
               <Typography sx={{ color: "#fff", fontWeight: 700, fontSize: "1.3rem", mb: 1.5 }}>Para revisar hoy</Typography>
               <Grid container spacing={2}>
                 {buildSummaries(home).map((summary) => (
-                  <Grid item xs={12} sm={6} md key={summary.key}>
+                  <Grid item xs={12} sm={6} md={4} key={summary.key}>
                     <SummaryCard summary={summary} onClick={() => scrollTo(`detalle-${summary.key}`)} />
                   </Grid>
                 ))}
@@ -508,6 +516,37 @@ export const Inicio = () => {
                     />
                   );
                 })}
+              </Panel>
+
+              <Panel
+                id="detalle-facturar"
+                title="Files para facturar"
+                icon={<ReceiptIcon />}
+                link="/pagos?seccion=balance"
+                linkText="Ir a facturación"
+                footer={
+                  home.facturar.total > home.facturar.items.length && (
+                    <Button
+                      component={Link}
+                      to="/pagos?seccion=balance"
+                      fullWidth
+                      sx={{ mt: 1, textTransform: "none", fontWeight: 600, fontSize: "0.95rem", color: "#0D5B75", backgroundColor: "#f2f8fa", borderRadius: 2 }}
+                    >
+                      Ver los {home.facturar.total} files para facturar
+                    </Button>
+                  )
+                }
+              >
+                {home.facturar.items.map((f) => (
+                  <Line
+                    key={f.id}
+                    to={`/files/profile/${f.id}?seccion=pagos`}
+                    level="orange"
+                    main={`Facturar ${formatMoney(f.total, f.moneda)}${f.pasajero ? ` a ${fullName(f.pasajero)}` : ""}`}
+                    sub={fileText(f)}
+                    right={<Right level="orange" strong="Ya pagó todo" small={`viaje del ${dayjs(f.fechaSalida).format("DD/MM/YYYY")}`} />}
+                  />
+                ))}
               </Panel>
 
               <Panel id="detalle-documentos" title="Documentos de pasajeros" icon={<BadgeIcon />} link="/paxs" linkText="Ir a pasajeros">

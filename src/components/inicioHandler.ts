@@ -1,6 +1,7 @@
 import { apiFetch } from "./common/apiFetch";
 import { iCobranza } from "./File/paymentsHandler";
 import { iServiceToPay } from "./Pagos/mayoristasHandler";
+import { iToInvoice } from "./File/invoiceHandler";
 import { ServiceType } from "./Service/model";
 
 const apiUrl = import.meta.env.VITE_REACT_APP_API_URL;
@@ -53,6 +54,8 @@ export interface iHome {
       diasParaLiquidar: number;
     }[];
   };
+  // Files que el pasajero pagó completo y falta facturar
+  facturar: { total: number; items: iToInvoice[] };
   documentos: {
     total: number;
     items: {
