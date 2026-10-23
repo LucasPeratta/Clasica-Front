@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -14,6 +16,7 @@ import {
 } from "@mui/material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ReceiptIcon from "@mui/icons-material/Receipt";
+import AddIcon from "@mui/icons-material/Add";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -24,6 +27,7 @@ import { getBalance, iBalanceMonth, iToInvoice } from "../File/invoiceHandler";
 import { CURRENCIES, formatMoney } from "../File/utils/totals";
 import { formatFileNumber } from "../File/utils/fileNumber";
 import { InvoiceDialog } from "../File/components/InvoiceDialog";
+import { NewInvoiceDialog } from "./NewInvoiceDialog";
 
 const paperSx = {
   borderRadius: 3,
@@ -105,6 +109,8 @@ export const BalanceTab = () => {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const [invoicing, setInvoicing] = useState<iToInvoice | null>(null);
+  const [newInvoiceOpen, setNewInvoiceOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,8 +131,27 @@ export const BalanceTab = () => {
   );
   const diff = (m: iBalanceMonth, currency: string) => (m.facturado[currency] ?? 0) - (m.pagado[currency] ?? 0);
 
+  // Después de facturar: avisar y volver a calcular
+  const handleInvoiced = () => {
+    setInvoicing(null);
+    setNewInvoiceOpen(false);
+    setSavedOpen(true);
+    setReloadKey((k) => k + 1);
+  };
+
   return (
     <>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setNewInvoiceOpen(true)}
+          sx={{ background: "linear-gradient(135deg, #0D5B75 0%, #1a7a99 100%)", fontWeight: 600 }}
+        >
+          Facturar un file
+        </Button>
+      </Box>
+
       <Paper sx={{ ...paperSx, p: 2, mb: 2 }}>
         <Typography sx={{ color: "#5b6d74", mb: 2 }}>
           Lo que <strong>les facturamos a los pasajeros</strong> (files marcados como facturados, por fecha de factura) contra lo que{" "}
@@ -290,12 +315,17 @@ export const BalanceTab = () => {
           fileId={invoicing.id}
           initial={{ importe: invoicing.total, moneda: invoicing.moneda }}
           onClose={() => setInvoicing(null)}
-          onSaved={() => {
-            setInvoicing(null);
-            setReloadKey((k) => k + 1);
-          }}
+          onSaved={handleInvoiced}
         />
       )}
+
+      {newInvoiceOpen && <NewInvoiceDialog onClose={() => setNewInvoiceOpen(false)} onSaved={handleInvoiced} />}
+
+      <Snackbar open={savedOpen} autoHideDuration={3000} onClose={() => setSavedOpen(false)} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert severity="success" onClose={() => setSavedOpen(false)}>
+          File facturado
+        </Alert>
+      </Snackbar>
     </>
   );
 };

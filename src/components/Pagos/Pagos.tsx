@@ -35,7 +35,7 @@ export const Pagos = (): JSX.Element => {
         tabs={[
           { value: "cobros", label: "Cobros a pasajeros", icon: <PersonIcon /> },
           { value: "mayoristas", label: "Pagos a mayoristas", icon: <StorefrontIcon /> },
-          { value: "balance", label: "Balance", icon: <InsightsIcon /> },
+          { value: "balance", label: "Facturación y balance", icon: <InsightsIcon /> },
         ]}
       />
 

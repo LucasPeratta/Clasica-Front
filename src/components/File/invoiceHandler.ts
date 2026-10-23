@@ -65,3 +65,33 @@ export const getBalance = async (
     return null;
   }
 };
+
+// File encontrado para facturar: lo cobrado y si ya está facturado
+export interface iFileToInvoice {
+  id: string;
+  numero?: number | null;
+  anio?: number | null;
+  destino: string;
+  fechaSalida: string;
+  pasajeros: { firstname: string; lastname: string }[];
+  moneda: string | null;
+  total: number;
+  cobrado: number;
+  falta: number;
+  estado: string;
+  facturadoAt: string | null;
+  facturaNumero: string | null;
+  facturaImporte: number | null;
+  facturaMoneda: string | null;
+}
+
+export const searchFilesToInvoice = async (search: string): Promise<iFileToInvoice[]> => {
+  try {
+    const params = new URLSearchParams({ search });
+    const response = await apiFetch(`${apiUrl}/balance/files?${params}`);
+    if (!response.ok) return [];
+    return (await response.json()).data;
+  } catch {
+    return [];
+  }
+};
