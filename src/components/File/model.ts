@@ -19,6 +19,11 @@ export interface iFile {
   fechaSalida: null | dayjs.Dayjs;
   clients: iPax[];
   services: iService[];
+  // Facturado al pasajero (el file entero, de una vez)
+  facturadoAt?: string | null;
+  facturaNumero?: string | null;
+  facturaImporte?: string | number | null;
+  facturaMoneda?: string | null;
   // Solo en el listado: estado de los cobros al pasajero
   cobro?: {
     estado: "SIN_PLAN" | "PAGADO" | "VENCIDO" | "POR_VENCER" | "AL_DIA";

@@ -6,6 +6,7 @@ import InsightsIcon from "@mui/icons-material/Insights";
 import { CountTabs } from "../common/CountTabs";
 import { CobrosTab } from "./CobrosTab";
 import { MayoristasTab } from "./MayoristasTab";
+import { BalanceTab } from "./BalanceTab";
 
 /**
  * Sección "Pagos": cobros a pasajeros, pagos a mayoristas y balance.
@@ -34,12 +35,13 @@ export const Pagos = (): JSX.Element => {
         tabs={[
           { value: "cobros", label: "Cobros a pasajeros", icon: <PersonIcon /> },
           { value: "mayoristas", label: "Pagos a mayoristas", icon: <StorefrontIcon /> },
-          { value: "balance", label: "Balance", icon: <InsightsIcon />, disabled: true, badgeText: "Próximamente" },
+          { value: "balance", label: "Balance", icon: <InsightsIcon /> },
         ]}
       />
 
       {seccion === "cobros" && <CobrosTab />}
       {seccion === "mayoristas" && <MayoristasTab />}
+      {seccion === "balance" && <BalanceTab />}
     </Box>
   );
 };

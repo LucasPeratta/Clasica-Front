@@ -142,9 +142,16 @@ export const FileSummary = ({ file, payments, onSelect }: FileSummaryProps) => {
           label="Cobro al pasajero"
           value={<PaymentsValue payments={payments} />}
           detail={
-            status && payments?.moneda && payments.estado !== "SIN_PLAN" ? (
-              <Chip size="small" color={status.color} label={status.label} sx={{ fontWeight: 600, mt: 0.25 }} />
-            ) : undefined
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mt: 0.25 }}>
+              {status && payments?.moneda && payments.estado !== "SIN_PLAN" && (
+                <Chip size="small" color={status.color} label={status.label} sx={{ fontWeight: 600 }} />
+              )}
+              {file.facturadoAt ? (
+                <Chip size="small" color="success" variant="outlined" label="Facturado" sx={{ fontWeight: 600 }} />
+              ) : payments?.estado === "PAGADO" ? (
+                <Chip size="small" color="warning" variant="outlined" label="Falta facturar" sx={{ fontWeight: 600 }} />
+              ) : null}
+            </Box>
           }
           onClick={() => onSelect("pagos")}
         />

@@ -14,6 +14,7 @@ import { PdfDocuments } from "../common/PdfDocuments/PdfDocuments";
 import { saveService, setServiceLiquidado } from "../Service/handler";
 import { FilePayments } from "./profile/components/FilePayments";
 import { FileSummary } from "./profile/components/FileSummary";
+import { FileInvoice } from "./profile/components/FileInvoice";
 import { getFilePayments, iPaymentsSummary } from "./paymentsHandler";
 import { CountTabs } from "../common/CountTabs";
 import ListAltIcon from "@mui/icons-material/ListAlt";
@@ -309,12 +310,29 @@ export const FilesProfile = (): JSX.Element => {
             />
           )}
           {seccion === "pagos" && (
-            <FilePayments
-              fileId={file.id}
-              refreshKey={paymentsRefreshKey}
-              onSummaryChange={setPayments}
-              pasajeros={file.clients}
-            />
+            <>
+              <FileInvoice
+                file={file}
+                payments={payments}
+                onChange={(invoice) =>
+                  setFile((prev) =>
+                    prev && {
+                      ...prev,
+                      facturadoAt: invoice?.fecha ?? null,
+                      facturaImporte: invoice?.importe ?? null,
+                      facturaMoneda: invoice?.moneda ?? null,
+                      facturaNumero: invoice?.numero || null,
+                    }
+                  )
+                }
+              />
+              <FilePayments
+                fileId={file.id}
+                refreshKey={paymentsRefreshKey}
+                onSummaryChange={setPayments}
+                pasajeros={file.clients}
+              />
+            </>
           )}
           {seccion === "documentos" && (
             <PdfDocuments baseUrl={filePdfsUrl(file.id)} titleColor="#0D5B75" />
