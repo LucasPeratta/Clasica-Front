@@ -39,7 +39,7 @@ const ymd = (date: dayjs.Dayjs) => date.format("YYYY-MM-DD");
 
 // Atajos que completan las dos fechas
 const SHORTCUTS = [
-  { label: "Este mes", range: () => [dayjs().startOf("month"), dayjs()] },
+  { label: "Este mes", range: () => [dayjs().startOf("month"), dayjs().endOf("month")] },
   { label: "Mes pasado", range: () => [dayjs().subtract(1, "month").startOf("month"), dayjs().subtract(1, "month").endOf("month")] },
   { label: "Últimos 3 meses", range: () => [dayjs().subtract(2, "month").startOf("month"), dayjs()] },
   { label: "Últimos 6 meses", range: () => [dayjs().subtract(5, "month").startOf("month"), dayjs()] },
@@ -50,11 +50,11 @@ const SHORTCUTS = [
   return { label: s.label, desde: ymd(desde), hasta: ymd(hasta) };
 });
 
-// Período en la URL: "AAAA-MM-DD_AAAA-MM-DD"; por defecto, este año
+// Período en la URL: "AAAA-MM-DD_AAAA-MM-DD"; por defecto, el mes actual entero
 const parsePeriod = (period: string | null) => {
   const match = period?.match(/^(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})$/);
   if (match && match[1] <= match[2]) return { desde: match[1], hasta: match[2] };
-  return { desde: ymd(dayjs().startOf("year")), hasta: ymd(dayjs()) };
+  return { desde: ymd(dayjs().startOf("month")), hasta: ymd(dayjs().endOf("month")) };
 };
 
 const chipSx = {
