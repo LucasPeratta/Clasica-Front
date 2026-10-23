@@ -10,15 +10,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
 import { getBalance, iBalanceMonth, iToInvoice } from "../File/invoiceHandler";
@@ -26,43 +25,40 @@ import { CURRENCIES, formatMoney } from "../File/utils/totals";
 import { formatFileNumber } from "../File/utils/fileNumber";
 import { InvoiceDialog } from "../File/components/InvoiceDialog";
 
-// Cuántos meses suma la columna "en 4 meses" (en ese lapso tiene que dar positivo)
-const ROLLING_MONTHS = 4;
-
 const paperSx = {
   borderRadius: 3,
   backgroundColor: "rgba(255, 255, 255, 0.97)",
   boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
 };
 
-const PERIODS = [
-  { value: "12m", label: "Últimos 12 meses" },
-  { value: "anio", label: "Este año" },
-  { value: "anioPasado", label: "Año pasado" },
-] as const;
+const ymd = (date: dayjs.Dayjs) => date.format("YYYY-MM-DD");
 
-const toggleSx = {
-  textTransform: "none",
-  fontWeight: 600,
-  px: 2,
-  border: "1px solid #c9d7dc !important",
-  borderRadius: "20px !important",
-  "&.Mui-selected": { backgroundColor: "#0D5B75", color: "#fff", "&:hover": { backgroundColor: "#0a4a5e" } },
+// Atajos que completan las dos fechas
+const SHORTCUTS = [
+  { label: "Este mes", range: () => [dayjs().startOf("month"), dayjs()] },
+  { label: "Mes pasado", range: () => [dayjs().subtract(1, "month").startOf("month"), dayjs().subtract(1, "month").endOf("month")] },
+  { label: "Últimos 3 meses", range: () => [dayjs().subtract(2, "month").startOf("month"), dayjs()] },
+  { label: "Últimos 6 meses", range: () => [dayjs().subtract(5, "month").startOf("month"), dayjs()] },
+  { label: "Este año", range: () => [dayjs().startOf("year"), dayjs()] },
+  { label: "Año pasado", range: () => [dayjs().subtract(1, "year").startOf("year"), dayjs().subtract(1, "year").endOf("year")] },
+].map((s) => {
+  const [desde, hasta] = s.range();
+  return { label: s.label, desde: ymd(desde), hasta: ymd(hasta) };
+});
+
+// Período en la URL: "AAAA-MM-DD_AAAA-MM-DD"; por defecto, este año
+const parsePeriod = (period: string | null) => {
+  const match = period?.match(/^(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})$/);
+  if (match && match[1] <= match[2]) return { desde: match[1], hasta: match[2] };
+  return { desde: ymd(dayjs().startOf("year")), hasta: ymd(dayjs()) };
 };
 
-const ym = (date: dayjs.Dayjs) => date.format("YYYY-MM");
-
-// Meses del período (ambos incluidos). Fechas elegidas a mano: "AAAA-MM_AAAA-MM"
-const periodMonths = (period: string) => {
-  const now = dayjs();
-  if (period === "anio") return { desde: ym(now.startOf("year")), hasta: ym(now) };
-  if (period === "anioPasado") {
-    const last = now.subtract(1, "year");
-    return { desde: ym(last.startOf("year")), hasta: ym(last.endOf("year")) };
-  }
-  const custom = period.match(/^(\d{4}-\d{2})_(\d{4}-\d{2})$/);
-  if (custom && custom[1] <= custom[2]) return { desde: custom[1], hasta: custom[2] };
-  return { desde: ym(now.subtract(11, "month")), hasta: ym(now) };
+const chipSx = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: 5,
+  borderColor: "#c9d7dc",
+  color: "#0D5B75",
 };
 
 const monthName = (mes: string) => {
@@ -89,24 +85,21 @@ const Figure = ({ label, children }: { label: string; children: React.ReactNode 
 
 /**
  * Balance: lo que les facturamos a los pasajeros contra lo que les pagamos a los mayoristas,
- * mes por mes. Un mes puede dar negativo; en varios meses tiene que dar positivo.
+ * en el período que se elija, con el detalle mes por mes.
  */
 export const BalanceTab = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const period = searchParams.get("periodo") ?? "12m";
-  const setPeriod = (value: string) =>
+  const { desde, hasta } = parsePeriod(searchParams.get("periodo"));
+  const setPeriod = (from: string, to: string) =>
     setSearchParams(
       (prev) => {
         const params = new URLSearchParams(prev);
-        if (value === "12m") params.delete("periodo");
-        else params.set("periodo", value);
+        params.set("periodo", `${from}_${to}`);
         return params;
       },
       { replace: true }
     );
-  const custom = period.includes("_");
-  const { desde, hasta } = periodMonths(period);
 
   const [data, setData] = useState<{ meses: iBalanceMonth[]; porFacturar: iToInvoice[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,9 +109,7 @@ export const BalanceTab = () => {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // Se piden 3 meses más atrás para que la suma de 4 meses esté completa desde el primero
-    const from = ym(dayjs(`${desde}-01`).subtract(ROLLING_MONTHS - 1, "month"));
-    getBalance(from, hasta).then((result) => {
+    getBalance(desde, hasta).then((result) => {
       if (cancelled) return;
       setData(result);
       setLoading(false);
@@ -128,64 +119,59 @@ export const BalanceTab = () => {
     };
   }, [desde, hasta, reloadKey]);
 
-  const allMonths = data?.meses ?? [];
-  const months = allMonths.filter((m) => m.mes >= desde);
+  const months = data?.meses ?? [];
   const currencies = CURRENCIES.map((c) => c.value).filter((currency) =>
     months.some((m) => m.facturado[currency] || m.pagado[currency])
   );
   const diff = (m: iBalanceMonth, currency: string) => (m.facturado[currency] ?? 0) - (m.pagado[currency] ?? 0);
-  const rolling = (mes: string, currency: string) => {
-    const index = allMonths.findIndex((m) => m.mes === mes);
-    return allMonths.slice(Math.max(0, index - ROLLING_MONTHS + 1), index + 1).reduce((sum, m) => sum + diff(m, currency), 0);
-  };
 
   return (
     <>
       <Paper sx={{ ...paperSx, p: 2, mb: 2 }}>
-        <Typography sx={{ color: "#5b6d74", mb: 1.5 }}>
+        <Typography sx={{ color: "#5b6d74", mb: 2 }}>
           Lo que <strong>les facturamos a los pasajeros</strong> (files marcados como facturados, por fecha de factura) contra lo que{" "}
-          <strong>les pagamos a los mayoristas</strong> (por fecha de pago). Un mes puede dar negativo; en {ROLLING_MONTHS} meses o en el
-          año tiene que dar positivo. Cada moneda va por separado.
+          <strong>les pagamos a los mayoristas</strong> (por fecha de pago). Cada moneda va por separado.
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "#0D5B75" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, color: "#0D5B75" }}>
           <CalendarMonthIcon />
-          <Typography sx={{ fontWeight: 700 }}>Período</Typography>
+          <Typography sx={{ fontWeight: 700 }}>¿Qué período querés ver?</Typography>
         </Box>
-        <ToggleButtonGroup
-          exclusive
-          value={custom ? "custom" : period}
-          onChange={(_, v: string | null) => v && setPeriod(v === "custom" ? `${desde}_${hasta}` : v)}
-          sx={{ flexWrap: "wrap", gap: 1 }}
-        >
-          {PERIODS.map((p) => (
-            <ToggleButton key={p.value} value={p.value} size="small" sx={toggleSx}>
-              {p.label}
-            </ToggleButton>
-          ))}
-          <ToggleButton value="custom" size="small" sx={toggleSx}>
-            Elegir meses
-          </ToggleButton>
-        </ToggleButtonGroup>
-        {custom && (
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 2 }}>
-            <TextField
-              size="small"
-              type="month"
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
+            <DatePicker
               label="Desde"
-              value={desde}
-              onChange={(e) => e.target.value && setPeriod(`${e.target.value}_${hasta}`)}
-              InputLabelProps={{ shrink: true }}
+              format="DD/MM/YYYY"
+              value={dayjs(desde)}
+              maxDate={dayjs(hasta)}
+              onChange={(value) => value?.isValid() && setPeriod(ymd(value), hasta)}
+              slotProps={{ textField: { sx: { width: 200 } } }}
             />
-            <TextField
-              size="small"
-              type="month"
+            <DatePicker
               label="Hasta"
-              value={hasta}
-              onChange={(e) => e.target.value && setPeriod(`${desde}_${e.target.value}`)}
-              InputLabelProps={{ shrink: true }}
+              format="DD/MM/YYYY"
+              value={dayjs(hasta)}
+              minDate={dayjs(desde)}
+              onChange={(value) => value?.isValid() && setPeriod(desde, ymd(value))}
+              slotProps={{ textField: { sx: { width: 200 } } }}
             />
           </Box>
-        )}
+        </LocalizationProvider>
+        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          {SHORTCUTS.map((shortcut) => {
+            const active = shortcut.desde === desde && shortcut.hasta === hasta;
+            return (
+              <Button
+                key={shortcut.label}
+                size="small"
+                variant={active ? "contained" : "outlined"}
+                onClick={() => setPeriod(shortcut.desde, shortcut.hasta)}
+                sx={{ ...chipSx, ...(active && { backgroundColor: "#0D5B75", color: "#fff" }) }}
+              >
+                {shortcut.label}
+              </Button>
+            );
+          })}
+        </Box>
       </Paper>
 
       {/* Files pagados que falta facturar */}
@@ -260,7 +246,7 @@ export const BalanceTab = () => {
               <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mb: 2 }}>
                 <Figure label="Facturado a pasajeros">{formatMoney(facturado, currency)}</Figure>
                 <Figure label="Pagado a mayoristas">{formatMoney(pagado, currency)}</Figure>
-                <Figure label="Diferencia del período">
+                <Figure label={`Diferencia del ${dayjs(desde).format("DD/MM/YYYY")} al ${dayjs(hasta).format("DD/MM/YYYY")}`}>
                   <Amount value={facturado - pagado} currency={currency} strong />
                 </Figure>
               </Box>
@@ -278,11 +264,6 @@ export const BalanceTab = () => {
                       <TableCell sx={{ fontWeight: 700 }} align="right">
                         Diferencia del mes
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="right">
-                        <Tooltip title={`Suma de este mes y los ${ROLLING_MONTHS - 1} anteriores: es la que tiene que dar positiva`}>
-                          <span>En {ROLLING_MONTHS} meses ⓘ</span>
-                        </Tooltip>
-                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -293,9 +274,6 @@ export const BalanceTab = () => {
                         <TableCell align="right">{m.pagado[currency] ? formatMoney(m.pagado[currency], currency) : "—"}</TableCell>
                         <TableCell align="right">
                           <Amount value={diff(m, currency)} currency={currency} />
-                        </TableCell>
-                        <TableCell align="right" sx={{ backgroundColor: "#f7fbfc" }}>
-                          <Amount value={rolling(m.mes, currency)} currency={currency} strong />
                         </TableCell>
                       </TableRow>
                     ))}
