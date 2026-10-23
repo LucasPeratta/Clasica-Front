@@ -13,6 +13,7 @@ import {
 import dayjs from "dayjs";
 import { iFile } from "../model";
 import { formatFileNumber } from "../utils/fileNumber";
+import { fileProtectionReason } from "../utils/protection";
 
 // Detalle del file a eliminar (con documentos); null mientras se carga
 export type iFileToDelete = iFile & { pdfs?: unknown[] };
@@ -39,6 +40,8 @@ export const FileDeleteDialog = ({
   deleting,
 }: FileDeleteDialogProps) => {
   const loadingFile = file === null && !fileError;
+  // Con plata (pagos o factura) no se elimina: se guarda para la AFIP
+  const protectedReason = file ? fileProtectionReason(file) : null;
   const paxCount = file?.clients?.length ?? 0;
   const serviceCount = file?.services?.length ?? 0;
   const pdfCount = file?.pdfs?.length ?? 0;
@@ -56,6 +59,11 @@ export const FileDeleteDialog = ({
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={28} />
           </Box>
+        ) : file && protectedReason ? (
+          <Alert severity="info">
+            <AlertTitle>{fileName}</AlertTitle>
+            Este file {protectedReason}, así que no se puede eliminar: se guarda para tener todo en orden ante la AFIP.
+          </Alert>
         ) : file ? (
           <Alert severity="warning">
             <AlertTitle>
@@ -84,15 +92,23 @@ export const FileDeleteDialog = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          color="error"
-          variant="contained"
-          onClick={onConfirm}
-          disabled={loadingFile || deleting}
-        >
-          {deleting ? "Eliminando..." : "Eliminar file"}
-        </Button>
+        {protectedReason ? (
+          <Button variant="contained" onClick={onClose}>
+            Entendido
+          </Button>
+        ) : (
+          <>
+            <Button onClick={onClose}>Cancelar</Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={onConfirm}
+              disabled={loadingFile || deleting}
+            >
+              {deleting ? "Eliminando..." : "Eliminar file"}
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );

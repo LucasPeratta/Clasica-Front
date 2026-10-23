@@ -39,16 +39,18 @@ export const getFilePage = (
 ): Promise<iPaginated<iFile>> =>
   fetchPage<iFile>(`${apiUrl}/file`, page, search, { status });
 
-// Devuelve true si se eliminó
-export const deleteFile = async (id: string): Promise<boolean> => {
+// Devuelve el motivo si no se pudo eliminar (ej. tiene pagos), o null
+export const deleteFile = async (id: string): Promise<string | null> => {
   try {
     const response = await apiFetch(`${apiUrl}/file/${id}`, {
       method: "DELETE",
     });
-    return response.ok;
+    if (response.ok) return null;
+    const data = await response.json().catch(() => null);
+    return data?.msg || "No se pudo eliminar. Intentá de nuevo.";
   } catch (error) {
     console.error(error);
-    return false;
+    return "No se pudo eliminar. Intentá de nuevo.";
   }
 };
 

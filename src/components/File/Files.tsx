@@ -36,7 +36,7 @@ export const Files = (): JSX.Element => {
   const [fileToDelete, setFileToDelete] = useState<iFileToDelete | null>(null);
   const [fileToDeleteError, setFileToDeleteError] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [errorOpen, setErrorOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,11 +68,11 @@ export const Files = (): JSX.Element => {
 
   const confirmDelete = async () => {
     setDeleting(true);
-    const ok = await handleDelete(fileToDeleteId);
+    const error = await handleDelete(fileToDeleteId);
     setDeleting(false);
     setDeleteDialogOpen(false);
-    if (ok) setSuccessOpen(true);
-    else setErrorOpen(true);
+    if (error) setDeleteError(error);
+    else setSuccessOpen(true);
   };
 
   // Mensaje cuando la pestaña no tiene files; si hay resultados en la otra, se ofrece ir
@@ -156,13 +156,13 @@ export const Files = (): JSX.Element => {
       </Snackbar>
 
       <Snackbar
-        open={errorOpen}
+        open={!!deleteError}
         autoHideDuration={4000}
-        onClose={() => setErrorOpen(false)}
+        onClose={() => setDeleteError(null)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={() => setErrorOpen(false)} severity="error">
-          No se pudo eliminar el file. Intentá de nuevo.
+        <Alert onClose={() => setDeleteError(null)} severity="error">
+          {deleteError}
         </Alert>
       </Snackbar>
 

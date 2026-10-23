@@ -267,17 +267,26 @@ export const FileProfileServices = ({
                               </Tooltip>
                             )}
                             {onRemoveService && (
-                              <Tooltip title="Eliminar servicio">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveService(service.id);
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
+                              <Tooltip
+                                title={
+                                  (service.pagosMayorista?.length ?? 0) > 0
+                                    ? "Ya tiene pagos al mayorista: no se puede eliminar (se guarda para la AFIP)"
+                                    : "Eliminar servicio"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    disabled={(service.pagosMayorista?.length ?? 0) > 0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onRemoveService(service.id);
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
                               </Tooltip>
                             )}
                           </Box>

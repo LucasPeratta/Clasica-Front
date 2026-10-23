@@ -13,16 +13,18 @@ export const getPaxPage = (
   search: string
 ): Promise<iPaginated<iPax>> => fetchPage<iPax>(`${apiUrl}/pax`, page, search);
 
-// Devuelve true si se eliminó
-export const deletePax = async (id: string): Promise<boolean> => {
+// Devuelve el motivo si no se pudo eliminar (ej. está en files con pagos), o null
+export const deletePax = async (id: string): Promise<string | null> => {
   try {
     const response = await apiFetch(`${apiUrl}/pax/${id}`, {
       method: "DELETE",
     });
-    return response.ok;
+    if (response.ok) return null;
+    const data = await response.json().catch(() => null);
+    return data?.msg || "No se pudo eliminar. Intentá de nuevo.";
   } catch (error) {
     console.error(error);
-    return false;
+    return "No se pudo eliminar. Intentá de nuevo.";
   }
 };
 

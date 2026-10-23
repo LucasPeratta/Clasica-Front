@@ -38,6 +38,10 @@ export const PaxDeleteDialog = ({
 }: PaxDeleteDialogProps) => {
   const loadingFiles = files === null && !filesError;
   const inFiles = files !== null && files.length > 0;
+  // Está en files con pagos o facturados: no se elimina (se guarda para la AFIP)
+  const protectedFiles = (files ?? []).filter(
+    (f) => f.facturado || (f.total !== undefined && f.falta !== undefined && f.falta < f.total)
+  );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -47,6 +51,12 @@ export const PaxDeleteDialog = ({
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
             <CircularProgress size={28} />
           </Box>
+        ) : protectedFiles.length > 0 ? (
+          <Alert severity="info">
+            <AlertTitle>No se puede eliminar</AlertTitle>
+            Este pasajero está en {protectedFiles.length === 1 ? "un file que tiene" : `${protectedFiles.length} files que tienen`} pagos
+            o facturas, así que se guarda para tener todo en orden ante la AFIP.
+          </Alert>
         ) : inFiles ? (
           <Alert severity="warning">
             <AlertTitle>
@@ -80,15 +90,23 @@ export const PaxDeleteDialog = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          color="error"
-          variant={inFiles ? "contained" : "text"}
-          onClick={onConfirm}
-          disabled={loadingFiles || deleting}
-        >
-          {deleting ? "Eliminando..." : inFiles ? "Eliminar igual" : "Eliminar"}
-        </Button>
+        {protectedFiles.length > 0 ? (
+          <Button variant="contained" onClick={onClose}>
+            Entendido
+          </Button>
+        ) : (
+          <>
+            <Button onClick={onClose}>Cancelar</Button>
+            <Button
+              color="error"
+              variant={inFiles ? "contained" : "text"}
+              onClick={onConfirm}
+              disabled={loadingFiles || deleting}
+            >
+              {deleting ? "Eliminando..." : inFiles ? "Eliminar igual" : "Eliminar"}
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );

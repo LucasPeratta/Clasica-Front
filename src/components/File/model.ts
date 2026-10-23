@@ -24,6 +24,8 @@ export interface iFile {
   facturaNumero?: string | null;
   facturaImporte?: string | number | null;
   facturaMoneda?: string | null;
+  // En el detalle: cuántos pagos del pasajero tiene
+  _count?: { pagos: number };
   // Solo en el listado: estado de los cobros al pasajero
   cobro?: {
     estado: "SIN_PLAN" | "PAGADO" | "VENCIDO" | "POR_VENCER" | "AL_DIA";

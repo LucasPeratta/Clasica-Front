@@ -33,7 +33,7 @@ export const FilesProfile = (): JSX.Element => {
   const [editingService, setEditingService] = useState<iService | null>(null);
   const [deleteFileOpen, setDeleteFileOpen] = useState(false);
   const [deletingFile, setDeletingFile] = useState(false);
-  const [deleteFileError, setDeleteFileError] = useState(false);
+  const [deleteFileError, setDeleteFileError] = useState<string | null>(null);
   const navigate = useNavigate();
   // Pestaña abierta (en la URL, para volver al mismo lugar)
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,14 +47,14 @@ export const FilesProfile = (): JSX.Element => {
   const handleDeleteFile = async () => {
     if (!id) return;
     setDeletingFile(true);
-    const ok = await deleteFile(id);
+    const error = await deleteFile(id);
     setDeletingFile(false);
-    if (ok) {
+    if (!error) {
       // replace: que "atrás" no vuelva al perfil de un file que ya no existe
       navigate("/files", { replace: true, state: { fileDeleted: true } });
     } else {
       setDeleteFileOpen(false);
-      setDeleteFileError(true);
+      setDeleteFileError(error);
     }
   };
   // Suma pasajeros al file; devuelve true si se guardó
@@ -258,13 +258,13 @@ export const FilesProfile = (): JSX.Element => {
         deleting={deletingFile}
       />
       <Snackbar
-        open={deleteFileError}
+        open={!!deleteFileError}
         autoHideDuration={4000}
-        onClose={() => setDeleteFileError(false)}
+        onClose={() => setDeleteFileError(null)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert severity="error" onClose={() => setDeleteFileError(false)}>
-          No se pudo eliminar el file. Intentá de nuevo.
+        <Alert severity="error" onClose={() => setDeleteFileError(null)}>
+          {deleteFileError}
         </Alert>
       </Snackbar>
       <Box>

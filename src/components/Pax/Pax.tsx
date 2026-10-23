@@ -31,7 +31,7 @@ export const Pax = (): JSX.Element => {
   const [paxFiles, setPaxFiles] = useState<iPaxFile[] | null>(null);
   const [paxFilesError, setPaxFilesError] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [errorOpen, setErrorOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -52,14 +52,14 @@ export const Pax = (): JSX.Element => {
 
   const handleDelete = async () => {
     setDeleting(true);
-    const ok = await deletePax(paxToDeleteId);
+    const error = await deletePax(paxToDeleteId);
     setDeleting(false);
     setDeleteDialogOpen(false);
-    if (ok) {
+    if (error) {
+      setDeleteError(error);
+    } else {
       reload();
       setSuccessOpen(true);
-    } else {
-      setErrorOpen(true);
     }
   };
 
@@ -118,13 +118,13 @@ export const Pax = (): JSX.Element => {
 
       {/* Notificación de error */}
       <Snackbar
-        open={errorOpen}
+        open={!!deleteError}
         autoHideDuration={4000}
-        onClose={() => setErrorOpen(false)}
+        onClose={() => setDeleteError(null)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={() => setErrorOpen(false)} severity="error">
-          No se pudo eliminar el pasajero. Intentá de nuevo.
+        <Alert onClose={() => setDeleteError(null)} severity="error">
+          {deleteError}
         </Alert>
       </Snackbar>
 
